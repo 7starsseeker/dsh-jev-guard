@@ -1,0 +1,81 @@
+{
+  "kind": "publish",
+  "package": "dsh-jev-guard",
+  "version": "0.2.0",
+  "publishedAt": "2026-09-20T15:26:59+08:00",
+  "host": {
+    "repo": "https://github.com/7starsseeker/dsh-jev-guard",
+    "fullName": "7starsseeker/dsh-jev-guard",
+    "visibility": "public",
+    "defaultBranch": "main",
+    "topics": [
+      "cordis-plugin",
+      "deepseek-harness",
+      "deepseek-harness-plugin",
+      "dsh",
+      "dsh-plugin",
+      "guard",
+      "jev",
+      "plugin",
+      "safety",
+      "typesafe"
+    ],
+    "description": "DeepSeek Harness (DSH) 执行前安全阀门:bash/pwsh 真正执行前先经静态规则 + TypeSafe Jev 语义判定,破坏性操作按 允许/修正/拦截/上报人工 四态处置,含额度降级与审计日志。"
+  },
+  "commit": {
+    "head": "用 `git log -1 --oneline` 查看当前值",
+    "note": "本文件不记录 sha —— 历史一经改写,写死的 sha 立刻变成死引用,徒增噪声。",
+    "trackedFiles": 41
+  },
+  "historyRewrite": {
+    "at": "2026-09-20",
+    "why": "公开仓库不该携带机器相关的身份信息与运维细节。这些内容在早期提交里就已经存在,只在最新一次提交里清理**不够** —— git 能翻出旧提交,所以必须逐提交重写。",
+    "how": "① 逐提交重写树内容与提交信息(确定性字符串替换,不是逐处手改);② 删除远端仓库并同名重建 —— 只做 force-push 不够:被取消引用的旧对象仍可能按 sha 直接取到。",
+    "what": [
+      "会话与环境路径中的个人用户名 → 中性占位(刻意保留 /home/<名字>/ 这个**形状**:预筛的 SAFE_ROOT 靠它匹配 /home/*/.cache/,换成 ~ 会改变行为)",
+      "内部工作区目录名 → 中性占位",
+      "真实部署路径 → 包内既有的通用示例路径(与 README 的写法一致)",
+      "机器规格的具体数字(磁盘余量 / tmpfs 大小 / 工作区体积)→ 定性表述,结论与影响一列原样保留",
+      "旧 sha、包外交接文档的文件名、其它宿主与工具名 → 移除或中性化"
+    ],
+    "verified": {
+      "scanner": "一个遍历**每个提交的每个文件** + 提交信息的验证器,判据覆盖上述各项、密钥样式、家目录用户名、Windows 用户目录、盘符提及、私有邮箱、非 DSH 宿主名",
+      "result": "0 命中 —— 被跟踪文件与全部提交(含 tag)都扫过",
+      "secretScan": "密钥样式的命中全部为 tools/selftest-audit.mjs 内的 EXAMPLE* 合成样例,无真实密钥",
+      "neverCommitted": "本机运行产物(包内 secrets.json / config.json、令牌文件、审计日志、降级状态)从未被提交过 —— 逐文件核对历史提交数为 0",
+      "functionalException": "`.gitignore` 里的交接文档忽略规则是有意保留的:它是**功能性**规则,替换掉会让那个文件变成可见、有误提交风险,所以验证器对这一个文件显式豁免",
+      "authorIdentities": "全部提交的作者都是 GitHub 的 noreply 匿名邮箱,无个人邮箱"
+    },
+    "selftests": "七套离线自检 + guard selftest + 适配器冒烟全过(替换只动示例路径与文档措辞,不动判定逻辑与规则)"
+  },
+  "sync": {
+    "sourceOfTruth": "GitHub 仓库的 main 分支(唯一共享源)",
+    "workingCopy": "Windows 侧的工作副本直接放在部署目录,靠 git 对齐,不再依赖第二份手工副本",
+    "parity": "identical",
+    "checkedWith": "diff -rq(剔除 .git / node_modules / 本机运行产物 —— 密钥、配置、令牌、日志、降级状态,以及那份只随部署副本存在的交接文档)"
+  },
+  "checks": {
+    "secretSweepTrackedFiles": {
+      "result": "pass",
+      "detail": "ghp_ / github_pat_ / sk- / apikey_ 四类样式在被跟踪文件与全部提交历史中逐条核实,**全部**为 tools/selftest-audit.mjs 内的 EXAMPLE* 合成样例,无真实密钥"
+    },
+    "gitConfigSecrets": {
+      "result": "pass",
+      "detail": "git config --local 无 token;remote 使用 https 无内嵌凭据"
+    },
+    "nonDshArtifacts": {
+      "result": "pass",
+      "detail": "包内不含 DSH 之外的宿主名与其专属机制名(与验收第 19 项同一判据)"
+    },
+    "valveSelfBlocks": {
+      "result": "expected",
+      "detail": "发布期间阀门按设计拦下我方两条命令:truncate -s 0(L0 硬规则 truncate-file,需人工确认)与 mv 删除部署副本文件的链式命令(Jev 判定暂缓)。均按文档方式处理 —— 拆分 / 收窄 / 先只读核对,未使用 allow 令牌绕过"
+    }
+  },
+  "pending": [
+    "凭据的轮换与保管由人负责,不在本文件的记录范围内"
+  ],
+  "notes": [
+    "发布流程未回显任何密钥;令牌只经文件重定向交给工具,命令文本与审计日志中均不含明文。"
+  ]
+}
