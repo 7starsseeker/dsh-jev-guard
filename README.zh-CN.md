@@ -135,7 +135,7 @@ node bin/guard.mjs status        # 期望:✅ 正常(降级时退出码为 3)
 
 代码注释与 `tools/` 里的自检标签**刻意保持中文**:它们由本仓库的维护者读,双语化只会让每次改动的维护成本翻倍,而不改变产品对外说的任何一句话。
 
-**`auto` 为什么不看系统 locale:** 人家最初把 `Intl` 也放进了探测链,结果第一次真实部署就踩到 —— WSL 里 `LANG=C.UTF-8` 表示"没有偏好",`Intl` 于是报出 Node 自己的 `en-US` 兜底值,会话里的理由**悄悄变成英文**,而 Windows 侧 CLI 仍是中文。`C`/`POSIX`/未设置一律视作**没有信号**,落在 `zh-CN`;真正指明语言的 locale(`en_US.UTF-8`、`zh_CN.UTF-8`)照常生效。
+**`auto` 为什么不看系统 locale:** 本插件最初也会落到 `Intl`,结果第一次真实部署就踩到 —— WSL 里 `LANG=C.UTF-8` 表示"没有偏好",`Intl` 于是报出 Node 自己的 `en-US` 兜底值,会话里的理由**悄悄变成英文**,而 Windows 侧 CLI 仍是中文。`C`/`POSIX`/未设置一律视作**没有信号**,落在 `zh-CN`;真正指明语言的 locale(`en_US.UTF-8`、`zh_CN.UTF-8`)照常生效。
 
 > English readers: the default README is [README.md](README.md).
 
