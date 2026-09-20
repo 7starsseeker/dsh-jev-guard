@@ -1,0 +1,40 @@
+{
+  "_comment": "复制成 config.json 后按需修改。config.json 与 secrets.json 不进版本库。",
+  "model": "jev-latest",
+  "endpoint": "https://api.typesafe.ai/v1/systemone",
+  "apiKeyEnv": "TYPESAFE_API_KEY",
+  "apiKeyFile": "secrets.json",
+
+  "_thresholds": "低于 lowThreshold 放行;介于两者之间 = revise(建议换更安全的写法后重试);达到 highThreshold = block。实测在 737 条真实命令上 0.5/0.7 得到 98.51% / 0.81% / 0.68% 的三分。**注意**:完全权限(approval=never)会话里 revise 也会变成硬拦,所以这个值决定你被拦多频繁;有了下面的一次性令牌,宁可偏严 —— 真想少打扰就抬到 0.6/0.8。",
+  "lowThreshold": 0.5,
+  "highThreshold": 0.7,
+
+  "_tokens": "一次性放行令牌:被拦的命令会在理由里附一个 ALLOW-XXXXXXXXXX,以及一行**绝对路径、命令原文不截断、引号已转义**的授权命令(整行复制进普通终端即可,普通终端里没有阀门)。令牌绑定命令哈希(空白差异不影响)、用掉即删、无法重放,且**不越过 L0 的永不允许规则**。授权入口要求交互终端 —— agent 自己跑会被拒。留空 = ~/.jev-guard/allow.txt",
+  "tokens": true,
+  "tokenPath": "",
+
+  "_timing": "单次判定预算;超时或报错一律放行(fail-open),因为宿主自己的沙箱与审批策略仍在执行之前。",
+  "timeoutMs": 1800,
+  "cacheSize": 256,
+
+  "_enrich": "把被调用脚本的正文读进判定状态,补掉 `node x.mjs` 这类盲区(实测 0.31 -> 0.82)。敏感路径(.env/.ssh/*.pem/*credential*/*secret*)自动跳过不上传;想彻底关闭就设 false。",
+  "inlineScripts": true,
+  "maxScriptBytes": 8192,
+
+  "_retry": "同一条(指纹相同)命令被拦多少次后升级为 escalate(交人处理),避免模型换写法无限重试。",
+  "retryLimit": 2,
+
+  "_log": "共享审计日志:每个判定追加一行 JSONL,DSH 插件与 CLI 写同一个文件。留空 = 默认 ~/.jev-guard/guard.log;超过 logMaxBytes 轮转到 guard.log.1;命令文本写入前会做密钥掩码。查看: node bin/guard.mjs log --tail 20 / --stats",
+  "logPath": "",
+  "logMaxBytes": 4194304,
+
+  "_quota": "额度耗尽后的降级(判定服务是收费的,用完是必然事件)。持久性失败(quota / auth / 无密钥)写一份 degraded.json,冷却窗口内不再发请求(省钱),窗口到期放一次探测:成功自动恢复、失败继续降级。瞬态失败(超时/网络/5xx/429限流)只逐次 fail-open,不降级但会分类记录。查状态: node bin/guard.mjs status(退出码 3 = 正在降级)。",
+  "quotaCooldownMs": 900000,
+  "authCooldownMs": 1800000,
+  "_degradePolicy": "降级期间保留哪一层:'l0-only'(默认)= 只停要花钱联网的语义层,免费的 L0 硬规则 + 预筛照常工作(它们正好覆盖 mkfs / dd of=/dev/* / git push --force 这类最坏情况);'off' = 连 L0 一起停(整条阀门暂停,全部放行)。",
+  "degradePolicy": "l0-only",
+  "_degradedPath": "降级状态文件;留空 = ~/.jev-guard/degraded.json",
+  "degradedPath": "",
+  "_cost": "成本可见性:判定响应里的 usage 会记进审计日志,`guard log --stats` 折算成美元(单价为美元/百万输入 token;输出按官方说明免费)。",
+  "pricePerMTok": 0.042
+}

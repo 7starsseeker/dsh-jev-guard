@@ -1,0 +1,125 @@
+{
+  "host": "dsh",
+  "updatedAt": "2026-09-20T07:16:55.278Z",
+  "items": {
+    "6": {
+      "status": "pass",
+      "evidence": "重启后实测(12:52 启动):① L0 路径生效——远端强推类命令被拦,理由含硬规则 id git-force-push;② Jev 联网路径生效——rm -rf /home/user/jev-guard-probe-dir 被拦,理由含'Jev 判定风险概率 70.0%'(CLI 独立复核同一命令 p=0.80);③ 策略读取正确——完全权限(approval=never)下理由含'这是自动判定,不是用户手动拒绝';④ 无误伤——ls -la /tmp、写自建探针文件(p=0.11)、node -e rmSync(p=0.22) 均正常放行;⑤ 探针全部无害,残留已清理",
+      "notes": "新发现(假阳性类型):L0 规则匹配的是整条命令文本,所以把危险命令'当作文本写在参数里'也会触发拦截——本次记录命令就被自己的规则拦了一次。缓解:改措辞(只写规则 id,不写命令原文)。根治方案:给易与文档冲突的规则(远端强推/历史重写/rm 根目录/远端执行)加'命令位置'约束,把引号内的散文留给 Jev 判。已列入待办,与下次重启一起生效。",
+      "question": "",
+      "at": "2026-09-20T04:56:48.771Z"
+    },
+    "7": {
+      "status": "pass",
+      "evidence": "重启(13:05:16)后实测:双重验收探针通过 —— 命令文本内的散文式危险短语不再触发 L0,且以重定向结尾的普通命令也不再被误判;两者此前都会被拦。规则自检 25/25(含 5 条重定向用例)",
+      "notes": "生效确认:命令位置锚定 + 截断规则窄化 已在运行实例内生效",
+      "question": "",
+      "at": "2026-09-20T05:08:31.393Z"
+    },
+    "8": {
+      "status": "pass",
+      "evidence": "审计日志在运行实例里生效(重启 13:14:38 后):guard.log 立即有记录,--tail 正常显示(时间/动作/p/来源/命中规则/命令),--stats 给出近 24 小时按动作/来源/规则计数与 fail-open 次数;命令写入前做密钥掩码,超 4MiB 轮转到 guard.log.1;'空白 logPath = 未配置'这条教训已修(resolveLogPath),lastLogError() 与 guard log 会暴露写入失败。",
+      "notes": "本项先前记为 partial(代码与离线自检就绪、运行实例未生效),现由 8-fix 的实测补齐;当前 24 小时实测:75 条记录、fail-open 1 次、按来源 jev=68 / token=2 / prefilter=2 / cache=1 / static-rule=1 / error=1(那 1 次 error 是操作者 shell 里直接跑 CLI judge 时解析不到 TypeSafe 密钥所致,属预期:密钥只在 DSH 凭据库里)。",
+      "question": "",
+      "at": "2026-09-20T05:46:25.492Z"
+    },
+    "9": {
+      "status": "pass",
+      "evidence": "令牌闭环在真实会话里验证:①被拦命令的理由里带 ALLOW-XXXXXXXXXX;②把令牌写进 allow.txt 后重试同一条命令被放行,日志记录了 source=token 且本应拦截的 p=0.76;③令牌文件被原子消费(变空);④完全相同的命令再跑一次被拦截(令牌确定性复现同一个 token,证明不可重放)",
+      "notes": "顺带发现并修掉一个设计洞:agent 自己跑 guard allow 会被判为改写源码而拦截(实测 p=51-56%),而若无这层拦截 agent 就能自我授权 → 已改为授权必须在交互终端(TTY)执行,拒绝理由里给出绝对路径的整行命令供用户复制。此项与 overridden 审计字段补全待下次重启生效",
+      "question": "",
+      "at": "2026-09-20T05:18:40.359Z"
+    },
+    "10": {
+      "status": "pass",
+      "evidence": "第 10 项全部验收完成(重启 13:44:30,修复后模块 13:36)。①授权行文案与路径:被拦命令的理由现在打印 **node /mnt/t/dsh-jev-guard/bin/guard.mjs allow '<完整命令>'**(绝对路径,来自 import.meta.url 推导),并明确告知'授权只在交互终端生效,AI 自己跑会被拒';②命令原文不截断、引号已转义:一条含单引号的 62 字命令打印为 '...echo \"it'\\''s 最后一项验收探针\"',整行可原样粘贴,且 tools/selftest-reason.mjs 用 bash -c 'printf %s' 做了逐字节回读断言(18 例);③授权入口双向:非 TTY 时明确拒绝并给出绝对路径整行命令,伪 TTY 下写入的令牌与公示令牌逐字一致(ALLOW-0A2DB6157F / ALLOW-B6EA6A3068 两次);④审计字段:令牌闭环记录为 {source:token, p:0.83, token:ALLOW-B6EA6A3068, overridden:block},用掉即空。全量自检 92 例(18+17+25+20+12)在源码与 T: 两侧全部通过。",
+      "notes": "本轮修掉一个真实缺陷:lib/index.js 定义了 CLI_PATH 却从未传进 explain/toHostDecision,而 toHostDecision 也没把 cliPath 往下透传 —— 于是授权行永远落到兜底的相对路径 node bin/guard.mjs,只有用户恰好站在包目录里才能粘贴成功,且不报错、只是静静失效。修法:verdict.js 用 import.meta.url 推导绝对默认路径(任何适配器自动正确、包搬走也对) + toHostDecision 透传 cliPath;index.js 两处调用点显式传 CLI_PATH(宿主可覆盖)。新增 tools/selftest-reason.mjs 作为回归护栏。旁证:agent 无法代跑授权命令(包装命令内联危险字面量会被判 revise p=51%~58%),这是设计使然——用户在自己终端里执行不过阀门;已写进 README 令牌章节。",
+      "question": "",
+      "at": "2026-09-20T05:46:18.495Z"
+    },
+    "11": {
+      "status": "pass",
+      "evidence": "用户介入途径由**用户本人**在真终端里手工验收(不是 AI 自测),三个渠道各走一遍:①令牌途径(A/B1)——拦截理由公示令牌 ALLOW-6878D6467A 与 ALLOW-5031AC2085,用户复制粘贴授权行后令牌进入 allow.txt(时间戳 05:47:56 / 05:50:53),AI 重试**同一条命令**即被放行一次,审计记录为 source=token,令牌文件随即清空(用掉即删);②绑定验证——把命令换成带尾斜杠的变体,照样被拦且给的是另一个令牌 ALLOW-ADCD5EA86D,证明授权只对命令原文生效、不可泛化;③executor 边界——用户在自己终端里手动执行同一条命令(无授权、无令牌),文件立刻变化且**审计日志零新增记录**(精确过滤后 3 条→3 条),而 AI 随后重试同一条命令**仍然被拦**并再次公示同一个令牌。即『人做了一次』不等于『给 agent 开了口子』。",
+      "notes": "四态在现场的可见差异:Jev 判定的 block → 理由里给令牌(overridden=block);L0 ask 规则 escalate → 也令牌(overridden=escalate);L0 deny(mkfs)→ 理由里**根本不出现授权行**,令牌过不去硬地板;allow → 无需人工。另记一条审计使用注意:guard.log 记录的是**每条经过判定的命令文本**,所以拿子串 grep 去统计某条命令时,AI 自己的检查命令(里面引用了该文本)也会被数进去——本次首次计数就因此污染(4→5),改用『command 字段以该命令开头』精确过滤后得到真实数字。该陷阱已在此备注,统计时请照此过滤。",
+      "question": "",
+      "at": "2026-09-20T05:53:42.841Z"
+    },
+    "12": {
+      "status": "pass",
+      "evidence": "宿主审批通道实测成功(2026-09-20,用户把会话从 approval=never 切到 ask 后)。①阀门侧:同一个 L0 ask 规则命令,ask 策略下判定记录为 {action:escalate, decision:ask, policy:ask, rule:truncate-file},即把决定权交给宿主而非自己硬拦;never 策略下同一条是 decision:deny。②宿主侧:会话日志出现 approval/asked + approval/decided,asked 的 reason 字段就是阀门理由的**原文**(含硬规则 id 与 why),用户在 GUI 弹窗点允许后 outcome=allowed-once(实测间隔 2.2 秒),命令随即执行、靶子文件 148→0 字节。③这是一条独立于令牌的人工通道:不需要开终端、不需要复制任何命令。④随此测试发现并修复一处文案缺陷:旧文案在 ask 模式的弹窗里显示'本会话没有审批提示…请让用户手动执行',并附上一条'复制到终端授权'的命令——指着眼前的弹窗说没有弹窗。现按策略分叉(ask: 说明宿主已发起审批请求;never: 保留原文案),且宿主真会弹框时不再附令牌授权行,新增 10 条回归断言(selftest-reason 28 例)。",
+      "notes": "【已核实并更正】上一条备注里我猜测'若用户选择永久允许,宿主可能替阀门自动应答后续 ask'——**该猜测错误,DSH 不存在这种选项**。源码依据(deepseek-harness @ ddefc45fbc):packages/interaction/user-approval/src/types.ts:32 定义 ApprovalOutcome = 'allowed-once' | 'rejected' | 'cancelled' | 'unavailable',注释写明 'a one-shot grant, explicit rejection, withdrawn request, or unavailable answerer';同目录 index.ts:48 的 OUTCOMES 常量同集合,index.ts:204 明确 'allowed-once is the only grant';GUI 侧 packages/client/ui-approval/src/client/contract/slots.ts:64 定义 ApprovalDecision = 'allowed-once' | 'rejected',即弹窗只有允许一次/拒绝两个答案;审批策略本身也是闭集,packages/session/session-format-v0-to-v1/src/payload-validation.ts:40,43 校验 outcome ∈ {allowed-once,rejected,cancelled,unavailable}、policy ∈ {ask,never}(另有一个 invariant 测试反过来断言 policy:'always' 必须被拒)。对阀门是**好消息**:ask 模式下每次 escalate 都是一次独立的逐次人工决定,没有任何常驻授权能把阀门的 ask 悄悄吞掉——'逐次确认'这条强度由宿主保证,不必由阀门自己维护记忆。指出这一点的是用户本人。",
+      "question": "",
+      "at": "2026-09-20T05:57:35.887Z"
+    },
+    "13": {
+      "status": "pass",
+      "evidence": "额度/密钥失败后的降级机制实测通过。(1)分类:402→quota、401/403→auth、无密钥→no-key(这三类**降级**);429 仅在正文含 quota/credit/insufficient 等词时按额度处理,否则算限流;5xx→server、超时→timeout、网络→network(这四类**不降级**,只逐次 fail-open 并分类记录)。(2)真实演练:用无效密钥打真实 API 得到 HTTP 401,响应体 {\"detail\":{\"error_type\":\"authentication_error\",...}};本次判定仍 fail-open 且带 errorKind=auth + degraded + 一句成文告警;写出 degraded.json(kind/label/since/until/failures/probes/status/detail/policy)。(3)第二次调用 source=degraded 且**零 HTTP 请求**(省钱),理由明确写'本条未经过语义判定'。(4)降级期间免费的 L0 仍拦:mkfs→block/static-rule、truncate -s 0→escalate/static-rule,均不发请求。(5)告警落点:拒绝理由内、审计的 level:warn 记录、各适配器 stderr(DSH 另加 ctx.logger.warn)、guard status(降级时**退出码 3**,可做健康检查)、guard log --stats 的'降级放行'与'语义判定成本'两行。(6)自动恢复:冷却到期放**一次**探测,成功清状态并记 probe+recovered,失败续期(failures+1/probes+1)且不再重复试。(7)配置:quotaCooldownMs 15min / authCooldownMs 30min / degradePolicy 默认 'l0-only'(只停花钱的语义层)、可设 'off' 连 L0 一起停(已实测)。(8)离线断言 52 条(tools/selftest-quota.mjs,替身 fetch),两侧全过。",
+      "notes": "为什么不做成纯 fail-open:功能上 fail-open 没错,但它是**静默**的——命令照跑、日志堆满 source:error,却没人看得出阀门已经不在防护。本项目已经吃过一次静默失效的亏(审计日志那轮)。另记两个自检当场抓到的**静默失效型真 bug**,都写进 docs/MEASUREMENTS.md §9:①readDegraded 用 Number(until) 校验 ISO 字符串→恒 NaN→写进去却读不出来,整个降级机制失效;②isProbe = degradedNow && probeDue(...),但状态到期时 isDegraded() 恰好为 false,于是到期后的探测永远不算探测,恢复与续期全部失效。决策见 docs/DECISIONS.md D9。",
+      "question": "",
+      "at": "2026-09-20T06:09:45.585Z"
+    },
+    "14": {
+      "status": "pass",
+      "evidence": "降级告警在**真实 DSH 会话**里端到端验收通过(重启 14:13:37 后)。做法:手动注入一份 kind=quota 的 degraded.json(故障注入),然后:①跑 L0 命令 mkfs —— 拒绝理由里**直接出现**那句成文告警'⚠️ Jev 安全阀门已降级:判定服务额度已用尽(自 06:00:00Z,已失败 3 次)。联网语义判定暂停 1064 分钟;仍在跑 L0 免费规则 + 预筛。'同时审计记录带上 degraded+warning 字段,并额外写出**一条 level:warn 记录**(每个降级窗口一条,不刷屏);②跑非 L0 命令 touch —— 判定为 source=degraded、errorKind=quota、ms=0,即**零 HTTP 请求**(省钱),命令正常执行;③guard status --clear 后状态文件消失、status 回到'✅ 正常'且退出码 0。另证:usage 已真实落盘(grep 到 {input_tokens:600,output_tokens:22}),成本可见性生效;插件从 adapters/dsh/index.js 正常装载(重启后每条 bash 判定都写日志且 source=jev)。",
+      "notes": "审批模式文案分叉(ask 分支)本轮**未**在真实宿主里复现,因为当前会话策略是 never(会话日志里最后一次 approval/policy 事件 = never),此时正确的文案本来就说'本会话没有审批提示'。ask 分支由 tools/selftest-reason.mjs 的 10 条断言覆盖(含'ask 策略下不再附令牌授权行')。想现场看 ask 分支:把会话切到带审批模式,再跑一条 truncate -s 0 <演示文件>,弹窗里的理由应变成'宿主已向用户发起审批请求'。",
+      "question": "",
+      "at": "2026-09-20T06:15:44.932Z"
+    },
+    "15": {
+      "status": "pass",
+      "evidence": "审批策略切到 ask 后,弹窗文案分叉在真实会话里验收通过。同一条 L0 ask 规则命令(truncate -s 0 演示文件)触发审批,会话日志 approval/asked 的 reason 字段(即弹窗里人看到的原文)现在是:'Jev 安全阀门[需要人工确认] 命中硬规则 truncate-file。这条命令需要人工确认,宿主已向用户发起审批请求 —— 请等用户在弹窗里决定,不要换写法重试。 命令:...' 三处都对:①不再说'本会话没有审批提示'(旧文案指着眼前的弹窗说没有弹窗,是上一轮测试抓出的 bug);②明确告诉模型等人在弹窗里决定,而不是让用户手动执行;③不再附那一行'复制到终端授权'的命令(人就在窗口前面,两条人工通道并列只会让读者不知道该走哪条)。用户点允许后 outcome=allowed-once(弹出到点下间隔 8.5 秒),命令执行、靶子文件 131→0 字节。",
+      "notes": "这条验收补上了第 14 项备注里标注的缺口(当时会话策略是 never,ask 分支无法现场复现,只能靠 10 条离线断言)。现在 ask 与 never 两条分支都有真实宿主证据。",
+      "question": "",
+      "at": "2026-09-20T06:20:24.253Z"
+    },
+    "16": {
+      "status": "pass",
+      "evidence": "跨平台入口守卫:两个平台都跑通了。背景:一次外部验证报告指出,某脚本的入口判断 import.meta.url === file:// 加 argv[1] 在 Windows 上恒为 false(argv1 是 盘符加反斜杠、url 是 file:///T:/),脚本加载完直接退出 0。实际修了三层:①守卫改为 realpathSync 双边归一(盘符/反斜杠/相对路径/软链),并内联在各自文件里(修第一层时曾为 DRY 抽进共享模块,导致 import.meta.url 指向该模块自身、连 WSL 也失效,该模块已不在包内);②动态 import 用 join(ROOT,...) 在 Windows 抛 ERR_UNSUPPORTED_ESM_URL_SCHEME,改用相对说明符;③新增 tools/selftest-entry.mjs(15 例)以入口身份真跑每个脚本,并断言被 import 时不得执行 main、守卫禁止共享导入。决定性验证用本机 node.exe 在 Windows 侧执行:退出码 0 到 2、stdout 出现 decision:block / permissionDecision:deny、Windows 侧诊断日志出现 outcome:block / rule:git-force-push。",
+      "notes": "",
+      "question": "",
+      "at": "2026-09-20T07:16:51.054Z"
+    },
+    "17": {
+      "status": "pass",
+      "evidence": "Windows 授权行引号 + 与 shell 无关的授权入口。(问题)授权行是给用户照抄的,而两种 shell 的转义规则不通用:旧代码固定用 POSIX 形式 'a'\\''b',实测在真实 PowerShell 里**直接 ParserError(语法都不成立)** —— 粘进去 = 授权入口不可用 = 人唯一的出口被堵住,而且在被拦发生之前没人会注意到。(修复)shellQuote(value, platform) 按平台分叉(win32 用 PowerShell 的 '' 双写),理由文案在 Windows 上额外点明'用 PowerShell';新增 guard allow --command-file <文件> 作为**不经过 shell 引号规则**的入口(给 cmd.exe 用,它两种写法都不认)。(验证)tools/selftest-reason.mjs 增两条真机断言:把 win32 形式喂给真实 PowerShell 要求逐字节还原('it''s a test' → it's a test,通过),并且**要求 POSIX 形式在 PowerShell 里失败**(反例也是断言,否则'分叉'没被证明);PowerShell 探测同时覆盖 Windows 的 PATH(pwsh/powershell)与 WSL 的互操作(/mnt/c/...exe)。--command-file 实测:文件内容 rm -rf /tmp/command-file-probe → 写入令牌 ALLOW-6A241C4D19,与 commandToken(同一文本)逐字一致。",
+      "notes": "两平台整套自检计数:WSL = entry 15 + quota 54 + reason 38 + token 17 + rules 25 + audit 20 + smoke 9 + CLI 12 = 190;Windows = 同样全过(reason 少 2 条,因为 bash 往返那两条在 win32 上显式跳过并打 note,而不是假装通过)。",
+      "question": "",
+      "at": "2026-09-20T07:04:39.398Z"
+    },
+    "18": {
+      "status": "pass",
+      "evidence": "收窄为 DSH 专用(2026-09-20 用户决定)。包内现在只有 DSH:adapters 下只有 dsh/;其它执行通道的实现、验证工具与简报已不在包内;docs 里的 HOST-CONTRACT 改名为 DSH-INTEGRATION 并改写为它用 DSH 的哪些机制;VERIFICATION 改为 DSH 单一清单(6-20 项 + U1-U3);README / START-HERE / DEPLOY 重写为 DSH 视角;package.json 0.1.0 升到 0.2.0,exports 增加 ./quota。跨平台保留:bash 与 pwsh 两个工具都在默认列表。DSH 特化新增:审计里记录会话的沙箱档位 permission/preset(smoke 已断言该字段)。用户后续决定不再保留包外档案,包内指向它的路标也一并清掉,避免断链。",
+      "notes": "",
+      "question": "",
+      "at": "2026-09-20T07:16:55.278Z"
+    },
+    "19": {
+      "status": "pass",
+      "evidence": "包内清除非 DSH 痕迹(2026-09-20,用户要求)。做法:关键词全量扫描后逐处改写 —— 其它工具名、它们专属的机制名与模板名、多宿主与通用口径,以及**为其它调用方准备的两个入口**(常驻 HTTP 判定服务、stdio 协议服务,已从 bin/guard.mjs 与 package.json scripts 移除;现在跑 guard serve 会落到用法提示)全部清掉。保留的判断:宿主一词在本包里指 DSH 本身(如宿主审批弹窗),保留;适配器指本包自己的 adapters/dsh/(唯一的适配层),保留;通用只出现在两种 shell 的引号规则不通用这类句子(指 Windows 与 POSIX 的转义差异),保留。历史与逐条原因只留在**包外** jev-guard-unsupported/(包内只留一句'已归档到包外',不点任何工具名)。复查:全部非 DSH 工具名、它们专属的机制名与模板名、多宿主口径在包内命中数全为 0。回归:WSL 与 Windows 两侧整套自检全过(entry 15 + quota 54 + reason 38 或 36 + token 17 + rules 25 + audit 20 + smoke 9 + CLI 12)。",
+      "notes": "顺带更新了部署实例 config.json 里的两处旧措辞(它们也提到了已归档的实现)。package.json 的 exports 未动,句点入口仍指向 adapters/dsh/index.js,并已用 import 从 DSH profile 实测解析出 apply/inject/name。",
+      "question": "",
+      "at": "2026-09-20T07:11:37.378Z"
+    },
+    "20": {
+      "status": "pass",
+      "evidence": "包内现状:所有文件只描述 DSH。包外档案不再保留,包内也不含指向它的链接;verification-results 里非 DSH 的条目已不在其中。可迁移的教训由 MEASUREMENTS 第 12 节承载,不点具体工具名。用户要求(2026-09-20):既然档案不要了,包内路标一并清掉,避免断链引用。",
+      "notes": "",
+      "question": "",
+      "at": "2026-09-20T07:16:41.419Z"
+    },
+    "6-pre": {
+      "status": "pass",
+      "evidence": "适配器冒烟 8/8(mock ctx);真实工具管线集成 6/6(dsh-tools ToolRuntime:git push --force 与 rm -rf 真实目录被拦、工具体未执行、只读命令正常执行);dsh --dump-config 组合无错且含 dsh-jev-guard;profile 依赖 link:/mnt/t/dsh-jev-guard,bundles 25→26,关键插件无缺失;凭据库 refs 已加 TYPESAFE_API_KEY(YAML 合法)",
+      "notes": "已走到重启前。待做:重启 DSH 后跑 probe 命令(echo \"\" > ~/jev-guard-probe.txt)并按会话策略验收,记为 item 6",
+      "question": "",
+      "at": "2026-09-20T04:48:49.986Z"
+    },
+    "8-fix": {
+      "status": "pass",
+      "evidence": "审计日志已在运行实例里生效:重启(13:14:38)后 guard.log 立即有记录;--tail 正常显示(时间/动作/p/来源/规则/命令);--stats 正常(近24h 14 条 / fail-open 0 / 按动作 allow=8 block=3 revise=3 / 按来源 jev=12 token=1 cache=1)",
+      "notes": "logPath 空串 bug 已修并生效;失败不再完全静默(lastLogError + guard log 提示)",
+      "question": "",
+      "at": "2026-09-20T05:18:40.276Z"
+    }
+  }
+}

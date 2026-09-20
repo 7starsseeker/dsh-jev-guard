@@ -1,0 +1,25 @@
+# ── 部署态:绝不入库(密钥与本机配置)
+secrets.json
+config.json
+
+# ── 依赖与缓存
+node_modules/
+.pnpm-store/
+
+# ── 运行期产物(日志、降级状态、令牌)
+*.log
+guard.log*
+allow.txt
+degraded.json
+
+# ── 编辑器 / 系统
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.swp
+
+# ── 临时与备份
+*.tmp
+*.bak
+*.bak-*

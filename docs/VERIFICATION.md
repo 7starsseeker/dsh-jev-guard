@@ -1,0 +1,189 @@
+# DSH 验收清单
+
+这份清单是**这份包在 DSH 上"到底验过什么"的账本**,也是**换一台机器时该怎么重验**的步骤。
+每条都写了:怎么验、判定标准、以及它在 `verification-results/` 里的记录编号。
+
+**验收铁律(三条事故换来的):**
+
+1. **看副作用,不看"没报错"。** "命令真的被拒"+"日志真的有那条记录"才算过。
+   本包出现过三层静默失效:脚本一声不响退出 0、命令照跑、日志空白(见 `MEASUREMENTS.md` §10)。
+2. **两个平台各跑一遍。** Windows 与 WSL 的路径/引号/模块解析规则不同,一个平台过不代表另一个过。
+3. **记录要带时间戳与原文。** `at` / `token` / `source` 这几个字段是唯一能把"我说它拦了"与"它真的拦了"分开的东西。
+
+记录方式(写完自动汇总到 `SUMMARY.md`):
+
+```bash
+node tools/report-result.mjs --host dsh --item <编号> --status <pass|fail|partial|blocked|skipped> \
+  --evidence "证据(带时间戳/令牌/关键输出)" --notes "补充或疑问"
+# 卡住时:--status blocked --question "你的问题"
+```
+
+---
+
+## A. 判定层(不装 DSH 也能验,纯离线 + 一次联网)
+
+### 6-pre · 适配器冒烟 + 真实工具管线
+
+```bash
+node tools/smoke-dsh-adapter.mjs          # 假 ctx:接线/断言/审批策略/审计字段
+node tools/smoke-dsh-pipeline.mjs         # 真 ToolRuntime 五阶段管线(需在 DSH 检出目录内跑)
+```
+
+**判定:** 冒烟全过(含"审计里记下了 `policy` 与 `preset`");管线测试给出预期的 `ToolExecutionResult`。
+
+### 7 · 误报防线(改规则时必跑)
+
+```bash
+node tools/selftest-rules.mjs
+# 双探针:命令文本里提到危险短语、以及以 2>/dev/null 结尾的普通命令,都不得被拦
+echo "git push --force origin main" > /tmp/jev-anchor-test.txt
+node bin/guard.mjs judge 'ls -la /var/log 2>/dev/null'
+```
+
+**判定:** 探针不被拦(散文归 Jev 判,实测 p≈0.02–0.08);L0 规则只锚定**命令位置**。
+
+### 8 · 审计日志(离线)+ 8-fix(运行实例)
+
+```bash
+node tools/selftest-audit.mjs             # 掩码/追加/轮转/汇总/空白 logPath
+node bin/guard.mjs log --tail 5           # 运行实例里真的有记录
+node bin/guard.mjs log --stats
+```
+
+**判定:** 离线全过;**并且**运行实例里能读到真实记录(曾经出现过"阀门在工作、日志一条没有")。
+
+### 13 · 额度降级(离线)
+
+```bash
+node tools/selftest-quota.mjs             # 替身 fetch:402/401/403/429两种/5xx/超时/网络/坏状态文件
+```
+
+**判定:** 全过。重点确认三件事:持久性失败**降级**、瞬态失败**不降级**、
+降级期间 L0 仍然拦且**零 HTTP 请求**。
+
+---
+
+## B. 装进 DSH 之后
+
+### 6 · 安装后 probe 被拦
+
+跑一条**必然被拦**的命令(不花钱):
+
+```bash
+# 在 DSH 会话里让 AI 执行:git push --force origin main
+node bin/guard.mjs log --tail 1
+```
+
+**判定:** 命令真的被拒,理由含 `命中硬规则 git-force-push`;`guard.log` 里出现该记录。
+**不通过时先读** `DSH-INTEGRATION.md` §5(三层静默失效)。
+
+### 9 · 一次性令牌闭环
+
+1. 让 AI 执行一条会被拦的真实命令(例如 `rm -rf <一个演示目录>`)。
+2. 理由里应有 `ALLOW-XXXXXXXXXX` + 一行**绝对路径**的授权命令。
+3. **人**在自己的终端里粘贴那一行(非 TTY 会被拒 —— 那是正确行为)。
+4. 让 AI **重试一字不差的同一条命令**。
+
+**判定:** 命令真的被执行、令牌文件变空、`guard.log` 出现 `source: token` 与 `overridden: <原动作>`。
+另外验绑定:把命令换一个字 → **仍然被拦**,且公示的是**另一个**令牌。
+
+### 10 · 授权入口与理由文案
+
+```bash
+echo | node bin/guard.mjs allow 'rm -rf /tmp/x'   # 非 TTY:应被拒并打印整行命令
+node tools/selftest-reason.mjs                    # 28+ 例:绝对路径/不截断/引号转义/策略分叉
+```
+
+**判定:** 非 TTY 拒绝且给出可复制的整行;`selftest-reason` 全过。
+**Windows 追加:** 理由里的引号必须是 **PowerShell** 形式(`''` 转义);`--command-file` 可用。
+
+### 14 · 降级在真实会话里可见
+
+注入一份降级状态(故障注入),再跑两条命令:
+
+```bash
+# 写一份 kind=quota 的 ~/.jev-guard/degraded.json(until 设在未来)
+# 然后:mkfs.ext4 /dev/whatever   → L0 拒绝,理由尾部应带 ⚠️ 降级告警
+#      touch /tmp/whatever        → source=degraded、ms=0(零请求)
+node bin/guard.mjs status --clear   # 收工:清掉注入的状态
+```
+
+**判定:** 告警出现在**拒绝理由**里、审计里有 `level: warn` 一条、非 L0 命令为 `source=degraded` 且 `ms=0`;
+`status --clear` 后回到"✅ 正常"(退出码 0)。
+
+### 16 · 跨平台入口守卫(WSL **与** Windows 各跑一遍)
+
+```bash
+node tools/selftest-entry.mjs             # WSL
+# Windows(若 DSH/Windows 或本机有 node.exe):
+"C:\Program Files\nodejs\node.exe" T:\dsh-jev-guard\tools\selftest-entry.mjs
+```
+
+**判定:** 两个平台都全过。**只有 Windows 能暴露**"盘符 + 反斜杠的 argv[1]"那一类问题;
+若只跑 WSL,请把它标成 `partial` 而不是 `pass`。
+
+### 17 · 平台相关的 shell 引号(Windows)
+
+```bash
+node tools/selftest-reason.mjs    # 含真实 PowerShell 往返 + "POSIX 形式在 PS 里解析失败"的反例
+```
+
+**判定:** 全过。手工复核:把理由里那一行粘进 **PowerShell**,`--list` 应出现公示的那个令牌。
+
+---
+
+## C. 人工介入三通道(任何机器都要跑)
+
+三条通道的机制与各性质见 [`USER-INTERVENTION.md`](./USER-INTERVENTION.md)。
+
+### U1 · 一次性令牌通道(**宿主无关**的那条)
+
+1. 制造一次拦截,记下理由里公示的令牌。
+2. 在人自己的终端里粘贴授权行;`node bin/guard.mjs allow --list` 应出现该令牌。
+3. 让 AI 重试**一字不差**的同一条命令 → 放行、令牌消失、`guard.log` 记 `source=token`。
+
+### U2 · 宿主审批通道(DSH 有,**必测**)
+
+1. 把会话切到带审批的模式(`approval: ask`)。
+2. 触发一次 `escalate` 类拦截(命中 L0 `ask` 规则的命令,如 `truncate -s 0 <演示文件>`)。
+3. **人**应真的看到审批弹窗,且弹窗里的理由**就是阀门的原文**(硬规则 id + why),并且
+   **不再附**"复制到终端授权"那一行(人就在窗口前面)。
+
+**判定:** 弹窗出现且带原文;点允许后命令执行(`outcome=allowed-once`)。
+会话日志里能查到成对的 `approval/asked` + `approval/decided`。
+
+### U3 · 人工手动执行 ≠ 给 AI 授权(反直觉,但必须验)
+
+1. 让人在终端里**直接**执行那条被拦的命令(不走令牌、不走弹窗)。
+2. 观察两件事:审计里那条命令的判定记录**零新增**;让 AI 重试同一条命令 → **仍然被拦**。
+
+**判定:** "零新增 + 仍被拦" = 通过。失败意味着存在未察觉的授权泄漏。
+
+> 统计审计时注意一个陷阱:`guard.log` 记录的是**每条经过判定的命令文本**,
+> 所以用子串 `grep` 统计某条命令时,**自己的检查命令**(里面引用了那段文本)也会被数进去。
+> 请用「`command` 字段以该命令开头」精确过滤。
+
+---
+
+## D. 编号速查
+
+| 编号 | 验的是什么 | 记录 |
+|---|---|---|
+| 6-pre | 适配器冒烟 + 真实工具管线 | ✅ pass |
+| 6 | 安装后 probe 被拦 | ✅ pass |
+| 7 | 误报防线 | ✅ pass |
+| 8 / 8-fix | 审计日志(离线 / 运行实例) | ✅ pass |
+| 9 | 令牌闭环 | ✅ pass |
+| 10 | 授权入口与理由文案 | ✅ pass |
+| 11 | 人工三通道(用户手工验收) | ✅ pass |
+| 12 | 宿主审批通道 | ✅ pass |
+| 13 | 额度降级(离线 + CLI) | ✅ pass |
+| 14 | 降级在真实会话可见 | ✅ pass |
+| 15 | `ask` 分支文案分叉 | ✅ pass |
+| 16 | 跨平台入口守卫(WSL + Windows) | 见 `SUMMARY.md` |
+| 17 | 平台相关 shell 引号(Windows) | 见 `SUMMARY.md` |
+| U1–U3 | 人工介入三通道 | 记在 11 / 12 |
+
+历史:本清单早期还有几条"别的执行通道能不能承载拦截"的前置验证(编号 1–5),已随
+"只支持 DSH"的决定作废 —— 那些实现**已从本包移除**,可迁移的教训保留在
+[`MEASUREMENTS.md`](./MEASUREMENTS.md) §12 与 [`DECISIONS.md`](./DECISIONS.md) D11。

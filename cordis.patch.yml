@@ -1,0 +1,77 @@
+# dsh-jev-guard bundle patch layer.
+#
+# `dsh plugin --profile web add <path>` 会读这个文件,把本条 loader entry 插进 profile 树。
+# 注意两件事:
+#   · name 必须与 package.json 的 name 完全一致(dsh-jev-guard),写成别的会导致开机解析失败;
+#   · config 里所有字段都有默认值(lib/gate.js 的 DEFAULTS),这里的值会覆盖
+#     config.json(三级优先级:patch > config.json > 内置默认)。
+- insert:
+    - id: dsh-jev-guard
+      name: 'dsh-jev-guard'
+      config:
+        # 要拦的工具。bash 是主力;pwsh 若未挂载则无影响。
+        tools:
+          - bash
+          - pwsh
+
+        # 四态的两个阈值:
+        #   p <  lowThreshold            → allow
+        #   lowThreshold ≤ p < high      → revise(拒绝 + 三种降级模板,让模型换写法重试)
+        #   p ≥  highThreshold           → block(拒绝,不再重试)
+        # 实测依据:737 条真实命令上 0.5/0.7 = 98.51% / 0.81% / 0.68% 三分。
+        lowThreshold: 0.5
+        highThreshold: 0.7
+
+        # 单次判定预算;超时或报错一律放行(fail-open)——
+        # 宿主自己的沙箱与审批策略仍在执行之前,阀门只是增量检查。
+        timeoutMs: 1800
+        cacheSize: 256
+
+        # 同一条(指纹相同)命令被拦多少次后升级为 escalate(交人处理),
+        # 防止模型换写法无限重试。
+        retryLimit: 2
+
+        # 把被调用脚本的正文读进 state,补掉 `node x.mjs` 这类盲区
+        # (实测 0.31 → 0.82)。敏感路径(.env/.ssh/*.pem/*credential*/*secret*/*token*)
+        # 自动跳过,单文件上限 maxScriptBytes。
+        inlineScripts: true
+        maxScriptBytes: 8192
+
+        # 密钥解析:优先 ctx.credentials(即 ~/.dsh/.credentials.yaml 的 refs),
+        # 其次进程环境变量。绝不会打印。
+        apiKeyEnv: TYPESAFE_API_KEY
+        model: jev-latest
+
+        # 一次性放行令牌:被拦的命令会在理由里得到 ALLOW-XXXXXXXXXX;
+        # 用户在终端跑 `node bin/guard.mjs allow '<原命令>'` 后,重试同一条命令放行一次。
+        # 令牌绑定命令哈希、用掉即删、不越过 L0 硬规则。留空 = ~/.jev-guard/allow.txt
+        tokens: true
+        tokenPath: ''
+
+        # 共享审计日志:每个判定追加一行 JSONL。DSH 的 logger 会过滤插件的 info 级
+        # 日志(dsh-web.log 里看不到 jev-guard),所以运行期要靠这个文件回答"它判了什么"。
+        # 留空 = 默认 ~/.jev-guard/guard.log;查看:node bin/guard.mjs log --tail 20
+        logPath: ''
+        logMaxBytes: 4194304
+
+        # ── 额度耗尽后的降级(见 lib/quota.js 与 docs/DECISIONS.md D9)───────────────
+        # 判定服务是收费的,额度用完是必然事件。旧行为是"静默 fail-open":命令照跑、
+        # 日志一堆 error,但没人看得出阀门已经不在防护了。现在:
+        #   · 持久性失败(quota / auth / no-key)写一份 ~/.jev-guard/degraded.json,
+        #     在冷却窗口内**不再发请求**(省钱),窗口到期放**一次**探测请求:
+        #     成功 → 自动恢复(人不用做任何事);失败 → 继续降级。
+        #   · 瞬态失败(超时/网络/5xx/429限流)只逐次放行,不降级,但会被分类记录。
+        # 查状态:`node bin/guard.mjs status`(退出码 3 = 正在降级,供脚本/宿主做健康检查)。
+        quotaCooldownMs: 900000      # 额度类:15 分钟
+        authCooldownMs: 1800000      # 密钥类:30 分钟
+
+        # 降级期间保留哪一层:
+        #   'l0-only'(默认)= 只停**要花钱联网**的语义层,免费的 L0 硬规则 + 预筛照常工作。
+        #     这不是自作主张:那一层不花钱、不联网,正好覆盖最坏的一类
+        #     (mkfs / dd of=/dev/* / git push --force)。
+        #   'off' = 连 L0 一起停(整条阀门暂停,全部放行)—— 想"额度没了就完全不插手"用这个。
+        degradePolicy: l0-only
+
+        # 成本可见性:判定响应里的 usage 会被记进审计日志,
+        # `guard log --stats` 会折算成美元(单价,美元/百万输入 token;输出按官方说明免费)。
+        pricePerMTok: 0.042

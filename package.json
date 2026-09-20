@@ -1,0 +1,52 @@
+{
+  "name": "dsh-jev-guard",
+  "version": "0.2.0",
+  "description": "DSH 的执行前安全阀门:用 TypeSafe Jev 判定 shell 命令/脚本是否会不可逆地删除或覆盖真实数据。四态(allow/revise/block/escalate),挂在 tools/pre-execute 上。零依赖;支持 WSL/Linux(bash)与 Windows(pwsh);含一次性令牌、额度耗尽降级、共享审计日志。",
+  "type": "module",
+  "main": "adapters/dsh/index.js",
+  "exports": {
+    ".": "./adapters/dsh/index.js",
+    "./gate": "./lib/gate.js",
+    "./rules": "./lib/rules.js",
+    "./verdict": "./lib/verdict.js",
+    "./audit": "./lib/audit.js",
+    "./token": "./lib/token.js",
+    "./quota": "./lib/quota.js",
+    "./cli": "./bin/guard.mjs",
+    "./adapters/dsh": "./adapters/dsh/index.js",
+    "./cordis.patch.yml": "./cordis.patch.yml",
+    "./package.json": "./package.json"
+  },
+  "bin": {
+    "jev-guard": "./bin/guard.mjs"
+  },
+  "scripts": {
+    "selftest": "node bin/guard.mjs selftest",
+    "rules": "node bin/guard.mjs rules",
+    "judge": "node bin/guard.mjs judge",
+    "status": "node bin/guard.mjs status",
+    "log": "node bin/guard.mjs log --stats"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "dsh": {
+    "runtime": "host",
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  },
+  "files": [
+    "bin",
+    "lib",
+    "adapters",
+    "docs",
+    "tools",
+    "cordis.patch.yml",
+    "config.example.json",
+    "README.md",
+    "DEPLOY.md"
+  ],
+  "license": "MIT",
+  "private": true
+}
