@@ -2,6 +2,9 @@
 secrets.json
 config.json
 
+# ── 本机专属:交接说明只随部署副本存在,不上传仓库
+HANDOVER.md
+
 # ── 依赖与缓存
 node_modules/
 .pnpm-store/
