@@ -1,6 +1,6 @@
 {
   "host": "dsh",
-  "updatedAt": "2026-09-20T07:16:55.278Z",
+  "updatedAt": "2026-09-20T07:32:36.623Z",
   "items": {
     "6": {
       "status": "pass",
@@ -106,6 +106,13 @@
       "notes": "",
       "question": "",
       "at": "2026-09-20T07:16:41.419Z"
+    },
+    "21": {
+      "status": "pass",
+      "evidence": "重启(2026-09-20 15:30 本地)后核对三项全过:① guard status 退出码 0 并打印 ✅ 正常,degraded.json 不存在(degradePolicy=l0-only);② dsh --profile web --dump-config 中 bundle 的 id 与 name 均为 dsh-jev-guard;③ 重启后新审计记录同时含 policy 与 preset —— 本会话 policy=never preset=danger-full-access,另一会话 policy=ask preset=workspace-write,证明运行的是改名后的新适配器(旧版没有 preset 字段)。端到端实拦复验:truncate -s 0 /tmp/jev-restart-probe.txt 被拦,理由命中硬规则 truncate-file、公示令牌 ALLOW-6B2B30BC2A;审计记录 action=escalate decision=deny source=static-rule ms=0(零 API 成本,离线 L0 路径),且探针文件不存在 —— 拦在事前而非事后告警。",
+      "notes": "",
+      "question": "",
+      "at": "2026-09-20T07:32:36.623Z"
     },
     "6-pre": {
       "status": "pass",

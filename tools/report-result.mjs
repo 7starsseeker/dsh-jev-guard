@@ -13,7 +13,7 @@
  *
  *   node tools/report-result.mjs --show         只看当前全部结论
  *
- * 编号对照表在 docs/VERIFICATION.md(第 6–17 项 + U1–U3)。
+ * 编号对照表在 docs/VERIFICATION.md(第 6–21 项 + U1–U3)。
  * status: pass | fail | partial | blocked | skipped
  *
  * @module jev-guard/tools/report-result
@@ -86,8 +86,11 @@ async function writeSummary() {
     '6-pre 适配器冒烟 + 真实工具管线 | 6 安装后 probe 被拦 | 7 误报防线 | 8/8-fix 审计日志',
     '9 令牌闭环 | 10 授权入口与理由文案 | 11 人工三通道 | 12 宿主审批通道',
     '13 额度降级(离线) | 14 降级在真实会话可见 | 15 ask 分支文案 | 16 跨平台入口守卫 | 17 Windows 引号',
+    '18 收窄为 DSH 专用 | 19 清除非 DSH 痕迹 | 20 包内现状核对 | 21 改名后重启激活核对',
     '',
     'U1–U3:人工介入三通道(令牌 / 宿主审批 / 人工手动执行)',
+    '',
+    '发布与仓库核对记录见 [publish.json](./publish.json)(不在本表的验证项内)。',
     '',
   ].join('\n')
   await writeFile(join(OUT_DIR, 'SUMMARY.md'), md, 'utf8')

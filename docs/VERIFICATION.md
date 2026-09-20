@@ -130,6 +130,25 @@ node tools/selftest-reason.mjs    # 含真实 PowerShell 往返 + "POSIX 形式�
 
 **判定:** 全过。手工复核:把理由里那一行粘进 **PowerShell**,`--list` 应出现公示的那个令牌。
 
+### 21 · 改名 `dsh-jev-guard` 后重启激活核对
+
+改名、审计新增 `preset` 字段、降级/审批文案修正、移除 `serve`/`mcp` 这些改动**都要重启 DSH 才生效**。
+重启后按顺序核三件,再补一次实拦:
+
+```bash
+node bin/guard.mjs status                                  # ① 退出码 0 且打印 "✅ ... 正常"
+dsh --profile <你的> --dump-config | grep -A2 jev-guard     # ② bundle 的 id 与 name 都是 dsh-jev-guard
+tail -n 1 ~/.jev-guard/guard.log                           # ③ 新记录应同时含 policy 与 preset
+```
+
+**判定:** ① 与 ② 必过(**有 `degraded.json` 时 `status` 退出码是 3**,那是降级不是故障)。
+③ 要**重启之后**的新记录里出现 `preset`(如 `danger-full-access` / `workspace-write`)——
+这是"跑的是改名后的新适配器"的硬证据,旧版没有这个字段;`policy` 同理。
+
+最后交一条**本来就该被拦**的命令做端到端复验(挑效果无害的那种,例如 `truncate -s 0` 一个 /tmp 探针文件),
+确认三件事:拦截理由照常给出、审计里出现对应记录(`action=escalate` / `decision=deny` /
+`source=static-rule` + 同一个令牌)、且**命令确实没被执行**(探针文件不存在 = 拦在事前,不是事后告警)。
+
 ---
 
 ## C. 人工介入三通道(任何机器都要跑)
@@ -182,6 +201,10 @@ node tools/selftest-reason.mjs    # 含真实 PowerShell 往返 + "POSIX 形式�
 | 15 | `ask` 分支文案分叉 | ✅ pass |
 | 16 | 跨平台入口守卫(WSL + Windows) | 见 `SUMMARY.md` |
 | 17 | 平台相关 shell 引号(Windows) | 见 `SUMMARY.md` |
+| 18 | 收窄为 DSH 专用 | 见 `SUMMARY.md` |
+| 19 | 包内清除非 DSH 痕迹 | 见 `SUMMARY.md` |
+| 20 | 包内现状核对(只描述 DSH) | 见 `SUMMARY.md` |
+| 21 | 改名 `dsh-jev-guard` 后重启激活核对 | 见 `SUMMARY.md` |
 | U1–U3 | 人工介入三通道 | 记在 11 / 12 |
 
 历史:本清单早期还有几条"别的执行通道能不能承载拦截"的前置验证(编号 1–5),已随
