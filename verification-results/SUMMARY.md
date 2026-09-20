@@ -29,3 +29,7 @@
 13 额度降级(离线) | 14 降级在真实会话可见 | 15 ask 分支文案 | 16 跨平台入口守卫 | 17 Windows 引号
 
 U1–U3:人工介入三通道(令牌 / 宿主审批 / 人工手动执行)
+
+## 发布记录
+
+代码备份仓库:**https://github.com/7starsseeker/dsh-jev-guard**(private),提交 `(改写前的 sha 已失效)`,40 个文件,远端与本地提交一致,与部署副本 `T:\dsh-jev-guard` 完全一致。发布前做过密钥扫描(唯一命中全部为 `EXAMPLE*` 合成样例),并清掉了部署副本里残留的真实密钥。细节见 [publish.json](./publish.json)。
