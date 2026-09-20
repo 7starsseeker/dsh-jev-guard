@@ -2,6 +2,19 @@
   "name": "dsh-jev-guard",
   "version": "0.3.1",
   "description": "DSH 的执行前安全阀门:用 TypeSafe Jev 判定 shell 命令/脚本是否会不可逆地删除或覆盖真实数据。四态(allow/revise/block/escalate),挂在 tools/pre-execute 上。零依赖;支持 WSL/Linux(bash)与 Windows(pwsh);含一次性令牌、额度耗尽降级、共享审计日志。",
+  "keywords": [
+    "deepseek-harness",
+    "dsh",
+    "dsh-plugin",
+    "cordis",
+    "guard",
+    "safety",
+    "destructive-command",
+    "jev",
+    "typesafe",
+    "pre-execute",
+    "audit-log"
+  ],
   "type": "module",
   "main": "adapters/dsh/index.js",
   "exports": {
@@ -48,5 +61,14 @@
     "DEPLOY.md"
   ],
   "license": "MIT",
+  "author": "7starsseeker",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/7starsseeker/dsh-jev-guard.git"
+  },
+  "homepage": "https://github.com/7starsseeker/dsh-jev-guard#readme",
+  "bugs": {
+    "url": "https://github.com/7starsseeker/dsh-jev-guard/issues"
+  },
   "private": true
 }
