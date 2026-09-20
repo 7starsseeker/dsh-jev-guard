@@ -66,10 +66,48 @@
 | 失败类别 | 阀门行为 | 审计里的 `source` |
 |---|---|---|
 | `quota`(402 / 额度字样)/ `auth`(401/403) | **降级**:写 `~/.jev-guard/degraded.json`,冷却窗口内不再发请求,默认只跑免费的 L0 + 预筛 | 第一次:`error` + `degraded`;之后:`degraded` |
-| `timeout` / `network` / `server` / `rate-limit` / `no-key` | **不降级**,逐次 fail-open,以 `errorKind` 分类记录 | `error` |
+| `no-key`(解析不到密钥) | **降级,且粘性 + 带作用域**:一次 HTTP 都不发,状态不随时间到期(没有可探测对象),密钥一出现即清除;写入时记下"是哪条入口报告的",所以只压制那一条入口 | 第一次:`error` + `degraded`;之后:`degraded` |
+| `timeout` / `network` / `server` / `rate-limit` | **不降级**,逐次 fail-open,以 `errorKind` 分类记录 | `error` |
 
-`no-key` 刻意**不**降级:它是本地配置状况、零 HTTP 成本,而 `degraded.json` 是全局共享的 ——
-一条路径读不到密钥,不该把别的路径也按停(见 [`DECISIONS.md`](./DECISIONS.md) D10.2)。
+`no-key` 原先刻意**不**降级(D10.2):它是本地配置状况、零 HTTP 成本,而 `degraded.json` 是全局共享的 ——
+一条路径读不到密钥,不该把别的路径也按停。**D15 保留这条反对意见,但用作用域而不是沉默来回答**:本地状态
+记下*是谁写的*,而一条入口只遵守属于它自己的那份(`'cli'` / `'dsh-adapter'`)。服务侧状态仍是 `global`。
+
+### 4b. 会话内 notice:纯 host 插件唯一能对用户说话的渠道
+
+对于没有 `dsh.client` 的插件,DSH 不给任何 toast / banner / 启动提示 —— 设置页与 Plugins 页的每个位置都是
+浏览器侧注册,启动期告警只到终端。所以本插件挂了第二个事件:
+
+| 机制 | 位置 | 用途 | 用户看到什么 |
+|---|---|---|---|
+| **`agent/pre-step` 瀑布** | `adapters/dsh/index.js` | 追加一条 `notice` 形态的用户消息:首次运行没有密钥(提出要求,并附上确切的录入命令)、进入降级、恢复 —— 每种状态每个会话一次 | 对话里的一行,折叠为 `jev-guard · <摘要>`,展开是正文 |
+
+有三条性质是承重的,每一条都由 `tools/smoke-dsh-adapter.mjs` 断言:
+
+1. **只追加,绝不替换。** 决策里的 `messages` 数组*就是*这一步的整个批次 —— 一个直接返回自己数组的监听器会
+   静默吞掉用户的消息。处理器总是先 `await next()`,再返回 `[...decision.messages, notice]`。
+2. **绝不往空批次里注入**(`decision.messages.length === 0 && (step === 1 || messages.length > 0)`):
+   非空决策会开启一个步,往那里加一条消息等于为了说一句话白白多花一次模型请求。
+3. **消息形状是一份契约。** `source` 恰好带 `kind` / `plugin` / `form` / `summary`,`summary` ≤120 字符
+   (它要当折叠行的标题),`id` / `role` 都要有。形状写错的表现是**下次恢复会话时**报
+   `SessionPersistenceCorruptionError` —— 会话打不开,而现场离改动很远。所以这个形状要交给 DSH 自己的
+   `snapshotJsonValue`(`Session.append` 首先执行的那一步)验证,由一份必须跑在 DSH 检出里的测试执行。
+
+去重的依据是**持久化的历史**(`agent.session.deriveMessages()`),而不是内存里的标记:DSH 重启或会话恢复都会
+产生一个全新的插件实例,而已经写进历史的那条提示不该被重复。`notifyInSession: false` 可以整条关掉。
+
+notice 是 `role:'user'` 消息,所以它**会进入模型上下文** —— 这是本意(模型也该知道阀门降级了),也是它按状态
+跃迁而不是按步触发的原因:每一条都从那一刻起造成一次前缀缓存失效。
+
+### 4c. 密钥从哪来(三层,以及第三层为什么必须存在)
+
+| 顺序 | 来源 | 说明 |
+|---|---|---|
+| 1 | `ctx.credentials.resolve(ref)` | DSH 自己的凭据存储(`~/.dsh/.credentials.yaml`);轮换无需重启 |
+| 2 | 进程环境变量 | 由 `apiKeyEnv` 命名的那个变量 |
+| 3 | `apiKeyFile`(默认包根 `secrets.json`) | `guard key set` 写的就是它;相对路径按**包根**解析,与 cwd 无关 —— 与 CLI 同一条规则 |
+
+第三层让"用 CLI 录入密钥"对新装用户成为实话 —— 他们既没有凭据层条目,也没有环境变量。值永不打印、永不进日志。
 
 DSH 侧要注意的三件事:
 

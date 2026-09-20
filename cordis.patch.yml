@@ -71,9 +71,19 @@
         maxScriptBytes: 8192
 
         # 密钥解析:优先 ctx.credentials(即 ~/.dsh/.credentials.yaml 的 refs),
-        # 其次进程环境变量。绝不会打印。
+        # 其次进程环境变量,最后包根 secrets.json(相对路径的 apiKeyFile 按**包根**解析)。
+        # 第三层就是 `node bin/guard.mjs key set` 写的那一份 —— 缺了它,"用 CLI 录入密钥"
+        # 对 DSH 用户就是一句空话。三处永不打印密钥。
         apiKeyEnv: TYPESAFE_API_KEY
         model: jev-latest
+
+        # ── 会话内提示(2026-09-20,见 docs/DECISIONS.md D15)─────────────────────────
+        # 纯 host 插件没有任何 toast / banner / 启动提示接口(DSH 的设置页都由浏览器侧注册占位),
+        # 所以"没有密钥,请录入"与"阀门已降级"这两件事靠**往会话里注入一条 notice 消息**说出来:
+        # 它在对话里是一行、写进会话历史、并进入模型上下文(于是模型也知道阀门现在是瞎的)。
+        # 每个会话每种状态只说一次(去重靠会话历史,重启/恢复后也不会重复)。
+        # 设 false = 只保留 logger 与审计日志(不打扰对话)。
+        notifyInSession: true
 
         # 一次性放行令牌:被拦的命令会在理由里得到 ALLOW-XXXXXXXXXX;
         # 用户在终端跑 `node bin/guard.mjs allow '<原命令>'` 后,重试同一条命令放行一次。

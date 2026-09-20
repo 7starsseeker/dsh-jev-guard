@@ -72,18 +72,35 @@ dsh plugin --profile web add /mnt/t/dsh-jev-guard      # on Windows: T:\dsh-jev-
 # 3. Restart DSH (plugins are not hot-reloaded)
 ```
 
+A local path is **linked**, so the plugin keeps running from your own checkout — edit a file, restart, done. `dsh plugin` resolves `add` through pnpm, so the spec takes anything pnpm accepts (a local path, `github:owner/repo`, or a registry name). To install the released bundle straight from GitHub instead — the form the plugin market lists — skip the first step:
+
+```bash
+dsh plugin --profile web add github:7starsseeker/dsh-jev-guard
+```
+
+Neither form has anything to build (zero dependencies, no install scripts), so neither raises a build-approval prompt.
+
+**A fresh install has no key, and it says so instead of going quiet.** The first session tells you in the conversation itself that no key is configured, and until you record one the valve runs **degraded**: the free L0 hard rules and the pre-screen still work, the paid semantic layer does not. Recording a key is one command, and it is read from stdin — never from an argument, which would land in your shell history and in `ps`:
+
+```bash
+node bin/guard.mjs key set        # paste the key, Enter; never echoed, never in shell history
+node bin/guard.mjs key status     # which source resolves, and how long it is (never the value)
+```
+
+`guard key status` exits 3 when no key resolves, so it works as a health check. There is no cooldown to wait out: the moment a key resolves, the degraded state is cleared and judging resumes on the next command.
+
 The declaration in `package.json` is a standard DSH bundle:
 
 ```json
 {
   "name": "dsh-jev-guard",
-  "dsh": { "runtime": "host", "bundle": { "patch": "./cordis.patch.yml" } }
+  "dsh": { "bundle": { "patch": "./cordis.patch.yml" } }
 }
 ```
 
 `cordis.patch.yml` mounts the plugin on `tools/pre-execute`, and **every tunable lives there** (you can also put them in `config.json`; precedence is `patch > config.json > built-in defaults`).
 
-**API key** — three sources, highest precedence first: the DSH credentials layer (`ctx.credentials`, rotation needs no restart) → the environment variable `TYPESAFE_API_KEY` → the bundled `secrets.json` (`{"TYPESAFE_API_KEY": "apikey_..."}`). The key is never printed, and it is masked before anything is written to the log.
+**API key** — three sources, highest precedence first: the DSH credentials layer (`ctx.credentials`, rotation needs no restart) → the environment variable `TYPESAFE_API_KEY` → a `secrets.json` **you create yourself in the package root** (`{"TYPESAFE_API_KEY": "apikey_..."}`). That file is in `.gitignore` and is deliberately **not** part of the repository or of the published package, so nobody ships one to you — the two sources above it are the ones to prefer. `node bin/guard.mjs key set` writes that file for you (mode 0600), and the DSH adapter reads it too. The key is never printed, and it is masked before anything is written to the log.
 
 **Verify right after installing** (don't settle for "it didn't error"):
 

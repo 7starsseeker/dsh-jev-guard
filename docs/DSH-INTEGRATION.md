@@ -68,10 +68,52 @@ Details, measured evidence, and the nature of each of the three channels are in 
 | Failure category | Valve behaviour | `source` in the audit |
 |---|---|---|
 | `quota` (402 / quota wording) / `auth` (401/403) | **Degrades**: writes `~/.jev-guard/degraded.json`, sends no more requests within the cooldown window, by default only the free L0 + pre-screen runs | First time: `error` + `degraded`; afterwards: `degraded` |
-| `timeout` / `network` / `server` / `rate-limit` / `no-key` | **Does not degrade**, fail-open each time, recorded classified by `errorKind` | `error` |
+| `no-key` (no key could be resolved) | **Degrades, stickily and scoped**: no HTTP is sent at all, the state never expires with time (there is nothing to probe) and is cleared the moment a key resolves; it records the identity of the entry that reported it, so it suppresses only that entry | First time: `error` + `degraded`; afterwards: `degraded` |
+| `timeout` / `network` / `server` / `rate-limit` | **Does not degrade**, fail-open each time, recorded classified by `errorKind` | `error` |
 
-`no-key` deliberately does **not** degrade: it is a local configuration condition with zero HTTP cost, while `degraded.json` is
-globally shared — one path being unable to read a secret should not stop the other paths too (see [`DECISIONS.md`](./DECISIONS.md) D10.2).
+`no-key` used to be deliberately non-degrading (D10.2): it is a local configuration condition with zero HTTP cost, while
+`degraded.json` is globally shared — one path being unable to read a secret should not stop the other paths too.
+**D15 keeps that objection and answers it with scope instead of silence**: a local state records *who wrote it*, and an entry
+obeys only its own (`'cli'` / `'dsh-adapter'`). Service-side states stay `global`.
+
+### 4b. The in-session notice: the only way a host-only plugin can speak to the user
+
+DSH gives a plugin without `dsh.client` **no** toast, banner or startup notice — every settings/Plugins seat is a browser-side
+registration, and boot warnings reach the terminal only. So the plugin mounts a second event:
+
+| Mechanism | Where | What it is for | What the user sees |
+|---|---|---|---|
+| **`agent/pre-step` waterfall** | `adapters/dsh/index.js` | Appends one `notice`-form user message: first run with no key (the demand, carrying the exact recording command), entering a degraded state, recovering — one per state per session | A row in the conversation, collapsed to `jev-guard · <summary>` and expandable to the body |
+
+Three properties are load-bearing, and each is asserted by `tools/smoke-dsh-adapter.mjs`:
+
+1. **It appends, it never replaces.** The decision's `messages` array *is* the whole batch for that step — a listener returning its
+   own array silently swallows the user's message. The handler always `await next()` first and returns `[...decision.messages, notice]`.
+2. **It never injects into an empty batch** (`decision.messages.length === 0 && (step === 1 || messages.length > 0)`): a non-empty
+   decision opens a step, so adding a message there would spend a whole extra model request just to say something.
+3. **The message shape is a contract.** `source` carries exactly `kind` / `plugin` / `form` / `summary`, `summary` is ≤120 characters
+   (it becomes the collapsed row's title), and `id` / `role` are set. A malformed message surfaces as
+   `SessionPersistenceCorruptionError` at the **next resume** — a session that will not open, far from the change that caused it. The
+   shape is therefore validated against DSH's own `snapshotJsonValue` (the step `Session.append` runs first) by a test that must run
+   inside a DSH checkout.
+
+Deduplication runs against the **durable history** (`agent.session.deriveMessages()`), not an in-memory flag: a harness restart or a
+session resume starts a fresh plugin instance, and a notice already written into the history must not be repeated. `notifyInSession:
+false` turns the whole channel off.
+
+The notice is a `role:'user'` message, so it **enters the model's context** — intended (the model should know the valve is degraded),
+and the reason it fires per state transition rather than per step: each one costs a prefix-cache miss from that point on.
+
+### 4c. Where the key comes from (all three layers, and why the third exists)
+
+| Order | Source | Notes |
+|---|---|---|
+| 1 | `ctx.credentials.resolve(ref)` | DSH's own credential store (`~/.dsh/.credentials.yaml`); a rotation needs no restart |
+| 2 | the process environment | the variable named by `apiKeyEnv` |
+| 3 | `apiKeyFile` (default `secrets.json` in the package root) | what `guard key set` writes; a relative path resolves against the **package root**, independent of cwd — the same rule the CLI uses |
+
+The third layer is what makes "record your key with the CLI" true for a fresh install, which has neither a credential-layer entry
+nor an environment variable. The value is never printed and never logged.
 
 Three things to note on the DSH side:
 

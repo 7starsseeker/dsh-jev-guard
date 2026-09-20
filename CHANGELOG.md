@@ -5,6 +5,66 @@
 This project follows a "record the facts by date" approach: every entry states clearly **what changed, why, and how it was verified**.
 The complete design trade-offs are in [`docs/DECISIONS.md`](./docs/DECISIONS.md), the measured data in [`docs/MEASUREMENTS.md`](./docs/MEASUREMENTS.md).
 
+## [0.5.0] — 2026-09-20
+
+**A first-time deployment now has a real place to put its key, and "no key" is no longer silent: it degrades like exhausted credit — loudly, stickily, and without stopping the free layer.**
+Trade-offs in [`DECISIONS.md`](./DECISIONS.md) **D15**; the mechanism in [`docs/DSH-INTEGRATION.md`](./docs/DSH-INTEGRATION.md).
+
+**The key entry point: `guard key set` / `guard key status`.** The key is read from **stdin only** — never
+from a command-line argument, which would land in your shell history and in `ps`. It writes the file named
+by `apiKeyFile` (default `secrets.json` in the package root) with mode `0600`, keeps any other keys already
+in that file, and prints the length and the path — never the value. `guard key status` reports which source
+resolves and how long the key is, still never echoing it, and exits 3 when there is none, so it doubles as a
+health check. Reading and writing share one path resolver, so a relative `apiKeyFile` can never mean two
+different files.
+
+**Why the DSH adapter had to change too.** It resolved the key from `ctx.credentials` and the environment
+**only**, while `guard key set` writes a file. Without a third source, "record your key with the CLI" would
+have been an empty promise for exactly the users who have no credential layer yet — a fresh install. The
+adapter now falls back to `apiKeyFile` as well, under the same rule: a relative path resolves against the
+package root, independent of cwd.
+
+**`no-key` is now a degrading kind — sticky, and scoped.** It was deliberately non-degrading before
+(D10.2), for a good reason: a local configuration problem writing into the machine-wide `degraded.json`
+could stop other entries whose key was perfectly fine. That objection is answered by **scope** rather than
+by staying silent. Service-side kinds (`quota` / `auth`) stay `scope: 'global'` and suppress every entry;
+`no-key` is `scope: 'local'` and suppresses only the entry that wrote it (`'cli'` or `'dsh-adapter'`). And
+because a missing key makes **no HTTP request at all**, there is nothing to probe — so the state is
+**sticky**: it does not expire with time, it ends the moment a key resolves (cleared on the spot, zero
+requests, no restart). `guard status` says that explicitly instead of printing a countdown that would never
+matter.
+
+**The user actually gets told.** A host-only plugin has no toast, no banner and no startup notice — every
+settings and Plugins surface in DSH is claimed by browser-side (`dsh.client`) registrations. The one channel
+that exists is injecting a `notice` message at `agent/pre-step`: it renders as a row in the conversation, is
+written into the session history, and enters the model's context (so the model learns the valve is degraded
+too). The plugin uses it for three transitions — first run with no key (the demand, carrying the exact
+command), entering a degraded state, and recovering — one notice per state per session, deduplicated from
+the durable history so a restart or a resume does not repeat it. `notifyInSession: false` turns it off.
+
+**The message shape is a contract, and it is checked.** `source` carries exactly
+`kind` / `plugin` / `form` / `summary`, and the summary is bounded to 120 characters (it becomes the
+collapsed row's title). Getting this wrong surfaces as `SessionPersistenceCorruptionError` at the *next
+resume* — a session that will not open, far away from the change that caused it. So the shape is validated
+against DSH's own `snapshotJsonValue` (the step `Session.append` runs first) by a test that runs inside a
+DSH checkout, and the four-key source plus the summary bound are asserted offline in the smoke test. That
+validation was run for this version and passed.
+
+**Also in this version:** `package.json` no longer declares `dsh.runtime` — it is not a field of DSH's
+plugin manifest (`manifestVersion` / `bundle` / `profile` / `client` are), so it did nothing while looking
+meaningful to anyone reading the file. `tools/smoke-dsh-adapter.mjs` became hermetic: it used to write
+degradation state and audit records into the **real** `~/.jev-guard/`, and every `apply()` in it now pins
+`logPath` / `degradedPath` / `apiKeyFile` to a temp directory; it also gained 9 assertions covering the
+sticky state, the notice injection (appended rather than replacing; nothing added to an empty batch) and the
+file fallback. `tools/selftest-quota.mjs` went from 50 to 78 cases, `tools/selftest-entry.mjs` to 30 (it now
+runs `guard key set` for real, including the interactive path through a fake TTY) and
+`tools/selftest-i18n.mjs` to 34. Every user-facing string added here exists in both languages.
+
+**Not covered here:** `tools/smoke-dsh-pipeline.mjs` needs a DSH workspace whose bare `@deepseek-ai/*`
+specifiers resolve; that does not hold in this deployment, so it could not be executed (it fails the same
+way at the previous commit, so this is not a regression). The notice shape was verified directly against
+DSH's `snapshotJsonValue` instead.
+
 ## [0.4.1] — 2026-09-20
 
 **Every document a human reads is now English by default, with the Chinese kept as `*.zh-CN.md`.**

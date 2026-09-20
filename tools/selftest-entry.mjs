@@ -25,7 +25,8 @@
  */
 
 import { spawnSync } from 'node:child_process'
-import { mkdtemp, readFile, rm } from 'node:fs/promises'
+import { existsSync, statSync } from 'node:fs'
+import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
@@ -84,6 +85,49 @@ const judgeLang = run(CLI, { args: ['judge', 'ls -la', '--lang', 'en'] })
 expect('--lang 的值不会被当成待判定的命令', judgeLang.stdout.trim().split('\n').length === 2, judgeLang.stdout.slice(0, 200))
 const badLang = run(CLI, { args: ['status', '--lang', 'klingon'] })
 expect('无法识别的语言 → 退回原语言并在 stderr 说明', /klingon/.test(badLang.stderr) && badLang.status === 0, badLang.stderr.slice(0, 160))
+
+// ── 1c. 密钥录入:只从标准输入读、写 0600、永不回显 ─────────────────────────────
+//
+// 这条链路决定"首次部署能不能装上就用":市场里的新用户既没有 DSH 凭据层也没有环境变量,
+// 唯一能自己完成的动作就是 `guard key set`。所以它必须被**真的执行一遍**验证,而不是只读代码。
+const keyDir = await mkdtemp(join(tmpdir(), 'jev-guard-entry-key-'))
+const keyFile = join(keyDir, 'secrets.json')
+const KEY = 'apik-entry-selftest-0123456789'
+
+// ① 非交互式 stdin(= agent 的调用形态)必须被拒 —— 密钥只能由人在键盘上敲。
+const piped = run(CLI, { args: ['key', 'set', '--key-file', keyFile], input: `${KEY}\n` })
+expect('key set 在非交互 stdin 下被拒(退出码 3)', piped.status === 3, `status=${piped.status}`)
+expect('key set 被拒时不写任何文件', !existsSync(keyFile))
+
+// ② 交互式终端形态:用一个把 isTTY 伪装成 true 的包装脚本喂密钥进去。
+//    这是自动化里唯一能走通"人在键盘上输入"这条路的办法(readSecretLine 在没有 setRawMode 的
+//    管道上会退化成普通 data 读取,所以管道喂得进去)。
+const wrapper = join(keyDir, 'fake-tty.mjs')
+await writeFile(wrapper, [
+  "Object.defineProperty(process.stdin, 'isTTY', { value: true })",
+  `process.argv = ['node', 'guard.mjs', 'key', 'set', '--key-file', ${JSON.stringify(keyFile)}]`,
+  `await import(${JSON.stringify(pathToFileURL(CLI).href)})`,
+  '',
+].join('\n'))
+const typed = spawnSync(process.execPath, [wrapper], { input: `${KEY}\n`, encoding: 'utf8', env })
+expect('key set(交互终端)→ 退出码 0', typed.status === 0, `status=${typed.status} stderr=${typed.stderr.slice(0, 200)}`)
+expect('key set 的输出里**没有**密钥本身', !typed.stdout.includes(KEY) && !typed.stderr.includes(KEY), typed.stdout.slice(0, 200))
+const written = JSON.parse(await readFile(keyFile, 'utf8'))
+expect('key set 写出的内容可用于解析(键名 = apiKeyEnv)', written.TYPESAFE_API_KEY === KEY, JSON.stringify(Object.keys(written)))
+expect('key set 只打印长度,不打印值', /长度 \d+|length \d+/.test(typed.stdout), typed.stdout.slice(0, 200))
+if (process.platform !== 'win32') {
+  expect('key set 落盘权限 0600', (statSync(keyFile).mode & 0o777) === 0o600, (statSync(keyFile).mode & 0o777).toString(8))
+}
+
+// ③ `key status` 要能说出"哪个来源在生效",并且同样不回显。
+const fromFile = run(CLI, { args: ['key', 'status', '--key-file', keyFile], extraEnv: { TYPESAFE_API_KEY: '' } })
+expect('key status → 报告来源为文件、退出码 0', fromFile.status === 0 && /secrets\.json/.test(fromFile.stdout), fromFile.stdout.slice(0, 160))
+expect('key status 不回显密钥', !fromFile.stdout.includes(KEY))
+const fromEnv = run(CLI, { args: ['key', 'status', '--key-file', join(keyDir, 'missing.json')], extraEnv: { TYPESAFE_API_KEY: KEY } })
+expect('key status → 环境变量优先(与适配器同序)', fromEnv.status === 0 && /环境变量|environment/.test(fromEnv.stdout), fromEnv.stdout.slice(0, 160))
+const noKey = run(CLI, { args: ['key', 'status', '--key-file', join(keyDir, 'missing.json')], extraEnv: { TYPESAFE_API_KEY: '' } })
+expect('key status → 没有密钥时退出码 3(可当健康检查)', noKey.status === 3, `status=${noKey.status}`)
+await rm(keyDir, { recursive: true, force: true })
 
 // ── 2. 工具脚本:作为入口被执行时要有产出 ─────────────────────────────────────
 const extract = run(EXTRACTOR, { args: ['--limit', '1'], extraEnv: { DSH_HOME: join(HOME, 'no-such-dsh') } })

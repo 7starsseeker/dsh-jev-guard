@@ -72,18 +72,35 @@ dsh plugin --profile web add /mnt/t/dsh-jev-guard      # Windows 侧: T:\dsh-jev
 # 3. 重启 DSH(插件没有热加载)
 ```
 
+本地路径是**链接**装法,插件始终跑在你自己那份 checkout 上 —— 改文件、重启,就生效。`dsh plugin` 的 `add` 走 pnpm 解析,所以 spec 接受 pnpm 接受的一切(本地路径、`github:owner/repo`、registry 包名)。想直接从 GitHub 装发出来的那一份 —— 也就是插件市场列出的形式 —— 跳过第一步:
+
+```bash
+dsh plugin --profile web add github:7starsseeker/dsh-jev-guard
+```
+
+两种都没有东西要构建(零依赖、无安装脚本),所以都不会触发构建授权。
+
+**新装的时候没有密钥 —— 它会自己说出来,而不是装死。** 第一个会话会在对话里直接告诉你"没有配置密钥";在录入之前,阀门处于**降级**:免费的 L0 硬规则与预筛照常工作,付费的语义层不工作。录入只要一条命令,而且只从标准输入读 —— 绝不接受参数,那会进 shell 历史与 `ps`:
+
+```bash
+node bin/guard.mjs key set        # 粘贴密钥后回车;不回显、不进 shell 历史
+node bin/guard.mjs key status     # 当前哪个来源在生效、密钥多长(永不打印值)
+```
+
+`guard key status` 在没有密钥时退出码 3,可以直接当健康检查。这里没有需要等的冷却:密钥一解析到,降级状态当场清除,下一条命令就恢复完整判定。
+
 `package.json` 里的声明就是一个标准 DSH bundle:
 
 ```json
 {
   "name": "dsh-jev-guard",
-  "dsh": { "runtime": "host", "bundle": { "patch": "./cordis.patch.yml" } }
+  "dsh": { "bundle": { "patch": "./cordis.patch.yml" } }
 }
 ```
 
 `cordis.patch.yml` 把插件插到 `tools/pre-execute` 上,**所有可调参数都在那里**(也可以写在 `config.json` 里,优先级 `patch > config.json > 内置默认`)。
 
-**密钥**三种来源,优先级从高到低:DSH 凭据层(`ctx.credentials`,轮换后无需重启)→ 环境变量 `TYPESAFE_API_KEY` → 包内 `secrets.json`(`{"TYPESAFE_API_KEY": "apikey_..."}`)。密钥从不被打印,写入日志前会掩码。
+**密钥**三种来源,优先级从高到低:DSH 凭据层(`ctx.credentials`,轮换后无需重启)→ 环境变量 `TYPESAFE_API_KEY` → **你自己在包根建的** `secrets.json`(`{"TYPESAFE_API_KEY": "apikey_..."}`)。该文件写在 `.gitignore` 里,**刻意不入仓库、也不进发布包**,没人会替你带一份 —— 前两种来源才是首选。`node bin/guard.mjs key set` 会替你写这个文件(权限 0600),DSH 适配器也读它。密钥从不被打印,写入日志前会掩码。
 
 **装好后立刻验一次**(别看"没报错"):
 

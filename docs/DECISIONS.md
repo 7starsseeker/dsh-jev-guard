@@ -237,6 +237,11 @@ At the same time the trigger itself was fixed: in `bin/guard.mjs`, **a relative-
 
 **The rule of thumb:** whenever you have "shared state + each component's own premises", first ask "can this local failure get written into global state?".
 
+> **Partly superseded by D15 (2026-09-20).** The amplification chain described above is real, but it is now
+> answered by **scope** rather than by staying silent: `no-key` *does* degrade, and the state records the
+> identity of the entry that wrote it, so only that entry is suppressed. The per-entry key-resolution fix
+> below still stands — and the rule of thumb above is exactly what produced the scope field.
+
 ---
 
 ## D11 · **DSH only** (narrowed 2026-09-20, user decision)
@@ -395,3 +400,70 @@ switching must be acknowledged as a recalibration, not a translation.
 
 **Relationship to D2/D5/D13:** it changes no judging path. The only thing that touches the judging input is explicitly setting `promptLang: "en"`,
 and that belongs to the category "you chose it yourself, and now you have the numbers" (§14).
+
+---
+
+## D15 · `no-key` degrades **stickily and scoped**; the user is told through an **in-session notice**; the key is recorded from **stdin only** (2026-09-20, user decision)
+
+**Context.** A fresh install has no key: no credential-layer entry, no environment variable, no file. Before
+this decision the valve stayed silent in that state — each gated command failed open at the semantic layer
+with an `error`-class verdict, and nothing the user would ever see (DSH's logger drops plugin info-level
+lines). The user asked for three things at once: a real place to record the key, a first-run demand for it,
+and a degraded state that says "no valid key" out loud — while keeping the properties that make the plugin
+installable at all (zero dependencies, no build step, source install with no build approval).
+
+**Decisions.**
+
+1. **`no-key` is a degrading kind, and the state is sticky.** A missing key sends no HTTP request at all, so
+   there is nothing to probe. Unlike `quota`/`auth` — whose recovery is "ask the service once the cooldown
+   expires" — `no-key` cannot end with time. It ends with its **condition**: the moment a key resolves,
+   `evaluateCommand` clears the state and judges normally. `probeDue()` is false for sticky kinds for good,
+   so a keyless deployment never re-enters the judge on every command.
+2. **Degradation carries a scope.** `quota`/`auth` are service-side facts and stay `scope: 'global'` (every
+   entry obeys them). `no-key` is a local configuration fact, written with the **identity of the entry** that
+   reported it (`'cli'` / `'dsh-adapter'`), and an entry obeys only a local state whose scope is its own.
+   That is what retires the objection in D10.2 — the fix is the scope field, not silence.
+3. **The user is told inside the conversation.** DSH gives a host-only plugin no toast, no banner and no
+   startup notice: every settings/Plugins seat is claimed by a browser-side (`dsh.client`) registration, and
+   startup warnings reach the terminal only. The one channel that exists is injecting a `notice`-form user
+   message at `agent/pre-step`: it renders as a conversation row, is written into the session history, and
+   enters the model's context. Rejected alternatives: a slash command (its typed input is durably logged
+   unless `recordInput: false`, and the browser composer sees it regardless — never acceptable for a secret)
+   and shipping a browser half (that adds a build step, a committed bundle and React externals, giving up the
+   zero-build / zero-dependency property this plugin is built on). The notice fires on three transitions —
+   first run with no key, entering a degraded state, recovering — **one per state per session**, deduplicated
+   against the durable history (`session.deriveMessages()`) so a restart or a resume does not repeat it, and
+   it is **never** injected into an empty step batch (that would spend a whole extra model request).
+   `notifyInSession: false` turns it off.
+4. **The key is recorded with `guard key set`, from stdin only.** Arguments land in the shell history and in
+   `ps`, so `key set` accepts no value on the command line and refuses a non-TTY stdin — the same boundary
+   `guard allow` uses: a human at a keyboard, and that is verifiable. It writes the `apiKeyFile` in **0600**,
+   preserving other keys already in that file, and prints the length and the path, never the value.
+   `guard key status` answers "which source wins" and exits 3 when none does.
+5. **The adapter had to learn the file.** It resolved the key from `ctx.credentials` and the environment
+   only. Because `key set` writes a file, the CLI entry point would have been an empty promise for exactly
+   the users who need it most — a fresh install with neither. The adapter now resolves
+   `ctx.credentials` → environment → `apiKeyFile`, sharing the CLI's path rule (a relative path resolves
+   against the package root, independent of cwd).
+
+**Evidence.** `tools/selftest-quota.mjs` (78 cases) covers the sticky state, the never-probe rule, scope
+isolation in both directions, and the clear-on-key. `tools/smoke-dsh-adapter.mjs` (21 assertions, now
+hermetic — it no longer writes into the real `~/.jev-guard/`) covers the notice being **appended** rather
+than replacing, the empty-batch guard, the four-key `source` shape and the summary bound, and the file
+fallback. `tools/selftest-entry.mjs` runs `guard key set` for real (including the interactive path through a
+fake TTY) and asserts the file is written, parseable, 0600 on POSIX, and never echoed.
+
+**The shape is a contract.** `source` carries exactly `kind`/`plugin`/`form`/`summary`; a fifth key is
+rejected by the pre-v3 migration validator, and a malformed message surfaces as
+`SessionPersistenceCorruptionError` at the **next resume** — a session that will not open, long after the
+change. That shape was verified against DSH's own `snapshotJsonValue` (the step `Session.append` performs
+first) from inside a DSH checkout; the CHANGELOG records why `tools/smoke-dsh-pipeline.mjs` itself could not
+be run in this deployment.
+
+**Trade-off accepted:** a notice is a `role:'user'` message, so it **enters the model's context** (intended —
+the model should know the valve is degraded) and costs one prefix-cache miss from that point on. That is why
+it fires per state transition, never per step.
+
+**Rule of thumb:** when a plugin "must tell the user something" and ships no UI, first ask what the host
+already renders — a conversation notice is durable, attributed and model-visible; inventing a UI surface is
+a different project with a different dependency budget.

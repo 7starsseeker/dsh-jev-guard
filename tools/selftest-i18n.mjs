@@ -60,6 +60,22 @@ for (const key of zhKeys) {
 }
 expect('同一键的占位符在两种语言里一致', badPlaceholders.length === 0, badPlaceholders.join(', '))
 
+// 会话内 notice 的摘要会渲染成对话里的折叠行,DSH 对它的上限是 120 字符
+// (CONTEXT_SUMMARY_MAX_CHARS;超了就被截断,读者看到的话断在半句上)。英文通常更长,
+// 所以两种语言都量一遍 —— "只有英文超了"这类问题只有双语并排才看得见。
+const summaryKeys = zhKeys.filter(k => /^notice\..*\.summary$/.test(k))
+expect('notice 摘要键齐备(没有密钥 / 降级 / 恢复)', summaryKeys.length === 3, summaryKeys.join(','))
+const overlongSummaries = []
+for (const lang of ['zh-CN', 'en']) {
+  setLang(lang)
+  for (const key of summaryKeys) {
+    const text = t(key)
+    if (text.length > 120 || text.includes('\n')) overlongSummaries.push(`${lang}:${key}(${text.length})`)
+  }
+}
+expect('notice 摘要 ≤120 字符且不含换行', overlongSummaries.length === 0, overlongSummaries.join(', '))
+setLang('zh-CN')
+
 // ── 2. 英文侧不得残留中文(半翻译是最常见的静默缺陷)─────────────────────────
 setLang('en')
 const leftovers = enKeys.filter(k => CJK.test(t(k)))

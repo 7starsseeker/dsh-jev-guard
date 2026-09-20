@@ -47,10 +47,22 @@ Three sources, highest precedence first:
 1. **The DSH credentials layer** (recommended): `ctx.credentials.resolve('TYPESAFE_API_KEY')` — goes through DSH's own credential store,
    and after a rotation **needs no restart**.
 2. The environment variable `TYPESAFE_API_KEY` (the name is decided by `apiKeyEnv` in `config.json`).
-3. The bundled `secrets.json`, containing `{"TYPESAFE_API_KEY": "apikey_..."}`
+3. A `secrets.json` **you create yourself in the package root**, containing `{"TYPESAFE_API_KEY": "apikey_..."}`
    (**if `apiKeyFile` is given a relative path it resolves against the package root, independently of the current directory** — true on both Windows and WSL).
 
 Do not commit any of the three into any repository.
+
+Record the third one with `node bin/guard.mjs key set` — it reads the key from **stdin only** (never from an
+argument, which would land in your shell history and in `ps`), writes `apiKeyFile` with mode `0600`, keeps any
+other keys already in that file, and prints the length and the path, never the value. `node bin/guard.mjs key
+status` reports which source resolves and exits 3 when none does, so it doubles as a health check.
+
+**A missing key degrades; it does not go quiet (D15).** With no key resolved the paid semantic layer is
+paused — the free L0 rules and the pre-screen keep working — and the state is **sticky**: it does not expire
+with time (there is nothing to probe), it ends the moment a key resolves, cleared on the spot with zero
+requests and no restart. It is also scoped to the entry that reported it (`'cli'` or `'dsh-adapter'`), so a
+CLI that cannot see a key does not stop DSH from judging, and vice versa. `guard status` exits 3 while
+degraded, and the DSH session gets a one-line notice in the conversation saying which state the valve is in.
 
 ### 2.2b Language (optional, it runs without configuring it)
 

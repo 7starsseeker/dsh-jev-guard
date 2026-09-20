@@ -47,10 +47,20 @@
 1. **DSH 凭据层**(推荐):`ctx.credentials.resolve('TYPESAFE_API_KEY')` —— 走 DSH 自己的凭据存储,
    轮换后**无需重启**。
 2. 环境变量 `TYPESAFE_API_KEY`(名字由 `config.json` 的 `apiKeyEnv` 决定)。
-3. 包内 `secrets.json`,内容 `{"TYPESAFE_API_KEY": "apikey_..."}`
+3. **你自己在包根建的** `secrets.json`,内容 `{"TYPESAFE_API_KEY": "apikey_..."}`
    (**`apiKeyFile` 若给相对路径,按包根解析,与当前目录无关** —— Windows/WSL 都成立)。
 
 三种都不要提交进任何仓库。
+
+第三种用 `node bin/guard.mjs key set` 录:**只从标准输入**读密钥(绝不接受参数 —— 那会进 shell 历史与
+`ps`),写 `apiKeyFile`、权限 `0600`,保留文件里已有的其它键,只打印长度与路径、永不打印值。
+`node bin/guard.mjs key status` 说明当前哪个来源在生效,没有密钥时退出码 3,可以直接当健康检查。
+
+**没有密钥会降级,不会装死(D15)。** 解析不到密钥时,付费的语义层暂停 —— 免费的 L0 规则与预筛照常
+工作 —— 而且这个状态是**粘性**的:不随时间到期(没有可探测对象),密钥一出现就结束,当场清除、零请求、
+不用重启。它还带作用域,只压制写下它的那条入口(`'cli'` 或 `'dsh-adapter'`),所以 CLI 看不到密钥不会
+让 DSH 停止判定,反之亦然。降级期间 `guard status` 退出码为 3,DSH 会话里还会在对话中出现一行提示,
+说明阀门当前处于什么状态。
 
 ### 2.2b 语言(可选,不配也能跑)
 

@@ -21,10 +21,11 @@
  * @module jev-guard/tools/smoke-dsh-adapter
  */
 
-import { readFile, rm } from 'node:fs/promises'
+import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { flush } from '../lib/audit.js'
+import { readDegraded } from '../lib/quota.js'
 import { apply } from '../adapters/dsh/index.js'
 
 /** 收集 apply() 注册的 handler。 */
@@ -103,9 +104,22 @@ async function main() {
   const apiKey = process.env.TYPESAFE_API_KEY
   process.stdout.write(`DSH 适配器冒烟测试 ${apiKey ? '(含联网用例)' : '(无密钥:只跑离线路径)'}\n\n`)
 
+  // 全部落在一个临时目录里。**以前不是**:这个测试会往真实的 `~/.jev-guard/` 写降级状态与
+  // 审计记录(无密钥用例尤其),也就是说"跑一次冒烟测试"会改动你本机的阀门状态。测试不该有
+  // 这种副作用,所以现在每个 `apply()` 都显式带上 `logPath` / `degradedPath`。
+  // `apiKeyFile` 也必须指到一个不存在的临时路径,否则适配器新增的文件回退层会读到
+  // 仓库里真实的 `secrets.json`,于是"无密钥"用例永远造不出无密钥的情形。
+  const dir = await mkdtemp(join(tmpdir(), 'jev-guard-smoke-'))
+  const auditPath = join(dir, 'guard.log')
+  const degradedPath = join(dir, 'degraded.json')
+  const missingKeyFile = join(dir, 'no-such-secrets.json')
+  const applySmoke = (ctx, extra = {}) => apply(ctx, {
+    tools: ['bash'], inlineScripts: false, logPath: auditPath, degradedPath, apiKeyFile: missingKeyFile, ...extra,
+  })
+
   // ---- 第一次装配:审批策略 = ask(默认) ----
   const a = mockContext(apiKey)
-  apply(a.ctx, { tools: ['bash'], inlineScripts: false })
+  applySmoke(a.ctx)
   const handler = a.handlers.get('tools/pre-execute')
   if (typeof handler !== 'function') {
     process.stdout.write('FAIL  没有在 tools/pre-execute 上注册 handler\n')
@@ -121,7 +135,7 @@ async function main() {
 
   // ---- 第二次装配:审批策略 = never(完全权限),验证 deny + 准确理由 ----
   const b = mockContext(apiKey)
-  apply(b.ctx, { tools: ['bash'], inlineScripts: false })
+  applySmoke(b.ctx)
   const handlerNever = b.handlers.get('tools/pre-execute')
   // 让 effectivePolicy 读到 'never'(模拟 danger-full-access 会话)
   const neverExec = cmd => {
@@ -133,7 +147,7 @@ async function main() {
 
   // ---- 重试预算:同一命令反复重试应升级为 escalate ----
   const c = mockContext(apiKey)
-  apply(c.ctx, { tools: ['bash'], inlineScripts: false, retryLimit: 2 })
+  applySmoke(c.ctx, { retryLimit: 2 })
   const handlerBudget = c.handlers.get('tools/pre-execute')
   const cmd = 'git reset --hard HEAD~1'
   const r1 = await handlerBudget(fakeExec(cmd, 'budget-session'), nextAllow)
@@ -147,7 +161,7 @@ async function main() {
   // 一旦被预算升级成 escalate,ask 模式下就会弹窗 —— 弹窗里点"允许"就等于绕过了 L0
   // (令牌不能越过 L0,审批同样不能,见 D5/D13)。所以这里断言:反复重试仍然只有 deny。
   const g = mockContext(apiKey)
-  apply(g.ctx, { tools: ['bash'], inlineScripts: false, retryLimit: 2 })
+  applySmoke(g.ctx, { retryLimit: 2 })
   const handlerHard = g.handlers.get('tools/pre-execute')
   const hardRuns = []
   for (let i = 0; i < 4; i += 1) {
@@ -159,19 +173,85 @@ async function main() {
     hardRuns.join(' / '),
   )
 
-  // ---- 判定不可用时 fail-open ----
+  // ---- 没有密钥:fail-open 不变,但**留下粘性降级状态**(D15)----
+  //
+  // 为什么断言状态文件:这次判定的 action 仍然是 allow(fail-open 的承诺不变),但"没有密钥"
+  // 必须留下痕迹 —— 否则它又是"静默失效",而静默失效正是这个项目踩过的坑(审计日志那次)。
   const d = mockContext(undefined) // 没有凭据
-  apply(d.ctx, { tools: ['bash'], inlineScripts: false })
+  applySmoke(d.ctx)
   const handlerNoKey = d.handlers.get('tools/pre-execute')
   process.env.TYPESAFE_API_KEY = ''
+  // 命令必须绕开预筛(/tmp 之类会被当"可重建内容"直接放行,那样根本到不了需要密钥的语义层)。
   expect('无密钥 + 需要语义判定 → allow(fail-open)',
-    await handlerNoKey(fakeExec('rm -rf /tmp/whatever-not-prefiltered-xyz'), nextAllow), 'allow')
+    await handlerNoKey(fakeExec('rm -rf /home/user/jev-guard-smoke-demo'), nextAllow), 'allow')
+  const nkState = await readDegraded({ degradedPath })
+  expectTrue('无密钥 → 写下了 no-key 降级状态', nkState?.kind === 'no-key', JSON.stringify(nkState))
+  expectTrue('无密钥 → 状态是粘性的、且作用域只限本入口',
+    nkState?.sticky === true && nkState?.scope === 'dsh-adapter',
+    JSON.stringify({ sticky: nkState?.sticky, scope: nkState?.scope }))
   if (apiKey) process.env.TYPESAFE_API_KEY = apiKey
+  await rm(degradedPath, { force: true })
+
+  // ---- 会话内 notice:纯 host 插件唯一能让用户真看到的渠道(D15)----
+  //
+  // 这一段同时验证两件互相依存的事:① `agent/pre-step` 真的接线了,消息是**追加**而不是替换,
+  // 且空批次不乱塞(否则会白白多花一次模型请求);② 适配器确实会读 `apiKeyFile` ——
+  // 文件里有密钥时不发"没有密钥"的要求,而那个文件正是 `guard key set` 写的那一份。
+  const noticeCtx = mockContext(undefined)
+  applySmoke(noticeCtx.ctx)
+  const preStep = noticeCtx.handlers.get('agent/pre-step')
+  expectTrue('在 agent/pre-step 上注册了 handler(否则用户永远看不到"请录入密钥")', typeof preStep === 'function')
+
+  const nextEnter = async () => ({ kind: 'enter', messages: [{ id: 'user-1' }] })
+  const nextEmpty = async () => ({ kind: 'enter', messages: [] })
+  /** 一次假的 pre-step;`announced` 是"会话历史里已存在的消息"。 */
+  const fakeStep = (announced = []) => ({
+    agent: { session: { id: 'notice-session', snapshotEvents: () => [], deriveMessages: () => announced } },
+    messages: [{ id: 'user-1' }], turn: 1, step: 1, signal: new AbortController().signal,
+  })
+
+  const withNotice = await preStep(fakeStep(), nextEnter)
+  expectTrue('没有密钥 → 注入了一条 notice',
+    Array.isArray(withNotice.messages) && withNotice.messages.length === 2,
+    JSON.stringify(withNotice.messages?.map(m => m.id)))
+  expectTrue('注入是**追加**:原来那条用户消息还在', withNotice.messages[0]?.id === 'user-1')
+  const notice = withNotice.messages[1] ?? {}
+  expectTrue('notice 形状正确(role/content + source 恰好四个键)',
+    notice.role === 'user'
+      && notice.content?.[0]?.type === 'text' && typeof notice.content?.[0]?.text === 'string'
+      && notice.source?.kind === 'plugin' && notice.source?.plugin === 'jev-guard'
+      && notice.source?.form === 'notice' && typeof notice.source?.summary === 'string'
+      && Object.keys(notice.source).length === 4,
+    JSON.stringify(notice.source))
+  expectTrue('notice 摘要 ≤120 字符且无换行(它要当折叠行的标题)',
+    String(notice.source?.summary ?? '').length <= 120 && !String(notice.source?.summary ?? '').includes('\n'),
+    String(notice.source?.summary))
+  expectTrue('notice 正文给了确切的录入命令(否则"要求录入"不可执行)',
+    String(notice.content?.[0]?.text ?? '').includes('key set'), String(notice.content?.[0]?.text ?? '').slice(0, 120))
+
+  const again = await preStep(fakeStep([notice]), nextEnter)
+  expectTrue('同一条提示不会说第二遍(去重靠持久化的会话历史)',
+    Array.isArray(again.messages) && again.messages.length === 1, JSON.stringify(again.messages?.map(m => m.id)))
+
+  const emptyBatch = await preStep(fakeStep(), nextEmpty)
+  expectTrue('空批次不塞消息(否则会白白多花一次模型请求)',
+    Array.isArray(emptyBatch.messages) && emptyBatch.messages.length === 0, JSON.stringify(emptyBatch.messages))
+
+  // 文件里有密钥 → 不再要求录入。这就是"适配器读 `guard key set` 写的那份文件"的证明。
+  const keyFile = join(dir, 'secrets.json')
+  await writeFile(keyFile, `${JSON.stringify({ TYPESAFE_API_KEY: 'apik-smoke-fake-key' })}\n`)
+  const fileCtx = mockContext(undefined)
+  applySmoke(fileCtx.ctx, { apiKeyFile: keyFile })
+  const preStepFile = fileCtx.handlers.get('agent/pre-step')
+  const withFileKey = await preStepFile(fakeStep(), nextEnter)
+  expectTrue('密钥文件里有密钥 → 不再要求录入(证明适配器读了 apiKeyFile)',
+    Array.isArray(withFileKey.messages) && withFileKey.messages.length === 1,
+    JSON.stringify(withFileKey.messages?.map(m => m.id)))
 
   // ---- 联网用例(有密钥时才跑) ----
   if (apiKey) {
     const e = mockContext(apiKey)
-    apply(e.ctx, { tools: ['bash'], inlineScripts: false })
+    applySmoke(e.ctx)
     const h = e.handlers.get('tools/pre-execute')
     const destructive = await h(neverExec('rm -rf ~/dsh-cross-search'), nextAllow)
     expect('真实目录 rm -rf + 完全权限 → deny', destructive, 'deny')
@@ -189,7 +269,7 @@ async function main() {
   // 这里把 logPath 显式指到临时文件(同时顺带验证 config.logPath 这条路是通的)。
   const audited = join(tmpdir(), `jev-guard-smoke-${process.pid}.log`)
   const f = mockContext(apiKey)
-  apply(f.ctx, { tools: ['bash'], inlineScripts: false, logPath: audited })
+  applySmoke(f.ctx, { logPath: audited })
   const handlerAudit = f.handlers.get('tools/pre-execute')
   const presetExec = cmd => {
     const exec = fakeExec(cmd)
@@ -207,6 +287,7 @@ async function main() {
   await rm(audited, { force: true })
 
   await flush() // 等审计日志落盘,否则 process.exit 会丢掉尾部记录
+  await rm(dir, { recursive: true, force: true }) // 整个测试的产物都在这个临时目录里
   process.stdout.write(`\n${failures === 0 ? `全部通过(${checks} 组断言)` : `${failures} 组失败 / 共 ${checks} 组`}\n`)
   process.exit(failures === 0 ? 0 : 1)
 }

@@ -3,6 +3,7 @@
   "model": "jev-latest",
   "endpoint": "https://api.typesafe.ai/v1/systemone",
   "apiKeyEnv": "TYPESAFE_API_KEY",
+  "_apiKeyFile": "密钥的第三来源(优先级低于 DSH 凭据层与环境变量)。相对路径按**包根**解析,与 cwd 无关。用 `node bin/guard.mjs key set` 录入(只从标准输入读,写这个文件、权限 0600);`node bin/guard.mjs key status` 会告诉你当前哪个来源在生效,永不回显密钥。该文件在 .gitignore 里,也不在 npm files 白名单内 —— 仓库与发布包里都没有它。",
   "apiKeyFile": "secrets.json",
 
   "_lang": "界面/文案语言:'auto'(默认)按 JEV_GUARD_LANG -> LC_ALL/LC_MESSAGES/LANG(仅当它们指明受支持的语言)解析,都不指明就用 zh-CN;也可直接写 'zh-CN' 或 'en' 钉死。**刻意不看系统 locale/Intl**:LANG=C.UTF-8 这类「没有偏好」的值下,Node 会报 en-US 兜底值,那会让中文会话的理由悄悄变英文(2026-09-20 实测踩过)。它换的只是**给人或模型看的话**(判定理由、规则理由、CLI 输出、降级告警),不改变任何一条判定路径。CLI 另有 --lang 开关。",
@@ -37,9 +38,11 @@
   "logPath": "",
   "logMaxBytes": 4194304,
 
-  "_quota": "额度耗尽后的降级(判定服务是收费的,用完是必然事件)。持久性失败(quota / auth / 无密钥)写一份 degraded.json,冷却窗口内不再发请求(省钱),窗口到期放一次探测:成功自动恢复、失败继续降级。瞬态失败(超时/网络/5xx/429限流)只逐次 fail-open,不降级但会分类记录。查状态: node bin/guard.mjs status(退出码 3 = 正在降级)。",
+  "_quota": "降级有两种,别混为一谈(2026-09-20,D15)。① 服务侧状况(quota / auth)= 冷却式:写一份 degraded.json,窗口内不再发请求(省钱),到期放一次探测,成功即自动恢复。② 本地配置状况(无密钥)= **粘性**:没密钥时一次 HTTP 都不发、没有可探测对象,所以它不靠时间结束,而是靠\"密钥出现了\"结束(读到密钥即当场清除,零请求)。两类状态都记 scope:服务侧是 'global'(影响所有入口),本地类是写下它的那条入口身份(CLI 是 'cli',DSH 适配器是 'dsh-adapter')—— 于是某条入口读不到密钥不会把密钥正常的其它入口一起按停。瞬态失败(超时/网络/5xx/429限流)只逐次 fail-open,不降级但会分类记录。查状态: node bin/guard.mjs status(退出码 3 = 正在降级)。",
   "quotaCooldownMs": 900000,
   "authCooldownMs": 1800000,
+  "_notifyInSession": "把\"没有密钥,请录入\"与\"阀门已降级\"这两件事**在会话里说出来**:纯 host 插件没有 toast/banner 接口,所以往会话注入一条 notice 消息(它在对话里是一行、写进会话历史、并进入模型上下文)。每个会话每种状态只说一次,重启/恢复后不会重复。设 false 只保留 logger 与审计日志。",
+  "notifyInSession": true,
   "_degradePolicy": "降级期间保留哪一层:'l0-only'(默认)= 只停要花钱联网的语义层,免费的 L0 硬规则 + 预筛照常工作(它们正好覆盖 mkfs / dd of=/dev/* / git push --force 这类最坏情况);'off' = 连 L0 一起停(整条阀门暂停,全部放行)。",
   "degradePolicy": "l0-only",
   "_degradedPath": "降级状态文件;留空 = ~/.jev-guard/degraded.json",

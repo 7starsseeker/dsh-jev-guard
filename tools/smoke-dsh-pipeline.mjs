@@ -20,6 +20,7 @@ import { Context } from '@deepseek-ai/cordis'
 import ToolRuntime, { defineContentToolFixture } from '@deepseek-ai/dsh-tools'
 import SessionStore from '@deepseek-ai/dsh-session'
 import SystemPrompt from '@deepseek-ai/dsh-system-prompt'
+import { pathToFileURL } from 'node:url'
 
 const ROOT = process.env.JEV_GUARD_ROOT ?? '/mnt/t/dsh-jev-guard'
 const mod = await import(`${ROOT}/adapters/dsh/index.js`)
@@ -116,6 +117,27 @@ async function main() {
   // 5. 非目标工具不受影响
   const ctx2 = await harness({ tools: ['read'], inlineScripts: false })
   expect('tools 不匹配 → 放行', await run(ctx2, 'ls -la'), false, ['RAN: ls -la'])
+
+  // 6. 会话内 notice 的形状:交给 DSH 自己的 JSON 快照校验(真实 Session.append 之前那一步)
+  //
+  // 为什么必须在这里做:notice 是本插件唯一"写进别人会话历史"的东西,而形状写错的表现是
+  // **下次恢复会话时**报 SessionPersistenceCorruptionError —— 会话打不开,而现场离改动很远。
+  // 这个校验需要 DSH 自己的模块,所以只有"在 DSH 目录树里跑"的这一份测试能做(见文件头部的运行方式)。
+  let noticeOk = false
+  let noticeWhy = ''
+  try {
+    const treeRoot = pathToFileURL(`${process.cwd()}/`)
+    const values = await import(new URL('./packages/util/values/lib/index.js', treeRoot).href)
+    const snapshot = values.snapshotJsonValue(mod.noticeMessage('正文', '摘要'))
+    noticeOk = Object.keys(snapshot).join(',') === 'id,role,content,source'
+      && Object.keys(snapshot.source).join(',') === 'kind,plugin,form,summary'
+    noticeWhy = `keys=${Object.keys(snapshot).join(',')} | source=${Object.keys(snapshot.source).join(',')}`
+  } catch (error) {
+    noticeWhy = String(error?.message ?? error).slice(0, 200)
+  }
+  checks += 1
+  if (!noticeOk) failures += 1
+  process.stdout.write(`${noticeOk ? 'ok  ' : 'FAIL'}  notice 通过 DSH 自己的 snapshotJsonValue(Session.append 之前那一步)\n      ${noticeWhy}\n`)
 
   process.stdout.write(`\n${failures === 0 ? `全部通过(${checks} 组断言)` : `${failures} 组失败 / 共 ${checks} 组`}\n`)
   process.exit(failures === 0 ? 0 : 1)

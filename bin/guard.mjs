@@ -9,22 +9,25 @@
  *   guard log     [--tail N]   读共享审计日志(`--stats` 看汇总与成本)
  *   guard status  [--clear]    阀门是好的吗?(降级时退出码 3,可当健康检查)
  *   guard allow   '<命令>'     一次性放行令牌的人工入口(另有 --command-file / --list / --revoke)
+ *   guard key     set|status   密钥录入(只从标准输入读)与"哪个来源在生效"(永不回显值)
  *   guard selftest             离线自检:L0 规则、预筛、四态映射
  *   guard rules                打印 L0 规则清单
  *
  * The key is never printed and never stored here: it comes from the environment
  * variable named by config.apiKeyEnv, or from the file named by config.apiKeyFile.
+ * `guard key set` writes that file (mode 0600) — reading and writing share one path
+ * resolver, so the two can never disagree about a relative apiKeyFile.
  *
  * @module jev-guard/cli
  */
 
-import { readFile } from 'node:fs/promises'
+import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { dirname, isAbsolute, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { DEFAULTS, evaluateCommand, prefilter } from '../lib/gate.js'
 import { DEFAULT_LOG_PATH, lastLogError, readTail, resolveLogPath, summarize } from '../lib/audit.js'
 import {
-  clearDegraded, enterDegraded, isDegraded, probeDue, readDegraded, resolveDegradedPath, statusText, warningLine,
+  clearDegraded, enterDegraded, isDegraded, isSticky, probeDue, readDegraded, resolveDegradedPath, statusText, warningLine,
 } from '../lib/quota.js'
 import { resolveTokenPath, grantToken, readTokens, revokeToken } from '../lib/token.js'
 import { DENY_RULES, ASK_RULES, ruleWhy, staticRule } from '../lib/rules.js'
@@ -34,9 +37,16 @@ import { LANGS, setLang, t } from '../lib/i18n.js'
 const HERE = dirname(fileURLToPath(import.meta.url))
 const ROOT = join(HERE, '..')
 
+/**
+ * 本入口在降级状态里的身份(见 DEFAULTS.scope 与 lib/quota.js 的作用域过滤)。
+ * CLI 与 DSH 适配器各有自己的密钥解析,所以必须能被区分开 —— 否则 CLI 一次"读不到密钥"
+ * 会把**密钥其实是好的** DSH 侧一起按停。
+ */
+const CLI_SCOPE = 'cli'
+
 /** 带值的开关:它们的**值**不是位置参数(`judge 'x' --lang en` 里 `en` 不是命令)。 */
 const VALUED_FLAGS = new Set([
-  '--lang', '--file', '--tail', '--hours', '--cwd', '--policy', '--note', '--command-file', '--revoke',
+  '--lang', '--file', '--tail', '--hours', '--cwd', '--policy', '--note', '--command-file', '--revoke', '--key-file',
 ])
 
 /**
@@ -93,18 +103,33 @@ async function loadConfig() {
   } catch {
     // no config.json -> defaults only
   }
-  return { ...DEFAULTS, ...file }
+  // scope 不是用户偏好,而是"这条入口是谁" —— 由代码定死,不让配置文件改乱作用域隔离。
+  return { ...DEFAULTS, ...file, scope: CLI_SCOPE }
+}
+
+/**
+ * 密钥文件的实际路径 —— **读取与写入共用这一个函数**。
+ *
+ * 为什么必须共用:`apiKeyFile` 给相对路径时,语义是"按**包根**解析,与 cwd 无关"。旧写法
+ * `cfg.apiKeyFile ?? join(ROOT, 'secrets.json')` 只在"字段缺失"时回落到包根,一旦填了相对
+ * 路径就变成"按调用时的 cwd 解析" —— 在包目录外调用(CLI 与离线脚本都可能)就读不到密钥。
+ * 读写若各写一份这种解析,分叉的后果是"写得进去却读不出来",那是最难查的一类错。
+ * 绝对路径原样使用。
+ *
+ * @param cfg - effective config.
+ * @returns 绝对路径。
+ */
+function keyFilePath(cfg) {
+  const configured = typeof cfg.apiKeyFile === 'string' && cfg.apiKeyFile.trim() !== '' ? cfg.apiKeyFile : undefined
+  if (configured === undefined) return join(ROOT, 'secrets.json')
+  return isAbsolute(configured) ? configured : join(ROOT, configured)
 }
 
 /**
  * Resolve the API key without ever echoing it.
  *
- * 路径语义:`apiKeyFile` 若给的是**相对路径**,一律按**包根**解析(与 cwd 无关)。
- * 旧写法 `cfg.apiKeyFile ?? join(ROOT, 'secrets.json')` 只在"字段缺失"时回落到包根,
- * 一旦填了相对路径就变成"按调用时的 cwd 解析" —— 在包目录外调用(CLI 与离线脚本都可能)就读不到
- * 密钥,表现为 `source: error`,并且因为"无密钥"被当成持久失败而**写进共享的 degraded.json**:
- * 那会让**别的入口**(各有自己的密钥解析、密钥其实是好的)也一起停掉联网判定 30 分钟。
- * 绝对路径仍然原样使用。
+ * 来源顺序:环境变量 → 密钥文件。**与 DSH 适配器一致**(那里多一层凭据层,排在环境变量之前),
+ * 所以三处看到的是同一套规则:最高优先级的来源赢了就不再往下看。
  *
  * @param cfg - effective config.
  * @returns the key, or undefined.
@@ -112,12 +137,8 @@ async function loadConfig() {
 async function resolveKey(cfg) {
   const ref = cfg.apiKeyEnv ?? 'TYPESAFE_API_KEY'
   if (process.env[ref]) return process.env[ref]
-  const configured = typeof cfg.apiKeyFile === 'string' && cfg.apiKeyFile.trim() !== '' ? cfg.apiKeyFile : undefined
-  const file = configured === undefined
-    ? join(ROOT, 'secrets.json')
-    : (isAbsolute(configured) ? configured : join(ROOT, configured))
   try {
-    const parsed = JSON.parse(await readFile(file, 'utf8'))
+    const parsed = JSON.parse(await readFile(keyFilePath(cfg), 'utf8'))
     const value = parsed[ref] ?? parsed.apiKey
     if (typeof value === 'string' && value.trim() !== '') return value.trim()
   } catch {
@@ -363,7 +384,7 @@ async function cmdStatus() {
     missing: state ? '' : t('cli.status.stateFileMissing'),
   })}\n`)
   process.stdout.write(`${t('cli.status.explainer', { policy: cfg.degradePolicy ?? 'l0-only' })}\n`)
-  if (state && probeDue(state, now)) process.stdout.write(`${t('cli.status.probeDue')}\n`)
+  if (state && probeDue(state, now, CLI_SCOPE)) process.stdout.write(`${t('cli.status.probeDue')}\n`)
   return state ? 3 : 0
 }
 
@@ -438,6 +459,145 @@ async function cmdAllow() {
   return 0
 }
 
+/**
+ * 从标准输入读一行密钥,**不回显**。
+ *
+ * 为什么不用 readline:它在 TTY 上必然把输入回显出来,而这里输入的是密钥。所以自己处理原始
+ * 模式:可打印字符累积、退格删一个、回车结束、Ctrl-C 放弃。两个必须处理的细节:
+ *   · 原始模式下 Ctrl-C 不再产生 SIGINT,而是送来 0x03 —— 得自己识别,否则按键失灵;
+ *   · 粘贴时终端会包一层 bracketed-paste 的转义序列(ESC [ 2 0 0 ~ … ESC [ 2 0 1 ~),
+ *     那不是密钥内容。留下它,密钥就多出一段永远不被服务端接受的前缀,而服务端只会回 401。
+ *
+ * @returns 读到的一行(不含换行);Ctrl-C / Ctrl-D / EOF 时返回 null。
+ */
+function readSecretLine() {
+  return new Promise((resolve) => {
+    const stdin = process.stdin
+    let buffer = ''
+    let inEscape = false
+    const finish = (value) => {
+      stdin.removeListener('data', onData)
+      stdin.removeListener('end', onEnd)
+      if (typeof stdin.setRawMode === 'function') stdin.setRawMode(false)
+      stdin.pause()
+      resolve(value)
+    }
+    const onEnd = () => finish(null)
+    const onData = (chunk) => {
+      for (const ch of String(chunk)) {
+        if (inEscape) {
+          // 转义序列以字母或 `~` 收尾;整段丢弃。
+          if (/[A-Za-z~]/.test(ch)) inEscape = false
+          continue
+        }
+        if (ch === '\u001b') { inEscape = true; continue }
+        if (ch === '\u0003') { finish(null); return }        // Ctrl-C:放弃
+        if (ch === '\u0004') { finish(buffer); return }        // Ctrl-D:当作结束
+        if (ch === '\r' || ch === '\n') { finish(buffer); return }
+        if (ch === '\u007f' || ch === '\b') { buffer = buffer.slice(0, -1); continue }
+        if (ch >= ' ') buffer += ch
+      }
+    }
+    if (typeof stdin.setRawMode === 'function') stdin.setRawMode(true)
+    stdin.resume()
+    stdin.on('data', onData)
+    stdin.on('end', onEnd)
+  })
+}
+
+/**
+ * `guard key` —— 密钥的录入与来源查询(首次部署的第一个入口)。
+ *
+ *   guard key set                   从标准输入读一次密钥 → 写进 `apiKeyFile`(默认包根
+ *                                   `secrets.json`,权限 0600),原文件里的其它键保留
+ *   guard key status                说明**哪个来源在生效**(环境变量 / 文件)与长度;永不回显值
+ *
+ * 为什么密钥**只从标准输入**读:命令行参数会进 shell 历史、进进程列表(`ps`),还可能被别处
+ * 的日志记下来 —— 那等于把密钥复制到你控制不到的地方。所以 `key set` 不接受位置参数。
+ *
+ * 为什么不写 DSH 凭据库(`~/.dsh/.credentials.yaml`):那是另一个应用的文件格式
+ * (version / refs / records + 原子写),我们手写它有损坏或与之冲突的风险。包根 `secrets.json`
+ * 是本插件自己的第三来源,优先级低于凭据层与环境变量 —— 也就是说它**不会覆盖更好的来源**。
+ *
+ * @returns exit code.
+ */
+async function cmdKey() {
+  const action = PARSED.positional[0]
+  const cfg = await loadConfig()
+  // `--key-file` 让"写到哪、从哪读"可以在一次调用里一起改 —— 自检靠它避免碰真实密钥文件。
+  const keyCfg = { ...cfg, apiKeyFile: arg('--key-file', cfg.apiKeyFile) }
+  const file = keyFilePath(keyCfg)
+  const ref = keyCfg.apiKeyEnv ?? 'TYPESAFE_API_KEY'
+
+  if (action === 'status') {
+    const existing = await resolveKey(keyCfg)
+    if (existing) {
+      const fromEnv = Boolean(process.env[ref])
+      process.stdout.write(`${t(fromEnv ? 'cli.key.status.env' : 'cli.key.status.file', {
+        name: ref, path: file, len: existing.length,
+      })}\n`)
+      // 粘性状态靠"条件消失"结束:密钥已经能解析了,这条状态就该消失。顺手清掉并如实说明,
+      // 不留一个"看起来还在降级"的假象给下一个人。
+      const state = await readDegraded({ degradedPath: arg('--file', cfg.degradedPath) })
+      if (state !== null && isSticky(state) && state.kind === 'no-key') {
+        await clearDegraded({ degradedPath: arg('--file', cfg.degradedPath) })
+        process.stdout.write(`${t('cli.key.status.staleState')}\n`)
+      }
+      return 0
+    }
+    process.stderr.write(`${t('cli.key.status.none', { name: ref, path: file, cli: process.argv[1] })}\n`)
+    return 3
+  }
+
+  if (action !== 'set') {
+    process.stderr.write(`${t('cli.key.usage')}\n`)
+    return 2
+  }
+
+  // 与 `guard allow` 同一条分界线:键盘录入只能在交互终端里做 —— agent 的工具调用不是 TTY,
+  // 于是"密钥是人在键盘上敲的"这件事本身可验证。
+  if (!process.stdin.isTTY) {
+    process.stderr.write(`${t('cli.key.set.needsTty')}\n`)
+    return 3
+  }
+
+  process.stderr.write(`${t('cli.key.set.prompt')}\n`)
+  const raw = await readSecretLine()
+  process.stderr.write('\n')
+  if (raw === null) {
+    process.stderr.write(`${t('cli.key.set.empty')}\n`)
+    return 2
+  }
+  const value = raw.trim()
+  if (value === '') {
+    process.stderr.write(`${t('cli.key.set.empty')}\n`)
+    return 2
+  }
+  // 含空白一律拒绝:密钥本身不该有空格或换行。放宽它只会让"粘贴时多带了一个换行"
+  // 变成一次 401 排查 —— 服务端不会告诉你"末尾多了个空格"。
+  if (/\s/.test(value)) {
+    process.stderr.write(`${t('cli.key.set.whitespace')}\n`)
+    return 2
+  }
+
+  // 读-改-写:文件里可能有别的键(用户自己的),整份覆盖会静默删掉它们。
+  let existing = {}
+  try {
+    const parsed = JSON.parse(await readFile(file, 'utf8'))
+    if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) existing = parsed
+  } catch {
+    // 不存在或不是 JSON:当作新建
+  }
+  existing[ref] = value
+  await mkdir(dirname(file), { recursive: true })
+  // mode 0600:本仓库第一处带权限的写入 —— 因为它写的是密钥。Windows 上 Node 会把它映射成
+  // "只读+写"的 ACL,不报错;真正的保护来自这个文件不进版本库、也不进发布包。
+  await writeFile(file, `${JSON.stringify(existing, null, 2)}\n`, { mode: 0o600 })
+  process.stdout.write(`${t('cli.key.set.written', { path: file, len: value.length, count: Object.keys(existing).length })}\n`)
+  process.stdout.write(`${t('cli.key.set.hint')}\n`)
+  return 0
+}
+
 const sub = PARSED.sub
 
 // 语言必须在**任何输出之前**定下来 —— 包括下面那句降级告警与最后那行用法提示。
@@ -454,7 +614,9 @@ if (!langPick.known) {
 //   · status:它的全部工作就是把状态说清楚,不需要再叠一句;
 //   · judge:每条判定的**理由里已经带了同一句告警**(lib/verdict.js 的 warn),再说就是第三遍;
 //   · selftest / rules:纯离线,不涉及额度。
-if (!['status', 'judge', 'selftest', 'rules'].includes(sub)) {
+//   · key:它的全部工作就是密钥本身(`key status` 会自己说清有没有密钥),再叠一句降级告警
+//     只会把"去跑 key set"这条真正的指示埋掉。
+if (!['status', 'judge', 'selftest', 'rules', 'key'].includes(sub)) {
   try {
     await warnIfDegraded(await loadConfig())
   } catch {
@@ -466,6 +628,7 @@ const code = sub === 'selftest' ? selftest()
   : sub === 'log' ? await cmdLog()
   : sub === 'status' ? await cmdStatus()
   : sub === 'allow' ? await cmdAllow()
+  : sub === 'key' ? await cmdKey()
   : sub === 'judge' ? await cmdJudge()
   : (process.stderr.write(`${t('cli.usage')}\n`), 2)
 process.exit(code ?? 0)

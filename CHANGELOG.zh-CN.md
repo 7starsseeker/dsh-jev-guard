@@ -5,6 +5,53 @@
 本项目遵循「按日期记录事实」的写法:每条都写清**改了什么、为什么、以及怎么验证的**。
 完整的设计取舍见 [`docs/DECISIONS.md`](./docs/DECISIONS.md),实测数据见 [`docs/MEASUREMENTS.md`](./docs/MEASUREMENTS.md)。
 
+## [0.5.0] — 2026-09-20
+
+**首次部署现在有真正的密钥录入入口,而"没有密钥"不再静默:它像额度耗尽那样降级 —— 大声、粘性,并且不停止免费层。**
+取舍见 [`DECISIONS.md`](./DECISIONS.md) **D15**,机制见 [`docs/DSH-INTEGRATION.md`](./docs/DSH-INTEGRATION.md)。
+
+**录入入口:`guard key set` / `guard key status`。** 密钥**只从标准输入**读 —— 绝不接受命令行参数,
+那会进 shell 历史与 `ps`。它写 `apiKeyFile` 指定的文件(默认包根 `secrets.json`),权限 `0600`,
+保留文件里已有的其它键,只打印长度与路径、**永不打印值**。`guard key status` 说明当前**哪个来源**在
+生效、密钥多长,同样不回显;没有密钥时退出码 3,所以它也能当健康检查用。读与写共用同一个路径解析,
+所以相对 `apiKeyFile` 不可能在两个地方指向不同的文件。
+
+**为什么 DSH 适配器也必须改。** 它原先只从 `ctx.credentials` 与环境变量取密钥,而 `guard key set`
+写的是文件。少了这一层,"用 CLI 录入密钥"对**恰好还没有凭据层的新装用户**就是一句空话。现在适配器
+也回退到 `apiKeyFile`,规则一致:相对路径按包根解析,与 cwd 无关。
+
+**`no-key` 现在是会降级的类别 —— 粘性,而且带作用域。** 它原先刻意不降级(D10.2),理由是对的:
+本地配置问题写进全机共享的 `degraded.json`,会把**密钥其实是好的**其它入口一起按停。这个反对意见
+现在用**作用域**回答,而不是用沉默回答。服务侧类别(`quota` / `auth`)仍是 `scope: 'global'`,压制
+所有入口;`no-key` 是 `scope: 'local'`,只压制写下它的那条入口(`'cli'` 或 `'dsh-adapter'`)。又因为
+没有密钥时**一次 HTTP 都不发**,没有可探测对象 —— 所以状态是**粘性**的:不随时间到期,密钥一出现
+就结束(当场清除、零请求、不用重启)。`guard status` 直接这么说,而不是打印一个从来不重要的倒计时。
+
+**用户真的会被通知到。** 纯 host 插件没有 toast、没有 banner、没有启动提示 —— DSH 的设置页与 Plugins
+页的每一个位置都由浏览器侧(`dsh.client`)注册占位。唯一存在的渠道是在 `agent/pre-step` 注入一条
+`notice` 消息:它渲染成对话里的一行、写进会话历史、并进入模型上下文(于是模型也知道阀门降级了)。
+插件用它覆盖三种跃迁 —— 首次运行没有密钥(提出要求,并附上确切命令)、进入降级、以及恢复;每种状态
+每个会话只说一次,去重依据是**持久化的历史**,所以重启或恢复会话都不会重复。`notifyInSession: false`
+可以关掉它。
+
+**消息形状是一份契约,而且它有校验。** `source` 恰好带 `kind` / `plugin` / `form` / `summary` 四个键,
+摘要上限 120 字符(它要当折叠行的标题)。这里写错的表现是**下次恢复会话时**报
+`SessionPersistenceCorruptionError` —— 会话打不开,而现场离改动很远。所以形状要交给 DSH 自己的
+`snapshotJsonValue`(`Session.append` 之前跑的那一步)校验,由一份必须跑在 DSH 目录树里的测试执行;
+四个键的 source 与摘要上限则由离线冒烟测试断言。本版本已实际跑过这项校验并通过。
+
+**本版本还包括:** `package.json` 不再声明 `dsh.runtime` —— 它不是 DSH 插件 manifest 的字段(真实字段
+是 `manifestVersion` / `bundle` / `profile` / `client`),所以它什么也没做,却让读这个文件的人以为它有意
+义。`tools/smoke-dsh-adapter.mjs` 变成了密闭的:它以前会往**真实的** `~/.jev-guard/` 写降级状态与审计
+记录,现在每一处 `apply()` 都把 `logPath` / `degradedPath` / `apiKeyFile` 钉到临时目录;它还新增了 9 条
+断言,覆盖粘性状态、notice 注入(是追加而非替换、空批次不乱塞)与文件回退。`tools/selftest-quota.mjs`
+从 50 例涨到 78 例,`tools/selftest-entry.mjs` 到 30 例(它现在真的会跑一遍 `guard key set`,包括通过
+伪 TTY 走的交互路径),`tools/selftest-i18n.mjs` 到 34 例。这里新增的每一条面向用户的文案都有中英两份。
+
+**本次未覆盖:** `tools/smoke-dsh-pipeline.mjs` 需要一个能让裸 `@deepseek-ai/*` 说明符解析成功的 DSH
+工作区,本部署不满足,因此没能运行(它在上一提交上以同样方式失败,所以不是回归)。notice 形状改为直接
+对着 DSH 的 `snapshotJsonValue` 验证。
+
 ## [0.4.1] — 2026-09-20
 
 **给人看的文档一律改为英文默认,中文逐字节保留为 `*.zh-CN.md`。** 约定写在

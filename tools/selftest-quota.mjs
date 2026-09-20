@@ -17,7 +17,8 @@ import { join } from 'node:path'
 import { DEFAULTS, evaluateCommand } from '../lib/gate.js'
 import { setLang } from '../lib/i18n.js'
 import {
-  KINDS, classifyFailure, clearDegraded, enterDegraded, isDegraded, probeDue, readDegraded, statusText, warningLine,
+  KINDS, classifyFailure, clearDegraded, cooldownMs, enterDegraded, isDegraded, isSticky, kindScope, probeDue,
+  readDegraded, statusText, warningLine,
 } from '../lib/quota.js'
 import { explain } from '../lib/verdict.js'
 
@@ -82,11 +83,17 @@ const noKey = Object.assign(new Error('no key'), { code: 'no-key' })
 expect('无密钥 → no-key', classifyFailure(noKey).kind === 'no-key')
 expect('未知 → unknown(不降级)', classifyFailure(new Error('???')) && !KINDS.unknown.degraded)
 
-// 2) 只有 quota / auth 会降级。`no-key` 刻意**不**降级 —— 它是本地配置状况、零 HTTP 成本,
-//    而 degraded.json 是**全局共享**的:某个适配器读不到密钥不该把密钥正常的其它适配器按停。
+// 2) 会降级的类别,以及**两种降级方式**(2026-09-20,D15):
+//    · quota / auth = 服务侧状况 → 冷却式:到期放一次探测;
+//    · no-key = 本地配置状况 → **粘性**:没密钥时零 HTTP、没有可探测对象,所以靠"密钥出现"结束,
+//      而且带作用域 —— 只压制写下它的那条入口(密钥解析各入口独立,degraded.json 却是全机共享)。
 const degrading = Object.entries(KINDS).filter(([, v]) => v.degraded).map(([k]) => k).sort()
-expect('会降级的类别 = auth / quota', degrading.join(',') === 'auth,quota', degrading.join(','))
-expect('no-key 不降级', KINDS['no-key'].degraded === false)
+expect('会降级的类别 = auth / no-key / quota', degrading.join(',') === 'auth,no-key,quota', degrading.join(','))
+expect('no-key 降级(没有效密钥必须像额度耗尽那样明说,而不是静默 fail-open)', KINDS['no-key'].degraded === true)
+expect('no-key 是粘性的(不靠时间结束)', KINDS['no-key'].sticky === true && cooldownMs('no-key', {}) === 0)
+expect('no-key 的作用域是本地(只压制写下它的入口)', KINDS['no-key'].scope === 'local' && kindScope('no-key') === 'local')
+expect('quota / auth 的作用域是全局(服务侧状况影响所有入口)',
+  kindScope('quota') === 'global' && kindScope('auth') === 'global' && KINDS.quota.scope === 'global')
 expect('rate-limit / server / timeout / network 也都不降级',
   !KINDS['rate-limit'].degraded && !KINDS.server.degraded && !KINDS.timeout.degraded && !KINDS.network.degraded)
 
@@ -195,6 +202,58 @@ expect('健康状态报告会指出"没有密钥"', healthy.includes('正常') &
 // 12) 没有状态文件时,一切都是普通路径
 await clearDegraded(cfg)
 expect('清除后 isDegraded=false', isDegraded(await readDegraded(cfg)) === false)
+
+// 13) **没有密钥 → 粘性降级**(D15):一次 HTTP 都不发,而且不靠时间结束
+script = []
+calls = []
+await clearDegraded(cfg)
+const noKeyVerdict = await evaluateCommand(CMD, { ...DEFAULTS, ...cfg, apiKey: undefined, cache: undefined, scope: 'cli' })
+expect('没有密钥 → 仍然 fail-open(allow)但带着分类', noKeyVerdict.action === 'allow' && noKeyVerdict.errorKind === 'no-key',
+  `${noKeyVerdict.action}/${noKeyVerdict.errorKind}`)
+expect('没有密钥 → 一次请求都没发(没有可花钱的东西)', calls.length === 0, String(calls.length))
+expect('没有密钥 → 判定上带着粘性告警', String(noKeyVerdict.warning ?? '').includes('条件消失'), String(noKeyVerdict.warning))
+const nk = await readDegraded(cfg)
+expect('没有密钥 → 写出了降级状态', nk !== null && nk.kind === 'no-key', String(nk?.kind))
+expect('没有密钥 → 状态里记了粘性与入口身份', isSticky(nk) === true && nk.scope === 'cli', JSON.stringify({ sticky: nk?.sticky, scope: nk?.scope }))
+const farFuture = nk.until + 24 * 3600 * 1000
+expect('粘性不靠时间:一天之后仍然是降级', isDegraded(nk, farFuture, 'cli') === true)
+expect('粘性永不探测(没有可探测对象)', probeDue(nk, farFuture, 'cli') === false)
+expect('粘性告警不说"等 N 分钟"(它不等时间)', !warningLine(nk).includes('分钟'), warningLine(nk))
+expect('粘性状态报告写明"当场自动恢复"', statusText(nk).includes('当场自动恢复'), statusText(nk).split('\n')[3] ?? '')
+expect('粘性状态报告说明影响范围仅本入口', statusText(nk).includes('cli'), statusText(nk))
+calls = []
+const stillNoKey = await evaluateCommand(CMD, { ...DEFAULTS, ...cfg, apiKey: undefined, cache: undefined, scope: 'cli' })
+expect('粘性窗口内 → 直接放行,不再去撞密钥', stillNoKey.source === 'degraded' && calls.length === 0, `${stillNoKey.source}/${calls.length}`)
+
+// 14) **作用域隔离**:某条入口读不到密钥,不该把密钥正常的其它入口按停
+await clearDegraded(cfg)
+await enterDegraded('no-key', { cfg, scope: 'cli' })
+const scoped = await readDegraded(cfg)
+expect('CLI 的 no-key 状态对自己生效', isDegraded(scoped, Date.now(), 'cli') === true)
+expect('CLI 的 no-key 状态**不**压制 DSH 侧', isDegraded(scoped, Date.now(), 'dsh-adapter') === false)
+expect('CLI 的 no-key 状态对 DSH 侧也不算探测到期', probeDue(scoped, Date.now(), 'dsh-adapter') === false)
+script = [okAnswer(0.9)]
+calls = []
+const otherEntry = await evaluateCommand(CMD, { ...DEFAULTS, ...cfg, apiKey: 'x', cache: undefined, scope: 'dsh-adapter' })
+expect('别的入口照常判定(没有被按停)', otherEntry.source === 'jev' && calls.length === 1, `${otherEntry.source}/${calls.length}`)
+// 服务侧状态相反:quota 描述的是"服务坏了",它对每条入口都成立,所以是全局的。
+await clearDegraded(cfg)
+await enterDegraded('quota', { cfg })
+const globalState = await readDegraded(cfg)
+expect('服务侧(quota)状态压制所有入口',
+  isDegraded(globalState, Date.now(), 'cli') === true && isDegraded(globalState, Date.now(), 'dsh-adapter') === true)
+expect('服务侧状态的作用域记为 global', globalState.scope === 'global', String(globalState.scope))
+
+// 15) **密钥一出现 → 粘性状态当场清除**(不重启、不等冷却)
+await clearDegraded(cfg)
+await enterDegraded('no-key', { cfg, scope: 'cli' })
+expect('铺垫:粘性 no-key 状态在位', (await readDegraded(cfg))?.kind === 'no-key')
+script = [okAnswer(0.9)]
+calls = []
+const revived = await evaluateCommand(CMD, { ...DEFAULTS, ...cfg, apiKey: 'x', cache: undefined, scope: 'cli' })
+expect('密钥出现 → 恢复成正常判定', revived.source === 'jev' && revived.action === 'block', `${revived.source}/${revived.action}`)
+expect('密钥出现 → 状态文件当场清掉', (await readDegraded(cfg)) === null)
+expect('密钥出现 → 只花了一次请求(没有多余探测)', calls.length === 1, String(calls.length))
 
 await rm(dir, { recursive: true, force: true })
 process.stdout.write(`\n${failed === 0 ? '全部通过' : `${failed} 项失败`}(${checks} 例)\n`)
