@@ -242,7 +242,10 @@ export function apply(ctx, config = {}) {
       // rephrasing the same destruction eventually reaches a human instead of
       // looping forever.
       const { attempts, exhausted } = budget.hit(sessionKey)
-      if (exhausted && verdict.action !== 'escalate') {
+      // 例外:带 L0 `deny` 规则的硬命中**不能**借重试预算转人工 —— 那会让弹窗里的"允许"
+      // 越过硬地板(令牌不能越过 L0,审批同样不能,见 D5/D13)。硬命中照旧记 attempts 供审计。
+      const hardRule = verdict.rule?.kind === 'deny'
+      if (exhausted && verdict.action !== 'escalate' && hardRule !== true) {
         effective = { ...verdict, action: 'escalate', source: `${verdict.source}+retry-budget` }
       }
       if (effective.action === 'revise') stats.revised += 1
@@ -255,8 +258,14 @@ export function apply(ctx, config = {}) {
         (verdict.enriched ?? []).join('+') || 'none', command.slice(0, 160),
       )
 
-      const decision = toHostDecision(command, effective, policy, { token: verdict.token, cliPath: CLI_PATH })
-      // 审计:被拦/被问/升级都要留痕(含命中规则与重试次数)。
+      const decision = toHostDecision(command, effective, policy, {
+        token: verdict.token,
+        cliPath: CLI_PATH,
+        reviseInAskMode: cfg.reviseInAskMode,
+        blockInAskMode: cfg.blockInAskMode,
+      })
+      // 审计:被拦/被问/升级都要留痕(含命中规则与重试次数)。decision.kind 已经能区分
+      // "转人工(ask)"与"直接拒(deny)" —— 同一条 revise 在两种审批模式下会写在这里不同的值。
       void record({
         tool: exec.name, action: effective.action, decision: decision.kind, source: effective.source,
         p: verdict.p, model: verdict.model, ms: verdict.ms, rule: verdict.rule?.id,
@@ -266,8 +275,15 @@ export function apply(ctx, config = {}) {
         overridden: verdict.overridden, token: verdict.token,
         session: exec.agent?.session?.id,
       }, cfg)
-      if (decision.kind === 'deny' && effective.action === 'revise') {
-        return { kind: 'deny', reason: reviseGuidance(command, effective, { policy, token: verdict.token, cliPath: CLI_PATH }) }
+      // revise 的两条出路都带上三种降级模板:转人工时它是**弹窗正文**(让做决定的人看清
+      // 还能怎么改),被直接拒时它是给模型的教案。routedToHuman 决定开头那几句怎么说。
+      if (effective.action === 'revise') {
+        return {
+          ...decision,
+          reason: reviseGuidance(command, effective, {
+            policy, token: verdict.token, cliPath: CLI_PATH, routedToHuman: decision.kind === 'ask',
+          }),
+        }
       }
       return decision
     } catch (error) {

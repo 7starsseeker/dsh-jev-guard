@@ -17,7 +17,7 @@ import { existsSync } from 'node:fs'
 import { isAbsolute, join } from 'node:path'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { explain, shellName, shellQuote, toHostDecision } from '../lib/verdict.js'
+import { explain, reviseGuidance, shellName, shellQuote, toHostDecision } from '../lib/verdict.js'
 
 let failed = 0
 let checks = 0
@@ -137,10 +137,55 @@ expect('never 策略下 escalate 映射为 deny', neverEsc.kind === 'deny', neve
 expect('never 策略仍然说没有审批提示', neverEsc.reason.includes('本会话没有审批提示'))
 expect('never 策略仍然附令牌授权行', neverEsc.reason.includes('ALLOW-5031AC2085'))
 
-// 但 block / revise 在 ask 策略下**照样**没有弹窗(只有 escalate 会弹),所以令牌提示必须保留。
+// 8b) 模式相关路由(2026-09-20 用户决定,见 docs/DECISIONS.md D13)。
+//     改动前:只有 escalate 会看审批策略,revise / block 一律直接拒绝。审计证据 —— 一天里
+//     **9 条 revise 拒绝发生在 approval=ask 模式下**(全是 cp / sed -i / git add 这类维护动作),
+//     人就在场却拿不到弹窗,等于让一个 50% 的判断替人做决定。
+//     改动后:ask 模式下 revise 与 Jev 高分的 block 都转人工审批;never 模式(全自动,没人可问)
+//     保持直接拒绝。**例外**是 L0 的 deny 类硬规则:两种模式都拦死,不弹窗也不发令牌。
+const reviseVerdict = { action: 'revise', source: 'jev', p: 0.58, model: 'jev-1.13.0', ms: 240 }
+
 const askBlock = toHostDecision(CMD, riskVerdict, 'ask', { token: 'ALLOW-0A2DB6157F' })
-expect('ask 策略下 block 仍是 deny(没有弹窗)', askBlock.kind === 'deny', askBlock.kind)
-expect('ask 策略下 block 仍附令牌授权行', askBlock.reason.includes('ALLOW-0A2DB6157F'))
+expect('ask 策略下 Jev 高分的 block 转人工审批', askBlock.kind === 'ask', askBlock.kind)
+expect('ask 策略下 block 的理由说明已发起审批请求', askBlock.reason.includes('审批请求'), askBlock.reason.slice(0, 140))
+expect('ask 策略下 block 不再附令牌授权行(人就在弹窗前面)', !askBlock.reason.includes('ALLOW-0A2DB6157F'))
+
+const neverBlock = toHostDecision(CMD, riskVerdict, 'never', { token: 'ALLOW-0A2DB6157F' })
+expect('never 策略下 Jev 高分的 block 仍然是 deny', neverBlock.kind === 'deny', neverBlock.kind)
+expect('never 策略下 block 仍附令牌授权行', neverBlock.reason.includes('ALLOW-0A2DB6157F'))
+
+const askRevise = toHostDecision(CMD, reviseVerdict, 'ask', { token: 'ALLOW-0A2DB6157F' })
+expect('ask 策略下 revise 转人工审批', askRevise.kind === 'ask', askRevise.kind)
+expect('ask 策略下 revise 的抬头改成"需要人工确认"', askRevise.reason.includes('需要人工确认'), askRevise.reason.slice(0, 70))
+expect('ask 策略下 revise 不再附令牌授权行', !askRevise.reason.includes('ALLOW-0A2DB6157F'))
+
+const neverRevise = toHostDecision(CMD, reviseVerdict, 'never', { token: 'ALLOW-0A2DB6157F' })
+expect('never 策略下 revise 仍然是 deny', neverRevise.kind === 'deny', neverRevise.kind)
+expect('never 策略下 revise 仍附令牌授权行', neverRevise.reason.includes('ALLOW-0A2DB6157F'))
+expect('never 策略下 revise 的抬头仍是"暂缓"', neverRevise.reason.includes('[暂缓'), neverRevise.reason.slice(0, 70))
+
+// 例外:L0 的 deny 类硬规则 = 绝对闸门。两种模式都拦死,既不弹窗也不给令牌。
+const askL0 = toHostDecision('mkfs.ext4 /dev/sdb1', l0Verdict, 'ask', { token: 'ALLOW-0A2DB6157F' })
+expect('ask 策略下 L0 硬拒绝**不**转人工(绝对闸门)', askL0.kind === 'deny', askL0.kind)
+expect('L0 硬拒绝的理由里没有令牌授权行', !askL0.reason.includes('ALLOW-0A2DB6157F'))
+expect('L0 硬拒绝的理由仍说"禁止自动执行"', askL0.reason.includes('禁止自动执行'), askL0.reason.slice(0, 170))
+
+// 两个路由开关可以单独关掉(配置层就能回退,不必改代码)
+const askReviseOff = toHostDecision(CMD, reviseVerdict, 'ask', { reviseInAskMode: 'deny', token: 'ALLOW-0A2DB6157F' })
+expect('reviseInAskMode=deny 时退回直接拒绝', askReviseOff.kind === 'deny', askReviseOff.kind)
+const askBlockOff = toHostDecision(CMD, riskVerdict, 'ask', { blockInAskMode: 'deny', token: 'ALLOW-0A2DB6157F' })
+expect('blockInAskMode=deny 时退回直接拒绝', askBlockOff.kind === 'deny', askBlockOff.kind)
+
+// explain 的抬头也要跟着**路由结果**走(弹窗里显示的就是这句)
+const routedHead = explain(CMD, reviseVerdict, { policy: 'ask', routedToHuman: true })
+expect('已转人工时 revise 的抬头是"需要人工确认"', routedHead.includes('[需要人工确认]'), routedHead.slice(0, 70))
+const deniedHead = explain(CMD, reviseVerdict, { policy: 'ask', routedToHuman: false })
+expect('未转人工时 revise 的抬头仍是"暂缓"', deniedHead.includes('[暂缓'), deniedHead.slice(0, 70))
+
+// revise 的三种降级模板**两种出路都要带**:转人工时是弹窗正文,被拒时是给模型的教案。
+const routedGuidance = reviseGuidance(CMD, reviseVerdict, { policy: 'ask', routedToHuman: true })
+expect('转人工的 revise 理由仍带三种降级模板', routedGuidance.includes('可以尝试的更安全形式'), routedGuidance.slice(-200))
+expect('转人工的 revise 理由带令牌以外的降级建议', routedGuidance.includes('只读/演练') || routedGuidance.includes('作用域'))
 
 // 9) shellQuote:单引号包裹 + 按**平台**分叉的转义(POSIX `'\''` vs PowerShell `''`)
 expect("shellQuote(POSIX) 转义单引号", shellQuote("a'b", 'linux') === "'a'\\''b'", shellQuote("a'b", 'linux'))

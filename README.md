@@ -102,6 +102,7 @@ node bin/guard.mjs status        # 期望:✅ 正常(降级时退出码为 3)
 | `endpoint` | `https://api.typesafe.ai/v1/systemone` | 判定服务地址 |
 | `apiKeyEnv` / `apiKeyFile` | `TYPESAFE_API_KEY` / `secrets.json` | 密钥来源;**相对路径按包根解析**(与 cwd 无关) |
 | `lowThreshold` / `highThreshold` | `0.5` / `0.7` | 四态阈值:`p < low` → allow;`low ≤ p < high` → revise;`p ≥ high` → block。737 条真实命令上得到 98.51% / 0.81% / 0.68% 三分 |
+| `reviseInAskMode` / `blockInAskMode` | `ask` / `ask` | 判定动作怎么随审批模式分叉:`ask` = 审批可用时转人工弹窗(人就在场,不该让 50% 的判断替人做决定);`deny` = 退回直接拒绝。`never`(全自动)下两者都仍是直接拒绝。**L0 的 `deny` 类硬规则不受此开关影响** —— 它永远拦死 |
 | `timeoutMs` | `1800` | 单次判定预算;超时一律放行(fail-open) |
 | `cacheSize` | `256` | 判定缓存条数 |
 | `inlineScripts` / `maxScriptBytes` | `true` / `8192` | 把被调用脚本的正文读进判定状态(实测把 `node x.mjs` 这类盲区从 0.31 提到 0.82);敏感路径自动跳过 |
@@ -118,8 +119,14 @@ node bin/guard.mjs status        # 期望:✅ 正常(降级时退出码为 3)
 
 | 判定 | `approval: ask`(会弹框) | `approval: never`(完全权限 / YOLO) |
 |---|---|---|
-| `revise` / `block` | **拒绝**(+ 降级模板) | 拒绝 **+ 一次性令牌提示** |
-| `escalate` | **DSH 弹审批框**,由人决定 | 拒绝 **+ 一次性令牌提示** |
+| `revise`(50–70%) | **转人工弹审批框** | 拒绝 **+ 降级模板 + 一次性令牌提示** |
+| `block`(≥70%,语义层) | **转人工弹审批框** | 拒绝 **+ 一次性令牌提示** |
+| L0 的 `deny` 类硬规则 | **拒绝**(不弹框、不发令牌) | **拒绝** |
+| L0 的 `ask` 类规则(`escalate`) | **DSH 弹审批框**,由人决定 | 拒绝 **+ 一次性令牌提示** |
+
+> **为什么 `ask` 模式下灰区和高分都交给人**:人就在场时,让一个 50.6% 的判断替人做决定没有道理;而 `never` 模式下没人可问,只能由阀门保守地拒。宿主没有应答者时审批是 **fail-closed**,所以转人工**不会**在无人值守时变成自动放行;弹窗只给 `allowed-once`,不留长期旁路。
+>
+> **L0 的 `deny` 类硬规则是绝对闸门**:两种模式都拦死,连 `retryLimit` 的"反复重试就交人"也不适用于它 —— 否则弹窗里点一次"允许"就绕过了硬地板(令牌不能越过 L0,审批同样不能)。
 
 > `danger-full-access` = `{ sandbox: 'danger-full-access', approval: 'never' }` —— **没有沙箱兜底、审批也等于关掉,阀门是唯一一层**。这正是它存在的意义,也是它判错时代价最大的场景。审计记录里会带上当次的沙箱档位(`preset`)与审批策略(`policy`),事后复盘能看出"当时后面还有没有沙箱"。
 

@@ -5,9 +5,13 @@
   "apiKeyEnv": "TYPESAFE_API_KEY",
   "apiKeyFile": "secrets.json",
 
-  "_thresholds": "低于 lowThreshold 放行;介于两者之间 = revise(建议换更安全的写法后重试);达到 highThreshold = block。实测在 737 条真实命令上 0.5/0.7 得到 98.51% / 0.81% / 0.68% 的三分。**注意**:完全权限(approval=never)会话里 revise 也会变成硬拦,所以这个值决定你被拦多频繁;有了下面的一次性令牌,宁可偏严 —— 真想少打扰就抬到 0.6/0.8。",
+  "_thresholds": "低于 lowThreshold 放行;介于两者之间 = revise(中间带:证据不足);达到 highThreshold = block。实测在 737 条真实命令上 0.5/0.7 得到 98.51% / 0.81% / 0.68% 的三分。",
   "lowThreshold": 0.5,
   "highThreshold": 0.7,
+
+  "_routing": "判定动作怎么随宿主审批模式分叉(2026-09-20 决定):never(全自动,没人可问)下 revise/block 一律直接拒绝;ask(人就在场)下都转人工弹窗 —— 否则等于让一个 50% 的判断替人做决定(实测一天里 9 次 revise 拒绝发生在 ask 模式下,人就在旁边)。宿主没有应答者时审批是 fail-closed,不会变成无人自动放行。填 'deny' 可单独关掉某一档、退回旧行为。**不适用于 L0 的 deny 类硬规则**(rm -rf / / mkfs / git push --force):两种模式都拦死,也不参与 retryLimit 升级 —— 令牌与审批都不得越过 L0。",
+  "reviseInAskMode": "ask",
+  "blockInAskMode": "ask",
 
   "_tokens": "一次性放行令牌:被拦的命令会在理由里附一个 ALLOW-XXXXXXXXXX,以及一行**绝对路径、命令原文不截断、引号已转义**的授权命令(整行复制进普通终端即可,普通终端里没有阀门)。令牌绑定命令哈希(空白差异不影响)、用掉即删、无法重放,且**不越过 L0 的永不允许规则**。授权入口要求交互终端 —— agent 自己跑会被拒。留空 = ~/.jev-guard/allow.txt",
   "tokens": true,

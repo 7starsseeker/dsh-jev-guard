@@ -13,7 +13,7 @@
  *
  *   node tools/report-result.mjs --show         只看当前全部结论
  *
- * 编号对照表在 docs/VERIFICATION.md(第 6–21 项 + U1–U3)。
+ * 编号对照表在 docs/VERIFICATION.md(第 6–22 项 + U1–U3)。
  * status: pass | fail | partial | blocked | skipped
  *
  * @module jev-guard/tools/report-result
@@ -87,6 +87,7 @@ async function writeSummary() {
     '9 令牌闭环 | 10 授权入口与理由文案 | 11 人工三通道 | 12 宿主审批通道',
     '13 额度降级(离线) | 14 降级在真实会话可见 | 15 ask 分支文案 | 16 跨平台入口守卫 | 17 Windows 引号',
     '18 收窄为 DSH 专用 | 19 清除非 DSH 痕迹 | 20 包内现状核对 | 21 改名后重启激活核对',
+    '22 判定动作随审批模式分叉(ask 转人工 / never 拦死 / L0 绝对闸门)',
     '',
     'U1–U3:人工介入三通道(令牌 / 宿主审批 / 人工手动执行)',
     '',

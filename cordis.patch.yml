@@ -16,11 +16,23 @@
 
         # 四态的两个阈值:
         #   p <  lowThreshold            → allow
-        #   lowThreshold ≤ p < high      → revise(拒绝 + 三种降级模板,让模型换写法重试)
-        #   p ≥  highThreshold           → block(拒绝,不再重试)
+        #   lowThreshold ≤ p < high      → revise(中间带:证据不足)
+        #   p ≥  highThreshold           → block
         # 实测依据:737 条真实命令上 0.5/0.7 = 98.51% / 0.81% / 0.68% 三分。
         lowThreshold: 0.5
         highThreshold: 0.7
+
+        # ── 判定动作怎么随宿主审批模式分叉(2026-09-20 用户决定,见 docs/DECISIONS.md D13)──
+        # 背景:以前只有 escalate 会看审批策略,revise / block 一律直接拒绝。实测代价是
+        # 一天里 9 次 revise 拒绝发生在 approval=ask 模式下 —— 人就在场,却拿不到弹窗,
+        # 一个 50% 的判断替人做了决定。
+        #   'ask' (默认)= 审批策略为 ask 时转人工弹窗(灰区/高分都交给人);
+        #   'deny'      = 维持旧行为,直接拒绝。
+        # 审批策略为 never(全自动,没人可问)时两者都仍然是直接拒绝。
+        # **不适用于 L0 的 deny 类硬规则**:rm -rf / / mkfs / git push --force 这类零误报的
+        # 不可逆操作,两种模式都拦死,也不参与 retryLimit 的升级(令牌与审批都不得越过 L0)。
+        reviseInAskMode: ask
+        blockInAskMode: ask
 
         # 单次判定预算;超时或报错一律放行(fail-open)——
         # 宿主自己的沙箱与审批策略仍在执行之前,阀门只是增量检查。

@@ -9,6 +9,8 @@
  *   · 事件名接对了(tools/pre-execute)
  *   · 返回的是 { kind: 'allow' | 'ask' | 'deny' }
  *   · 会话审批策略被正确读取(ask → 弹审批 / never → 直接拒绝 + 准确理由)
+ *   · 判定动作按审批策略路由:ask 下 revise 与 Jev 高分的 block 转人工;L0 的 deny 类硬规则
+ *     两种模式都拦死,且**不参与**重试预算升级
  *   · 重试预算会把反复重试升级为 escalate
  *   · 判定失败时 fail-open(返回 allow,交给原有管线)
  *
@@ -140,6 +142,23 @@ async function main() {
   process.stdout.write(`\n  重试预算三次调用:${r1.kind} / ${r2.kind} / ${r3.kind}\n`)
   process.stdout.write('note L0 必问项在审批可用时始终 ask(预算只影响 block/revise 的升级路径)\n')
 
+  // ---- L0 硬规则**不参与**重试预算升级(2026-09-20 修)----
+  // 预算的本意是"模型反复重写同一条破坏性命令时交给人";但 L0 的 deny 类硬规则是**绝对闸门**,
+  // 一旦被预算升级成 escalate,ask 模式下就会弹窗 —— 弹窗里点"允许"就等于绕过了 L0
+  // (令牌不能越过 L0,审批同样不能,见 D5/D13)。所以这里断言:反复重试仍然只有 deny。
+  const g = mockContext(apiKey)
+  apply(g.ctx, { tools: ['bash'], inlineScripts: false, retryLimit: 2 })
+  const handlerHard = g.handlers.get('tools/pre-execute')
+  const hardRuns = []
+  for (let i = 0; i < 4; i += 1) {
+    hardRuns.push((await handlerHard(fakeExec('git push --force origin main', 'hard-session'), nextAllow)).kind)
+  }
+  expectTrue(
+    'L0 硬规则连试 4 次始终是 deny(不被预算升级成弹窗)',
+    hardRuns.every(k => k === 'deny'),
+    hardRuns.join(' / '),
+  )
+
   // ---- 判定不可用时 fail-open ----
   const d = mockContext(undefined) // 没有凭据
   apply(d.ctx, { tools: ['bash'], inlineScripts: false })
@@ -156,6 +175,9 @@ async function main() {
     const h = e.handlers.get('tools/pre-execute')
     const destructive = await h(neverExec('rm -rf ~/dsh-cross-search'), nextAllow)
     expect('真实目录 rm -rf + 完全权限 → deny', destructive, 'deny')
+    // 同一条命令、审批可用时:Jev 高分(≥0.7)按 D13 转人工,而不是直接拒
+    const destructiveAsk = await h(fakeExec('rm -rf ~/dsh-cross-search'), nextAllow)
+    expect('真实目录 rm -rf + 审批可用 → ask(转人工弹窗)', destructiveAsk, 'ask', '审批请求')
   } else {
     process.stdout.write('\n(跳过联网用例:没有 TYPESAFE_API_KEY)\n')
   }
