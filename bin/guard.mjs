@@ -27,26 +27,59 @@ import {
   clearDegraded, enterDegraded, isDegraded, probeDue, readDegraded, resolveDegradedPath, statusText, warningLine,
 } from '../lib/quota.js'
 import { resolveTokenPath, grantToken, readTokens, revokeToken } from '../lib/token.js'
-import { DENY_RULES, ASK_RULES, staticRule } from '../lib/rules.js'
+import { DENY_RULES, ASK_RULES, ruleWhy, staticRule } from '../lib/rules.js'
 import { explain, fingerprint, shellName, shellQuote } from '../lib/verdict.js'
+import { LANGS, setLang, t } from '../lib/i18n.js'
 
 const HERE = dirname(fileURLToPath(import.meta.url))
 const ROOT = join(HERE, '..')
-const VERSION = '0.1.0'
+
+/** 带值的开关:它们的**值**不是位置参数(`judge 'x' --lang en` 里 `en` 不是命令)。 */
+const VALUED_FLAGS = new Set([
+  '--lang', '--file', '--tail', '--hours', '--cwd', '--policy', '--note', '--command-file', '--revoke',
+])
+
+/**
+ * 解析 `guard <子命令> [位置参数…] [--开关 [值]]`。
+ *
+ * 为什么不再用 `argv.indexOf('--x')`:位置参数与开关值混在一个数组里时,
+ * `--lang en`、`--tail 20` 的**值**会被下游当成一条待判定的命令或一个令牌,
+ * 而那种错法是静默的(命令照跑,只是内容变成了 `en`)。
+ */
+function parseArgv(argv) {
+  const positional = []
+  const flags = new Map()
+  let sub
+  for (let i = 0; i < argv.length; i += 1) {
+    const item = argv[i]
+    if (VALUED_FLAGS.has(item)) {
+      flags.set(item, argv[i + 1])
+      i += 1
+    } else if (item.startsWith('--')) {
+      flags.set(item, true)
+    } else if (sub === undefined) {
+      sub = item
+    } else {
+      positional.push(item)
+    }
+  }
+  return { sub, positional, flags }
+}
+
+const PARSED = parseArgv(process.argv.slice(2))
 
 /**
  * @param name - flag name including dashes.
  * @param fallback - value when the flag is absent.
- * @returns the following argument or the fallback.
+ * @returns the flag's value or the fallback.
  */
 function arg(name, fallback) {
-  const i = process.argv.indexOf(name)
-  return i > 0 ? process.argv[i + 1] : fallback
+  return PARSED.flags.has(name) ? PARSED.flags.get(name) : fallback
 }
 
 /** @param name - flag name including dashes. @returns whether it was passed. */
 function flag(name) {
-  return process.argv.includes(name)
+  return PARSED.flags.has(name)
 }
 
 /**
@@ -115,7 +148,7 @@ async function warnIfDegraded(cfg) {
   if (cfg.quotaGuard === false) return false
   const state = await readDegraded(cfg)
   if (!state) return false
-  process.stderr.write(`${warningLine(state)}\n  状态详情:node ${process.argv[1]} status\n`)
+  process.stderr.write(`${warningLine(state)}\n${t('cli.degraded.stateDetail', { cli: process.argv[1] })}\n`)
   return true
 }
 
@@ -153,7 +186,7 @@ const SELFTEST = [
  */
 function selftest() {
   let failed = 0
-  process.stdout.write(`L0 规则: deny ${DENY_RULES.length} 条 / ask ${ASK_RULES.length} 条\n\n`)
+  process.stdout.write(`${t('cli.selftest.header', { deny: DENY_RULES.length, ask: ASK_RULES.length })}\n\n`)
   for (const [command, wantAction, wantSource] of SELFTEST) {
     const rule = staticRule(command)
     const fast = rule ? undefined : prefilter(command)
@@ -164,17 +197,17 @@ function selftest() {
     process.stdout.write(`${ok ? 'ok  ' : 'FAIL'}  ${action.padEnd(8)} ${source.padEnd(12)} ${command}\n`)
   }
   process.stdout.write(failed === 0
-    ? `\nselftest: ${SELFTEST.length} 项全部通过(未联网)\n`
-    : `\nselftest: ${failed} 项失败\n`)
+    ? `\n${t('cli.selftest.pass', { total: SELFTEST.length })}\n`
+    : `\n${t('cli.selftest.fail', { failed })}\n`)
   return failed === 0 ? 0 : 1
 }
 
 /** Print the rule inventory. */
 function rules() {
-  process.stdout.write('# L0 deny(永不放行)\n')
-  for (const r of DENY_RULES) process.stdout.write(`- ${r.id.padEnd(28)} ${r.why}\n`)
-  process.stdout.write('\n# L0 ask(必须人工确认)\n')
-  for (const r of ASK_RULES) process.stdout.write(`- ${r.id.padEnd(28)} ${r.why}\n`)
+  process.stdout.write(`${t('cli.rules.denyHeader')}\n`)
+  for (const r of DENY_RULES) process.stdout.write(`- ${r.id.padEnd(28)} ${ruleWhy(r)}\n`)
+  process.stdout.write(`\n${t('cli.rules.askHeader')}\n`)
+  for (const r of ASK_RULES) process.stdout.write(`- ${r.id.padEnd(28)} ${ruleWhy(r)}\n`)
 }
 
 /**
@@ -182,8 +215,8 @@ function rules() {
  * @returns command strings.
  */
 async function readCommands() {
-  const rest = process.argv.slice(3).filter(a => !a.startsWith('--'))
-  if (rest.length > 0 && process.argv[2] === 'judge' && process.argv[3] !== '--stdin') return rest
+  const rest = PARSED.positional
+  if (rest.length > 0 && PARSED.sub === 'judge' && !flag('--stdin')) return rest
   const chunks = []
   for await (const chunk of process.stdin) chunks.push(chunk)
   return Buffer.concat(chunks).toString('utf8').split('\n').map(l => l.trim()).filter(l => l !== '' && !l.startsWith('#'))
@@ -222,7 +255,9 @@ async function cmdJudge() {
     }
     process.stdout.write(`${flag('--json') ? JSON.stringify(out) : `${verdict.action.padEnd(9)} ${String(out.p ?? '-').padEnd(5)} ${verdict.source.padEnd(12)} ${command}`}\n`)
     if (verdict.action !== 'allow') worst = 3
-    if (!flag('--json')) process.stdout.write(`          ↳ ${verdict.reason.replace(/\n/g, '\n          ')}\n`)
+    if (!flag('--json')) {
+      process.stdout.write(`${t('cli.reasonIndent', { reason: verdict.reason.replace(/\n/g, '\n          ') })}\n`)
+    }
   }
   return worst
 }
@@ -237,46 +272,51 @@ async function cmdLog() {
   /** 写入失败时给一句明确提示 —— 静默失败曾经让整套日志白跑一轮。 */
   const explainEmpty = () => {
     const err = lastLogError()
-    if (err) process.stdout.write(`⚠️  最近一次写入失败:${err}\n   (审计写入失败会被静默吞掉以免影响判定,所以在这里显式提示)\n`)
+    if (err) {
+      process.stdout.write(`${t('cli.log.writeError', { error: err })}\n${t('cli.log.writeErrorNote')}\n`)
+    }
   }
   if (flag('--stats')) {
     const hours = Number(arg('--hours', '24'))
     const s = await summarize({ logPath, since: Date.now() - hours * 3600 * 1000 })
-    process.stdout.write(`日志: ${logPath}\n`)
+    process.stdout.write(`${t('cli.log.header', { path: logPath })}\n`)
     if (s.total === 0) {
-      process.stdout.write(`近 ${hours} 小时没有记录。\n`)
+      process.stdout.write(`${t('cli.log.emptyRange', { hours })}\n`)
       explainEmpty()
       return 0
     }
-    process.stdout.write(`近 ${hours} 小时共 ${s.total} 条  (${s.firstAt} → ${s.lastAt})\n`)
-    process.stdout.write(`  fail-open(判定失败但放行): ${s.failOpen}\n`)
+    process.stdout.write(`${t('cli.log.total', { hours, total: s.total, first: s.firstAt, last: s.lastAt })}\n`)
+    process.stdout.write(`${t('cli.log.failOpen', { count: s.failOpen })}\n`)
     if (s.degraded > 0 || s.lastDegraded) {
-      process.stdout.write(`  ⚠️ 降级放行(额度/密钥类,没花钱): ${s.degraded} 条`
-        + `${s.lastDegraded ? `   最近:${s.lastDegraded.kind} @ ${String(s.lastDegraded.at).slice(11, 19)}Z` : ''}\n`)
+      const last = s.lastDegraded
+        ? t('cli.log.degradedLast', { kind: s.lastDegraded.kind, at: String(s.lastDegraded.at).slice(11, 19) })
+        : ''
+      process.stdout.write(`${t('cli.log.degraded', { count: s.degraded })}${last}\n`)
     }
     const line = (label, obj) => {
       const body = Object.entries(obj).sort((a, b) => b[1] - a[1]).map(([k, v]) => `${k}=${v}`).join('  ')
       process.stdout.write(`  ${label}: ${body || '—'}\n`)
     }
-    line('按动作', s.byAction)
-    line('按来源', s.bySource)
-    line('按规则', s.byRule)
-    if (Object.keys(s.byErrorKind).length > 0) line('失败分类', s.byErrorKind)
+    line(t('cli.log.byAction'), s.byAction)
+    line(t('cli.log.bySource'), s.bySource)
+    line(t('cli.log.byRule'), s.byRule)
+    if (Object.keys(s.byErrorKind).length > 0) line(t('cli.log.byErrorKind'), s.byErrorKind)
     // 成本可见性:只统计**记录到了 usage** 的那些调用,并如实说明覆盖率,不假装是全额。
     if (s.priced > 0) {
       const coverage = s.total > 0 ? Math.round((s.priced / s.total) * 100) : 0
-      process.stdout.write(`  语义判定成本: 约 $${s.costUsd.toFixed(4)}`
-        + `  (${s.inputTokens} 输入 token,${s.priced} 次调用有 usage 记录 ≈ 全部记录的 ${coverage}%;输出按官方说明免费)\n`)
+      process.stdout.write(`${t('cli.log.cost', {
+        cost: s.costUsd.toFixed(4), tokens: s.inputTokens, priced: s.priced, coverage,
+      })}\n`)
     } else {
-      process.stdout.write('  语义判定成本: 未记录(最近的调用没有返回 usage;升级前写入的旧记录也不含)\n')
+      process.stdout.write(`${t('cli.log.costUnknown')}\n`)
     }
     return 0
   }
   const tail = Number(arg('--tail', '20'))
   const records = await readTail({ logPath, tail })
-  process.stdout.write(`日志: ${logPath}  (最近 ${records.length} 条)\n\n`)
+  process.stdout.write(`${t('cli.log.recent', { path: logPath, count: records.length })}\n\n`)
   if (records.length === 0) {
-    process.stdout.write('还没有记录。装好阀门后,每个判定都会写到这里。\n')
+    process.stdout.write(`${t('cli.log.emptyFile')}\n`)
     explainEmpty()
     return 0
   }
@@ -311,21 +351,19 @@ async function cmdStatus() {
 
   if (flag('--clear')) {
     const removed = await clearDegraded({ degradedPath: arg('--file', cfg.degradedPath) })
-    process.stdout.write(removed
-      ? '已清除降级状态。下一条命令会重新尝试联网判定(失败会再次进入降级)。\n'
-      : '当前没有降级状态,无需清除。\n')
+    process.stdout.write(`${t(removed ? 'cli.status.cleared' : 'cli.status.nothingToClear')}\n`)
     return 0
   }
 
   const state = await readDegraded({ degradedPath: arg('--file', cfg.degradedPath) })
   const now = Date.now()
   process.stdout.write(`${statusText(state, now, { apiKeyPresent: Boolean(cfg.apiKey) })}\n`)
-  process.stdout.write(`\n  状态文件: ${resolveDegradedPath({ degradedPath: cfg.degradedPath })}${state ? '' : '(不存在 = 健康)'}\n`)
-  process.stdout.write('  说明:降级 = 停用**要花钱的语义判定**;免费的 L0 规则与预筛照常工作'
-    + `(当前 degradePolicy=${cfg.degradePolicy ?? 'l0-only'})。\n`)
-  if (state && probeDue(state, now)) {
-    process.stdout.write('  注意:冷却已到期,下一条命令会自动发一次探测请求(成功即恢复)。\n')
-  }
+  process.stdout.write(`${t('cli.status.stateFile', {
+    path: resolveDegradedPath({ degradedPath: cfg.degradedPath }),
+    missing: state ? '' : t('cli.status.stateFileMissing'),
+  })}\n`)
+  process.stdout.write(`${t('cli.status.explainer', { policy: cfg.degradePolicy ?? 'l0-only' })}\n`)
+  if (state && probeDue(state, now)) process.stdout.write(`${t('cli.status.probeDue')}\n`)
   return state ? 3 : 0
 }
 
@@ -353,34 +391,25 @@ async function cmdAllow() {
   // 人在自己的终端里跑时 stdin 是 TTY,agent 的工具调用不是,这就是分界线。
   const fromFile = arg('--command-file')
   if (!flag('--list') && fromFile === undefined && !process.stdin.isTTY) {
-    const target = process.argv.slice(3).filter(a => !a.startsWith('--')).join(' ') || '<原命令>'
+    const target = PARSED.positional.join(' ') || '<original command>'
     const line = `node ${process.argv[1]} allow ${shellQuote(target, process.platform)}`
-    process.stderr.write(
-      '授权必须在交互终端里执行:当前检测到非交互环境(不是 TTY)。\n'
-      + '这是有意的 —— 否则被监管的 AI 就能给自己授权,阀门形同虚设。\n\n'
-      + `请让用户在最普通的终端窗口(${shellName(process.platform)})里复制执行下面这一行:\n\n`
-      + `  ${line}\n\n`
-      + 'Windows 的 cmd.exe 不支持上面这种引号写法 —— 那种情况改用与 shell 无关的入口:\n'
-      + '把命令原文**原样**写进一个文件(比如 cmd.txt),然后执行\n\n'
-      + `  node ${process.argv[1]} allow --command-file cmd.txt\n\n`
-      + '然后让 AI 重试同一条命令,即可放行一次。\n',
-    )
+    process.stderr.write(`${t('cli.allow.needsTty', {
+      shell: shellName(process.platform), line, cli: process.argv[1],
+    })}\n`)
     return 3
   }
 
   const revoke = arg('--revoke')
   if (revoke) {
     const { removed, remaining } = await revokeToken(revoke, { tokenPath })
-    process.stdout.write(removed > 0
-      ? `已撤销 ${removed} 个令牌(剩余 ${remaining})\n`
-      : `没找到该令牌(当前共 ${remaining} 个)\n`)
+    process.stdout.write(`${t(removed > 0 ? 'cli.allow.revoked' : 'cli.allow.notFound', { removed, remaining })}\n`)
     return removed > 0 ? 0 : 1
   }
 
   if (flag('--list')) {
     const tokens = await readTokens(tokenPath)
-    process.stdout.write(`令牌文件: ${tokenPath}\n`)
-    process.stdout.write(tokens.length === 0 ? '  (空)\n' : `${tokens.map(t => `  ${t}`).join('\n')}\n`)
+    process.stdout.write(`${t('cli.allow.fileHeader', { path: tokenPath })}\n`)
+    process.stdout.write(tokens.length === 0 ? `${t('cli.allow.fileEmpty')}\n` : `${tokens.map(x => `  ${x}`).join('\n')}\n`)
     return 0
   }
 
@@ -392,24 +421,35 @@ async function cmdAllow() {
     try {
       command = (await readFile(fromFile, 'utf8')).replace(/\r?\n$/, '')
     } catch (error) {
-      process.stderr.write(`读不到 --command-file 指定的文件:${fromFile}(${String(error?.message ?? error)})\n`)
+      process.stderr.write(`${t('cli.allow.readFileError', { path: fromFile, error: String(error?.message ?? error) })}\n`)
       return 2
     }
   } else {
-    command = process.argv.slice(3).filter(a => !a.startsWith('--')).join(' ')
+    command = PARSED.positional.join(' ')
   }
   if (command.trim() === '') {
-    process.stderr.write('用法: guard allow \'<命令原文>\'  |  --command-file <文件>  |  --list  |  --revoke ALLOW-XXXXXXXXXX\n')
+    process.stderr.write(`${t('cli.allow.usage')}\n`)
     return 2
   }
   const { token, already } = await grantToken(command, { tokenPath, note: arg('--note') })
   process.stdout.write(already
-    ? `这条命令已有令牌:${token}(重试同一条命令即可放行一次)\n`
-    : `已写入一次性令牌:${token}\n  文件:${tokenPath}\n  下一次执行**完全相同的命令**时生效,用掉即删除。\n`)
+    ? `${t('cli.allow.already', { token })}\n`
+    : `${t('cli.allow.granted', { token })}\n${t('cli.allow.grantedFile', { path: tokenPath })}\n${t('cli.allow.grantedNote')}\n`)
   return 0
 }
 
-const sub = process.argv[2]
+const sub = PARSED.sub
+
+// 语言必须在**任何输出之前**定下来 —— 包括下面那句降级告警与最后那行用法提示。
+// 优先级:`--lang` 开关 > config.json 的 `lang` > 环境变量/系统 locale(JEV_GUARD_LANG、
+// LANG、Intl)> zh-CN。config.json 单独读一次不算浪费:子命令本来各自会再读一次。
+const langPick = setLang(arg('--lang') ?? (await loadConfig()).lang)
+if (!langPick.known) {
+  process.stderr.write(`${t('cli.lang.unknown', {
+    lang: arg('--lang'), langs: LANGS.join(', '), used: langPick.lang,
+  })}\n`)
+}
+
 // 除下面这些之外,任何子命令在降级状态下都先在 stderr 说一句 —— 免得你以为它还在完整工作。
 //   · status:它的全部工作就是把状态说清楚,不需要再叠一句;
 //   · judge:每条判定的**理由里已经带了同一句告警**(lib/verdict.js 的 warn),再说就是第三遍;
@@ -427,5 +467,5 @@ const code = sub === 'selftest' ? selftest()
   : sub === 'status' ? await cmdStatus()
   : sub === 'allow' ? await cmdAllow()
   : sub === 'judge' ? await cmdJudge()
-  : (process.stderr.write('用法: guard <judge|log|status|allow|selftest|rules> [选项]\n'), 2)
+  : (process.stderr.write(`${t('cli.usage')}\n`), 2)
 process.exit(code ?? 0)

@@ -1,7 +1,7 @@
 {
   "name": "dsh-jev-guard",
-  "version": "0.3.1",
-  "description": "DSH 的执行前安全阀门:用 TypeSafe Jev 判定 shell 命令/脚本是否会不可逆地删除或覆盖真实数据。四态(allow/revise/block/escalate),挂在 tools/pre-execute 上。零依赖;支持 WSL/Linux(bash)与 Windows(pwsh);含一次性令牌、额度耗尽降级、共享审计日志。",
+  "version": "0.4.0",
+  "description": "Pre-execution safety valve for DeepSeek Harness: a TypeSafe Jev question decides whether a shell command/script would irreversibly delete or overwrite real data. Four states (allow/revise/block/escalate), mounted on tools/pre-execute. Zero dependencies; WSL/Linux (bash) and Windows (pwsh); one-shot tokens, credit-exhaustion degradation, shared audit log; bilingual (zh-CN / en) messages.",
   "keywords": [
     "deepseek-harness",
     "dsh",
@@ -58,6 +58,7 @@
     "cordis.patch.yml",
     "config.example.json",
     "README.md",
+    "README.zh-CN.md",
     "DEPLOY.md"
   ],
   "license": "MIT",

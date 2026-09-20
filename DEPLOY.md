@@ -50,6 +50,19 @@
 
 三种都不要提交进任何仓库。
 
+### 2.2b 语言(可选,不配也能跑)
+
+文案(判定理由 / CLI 输出 / 降级告警)有中英两份,`lang` 默认 `'auto'`:
+按 `JEV_GUARD_LANG` → `LC_ALL`/`LC_MESSAGES`/`LANG` 解析,**只有当这些变量真的指明了一种受支持的语言**
+(如 `en_US.UTF-8` / `zh_CN.UTF-8`)才生效;否则(含 `C.UTF-8`、未设置)一律用 `zh-CN`。
+**这里刻意不看系统 locale**:WSL 常见的 `LANG=C.UTF-8` 下 Node 的 `Intl` 会报 `en-US`,
+那会让中文会话的理由悄悄变英文(2026-09-20 实测)。想显式选语言:`config.json` 里写 `"lang": "en"`,
+给 DSH 进程设 `JEV_GUARD_LANG=en`,或 CLI 单次 `--lang en`。
+
+**别顺手改 `promptLang`。** 它管的是发给判定服务的那句问话,默认中文,正是阈值 0.5/0.7 的标定语言;
+实测换成英文后 p 平均压低约 0.04,且有三条探针翻向放行(`docs/MEASUREMENTS.md` §14)。
+真要切:先重标定,或把两个阈值一起下调约 0.04。
+
 ### 2.3 先证明判定层能工作(还没装进 DSH)
 
 ```bash
@@ -67,10 +80,10 @@ node bin/guard.mjs judge 'ls -la' 'git push --force origin main' 'pnpm test'
 
 失败时:`source: error` = 密钥或网络问题(看 `errorKind` 分类);`selftest` 失败 = 包不完整。
 
-**再跑一次整套离线自检**(六份,跨平台):
+**再跑一次整套离线自检**(七份,跨平台):
 
 ```bash
-for t in selftest-entry selftest-quota selftest-reason selftest-token selftest-rules selftest-audit; do
+for t in selftest-entry selftest-i18n selftest-quota selftest-reason selftest-token selftest-rules selftest-audit; do
   printf '%-18s ' "$t"; node tools/$t.mjs | tail -1
 done
 ```
@@ -128,7 +141,7 @@ node bin/guard.mjs status            # 健康状态(降级时退出码 3)
 ## 5. 总验收清单
 
 - [ ] `node bin/guard.mjs selftest` 12/12
-- [ ] 六份 `tools/selftest-*.mjs` 全过(**Windows 与 WSL 各跑一遍**)
+- [ ] 七份 `tools/selftest-*.mjs` 全过(**Windows 与 WSL 各跑一遍**)
 - [ ] `judge 'ls -la'` = allow / prefilter(零网络调用)
 - [ ] `judge 'git push --force origin main'` = block / static-rule
 - [ ] `judge 'rm -rf ~/某个真实目录'` = revise 或 block(联网判定)

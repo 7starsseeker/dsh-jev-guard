@@ -19,6 +19,7 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { flush, record } from '../../lib/audit.js'
 import { DEFAULTS, evaluateCommand } from '../../lib/gate.js'
+import { setLang, getLang } from '../../lib/i18n.js'
 import { RetryBudget, fingerprint, reviseGuidance, toHostDecision } from '../../lib/verdict.js'
 
 /** Package root (adapters/dsh/ → ../..), so every adapter reads the same config.json. */
@@ -149,6 +150,11 @@ export function apply(ctx, config = {}) {
     ...loadConfigFile(),
     ...config,
   }
+  // 语言在这里定一次:拒绝理由 / 弹窗正文 / 一次性令牌提示都是人读的文案。
+  // `lang: 'auto'`(默认)按 JEV_GUARD_LANG → locale 环境变量 → 系统 locale → zh-CN 解析。
+  // 注意它**不影响**发给 Jev 的那句问话 —— 那是 promptLang,默认仍是标定用的中文。
+  setLang(cfg.lang)
+
   const cache = new (class {
     constructor(limit) {
       this.limit = limit
@@ -174,8 +180,9 @@ export function apply(ctx, config = {}) {
   let lastDegradedKey = ''
 
   ctx.logger?.info?.(
-    'jev-guard: gating %s (low=%s high=%s timeout=%sms key=%s)',
+    'jev-guard: gating %s (low=%s high=%s timeout=%sms key=%s lang=%s promptLang=%s)',
     cfg.tools.join(','), cfg.lowThreshold, cfg.highThreshold, cfg.timeoutMs, cfg.apiKeyEnv,
+    getLang(), cfg.promptLang,
   )
 
   ctx.on('tools/pre-execute', async (exec, next) => {

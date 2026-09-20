@@ -17,7 +17,13 @@ import { existsSync } from 'node:fs'
 import { isAbsolute, join } from 'node:path'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { setLang } from '../lib/i18n.js'
 import { explain, reviseGuidance, shellName, shellQuote, toHostDecision } from '../lib/verdict.js'
+
+// 本文件的断言写的是**中文文案本身**(哪些句子必须出现 / 必须不出现),所以先把语言钉死 ——
+// 否则同一份自检在英文 locale 的机器上会无缘无故地红。英文那一侧由
+// `tools/selftest-i18n.mjs` 覆盖:它断言目录完整性、两语言键集合一致,以及英文理由的形状。
+setLang('zh-CN')
 
 let failed = 0
 let checks = 0

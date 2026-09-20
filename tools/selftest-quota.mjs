@@ -15,10 +15,14 @@ import { mkdtemp, readFile, readdir, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { DEFAULTS, evaluateCommand } from '../lib/gate.js'
+import { setLang } from '../lib/i18n.js'
 import {
   KINDS, classifyFailure, clearDegraded, enterDegraded, isDegraded, probeDue, readDegraded, statusText, warningLine,
 } from '../lib/quota.js'
 import { explain } from '../lib/verdict.js'
+
+// 下面的断言读的是中文文案(告警行、状态报告),先把语言钉死;英文侧见 selftest-i18n。
+setLang('zh-CN')
 
 let failed = 0
 let checks = 0

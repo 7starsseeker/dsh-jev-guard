@@ -54,6 +54,8 @@ const env = {
   ...process.env,
   JEV_GUARD_HOME: HOME,
   JEV_GUARD_AUDIT_LOG: join(HOME, 'guard.log'),
+  // 语言钉死:下面几条断言读的是中文输出,不该随运行机器的 locale 变色。
+  JEV_GUARD_LANG: 'zh-CN',
 }
 
 /** 以入口身份运行一个脚本。 */
@@ -67,6 +69,21 @@ expect('guard selftest 输出 12 项结论(不是"什么都不做地成功退出
 const status = run(CLI, { args: ['status'] })
 expect('guard status 作为入口被执行 → 有输出', /Jev 安全阀门/.test(status.stdout), status.stdout.slice(0, 120))
 expect('guard status 在健康时退出码 0', status.status === 0, `status=${status.status}`)
+
+// ── 1b. 语言:入口必须能切换文案,而**不动判定** ────────────────────────────────
+// 三个入口都要看:`--lang`(显式)、`JEV_GUARD_LANG`(环境)、以及"开关的值不是位置参数"。
+const enStatus = run(CLI, { args: ['status', '--lang', 'en'] })
+expect('guard status --lang en → 英文输出', /Jev guard: healthy/.test(enStatus.stdout), enStatus.stdout.slice(0, 120))
+const enByEnv = run(CLI, { args: ['status'], extraEnv: { JEV_GUARD_LANG: 'en' } })
+expect('JEV_GUARD_LANG=en 生效(不需要改配置)', /Jev guard: healthy/.test(enByEnv.stdout), enByEnv.stdout.slice(0, 120))
+const enSelftest = run(CLI, { args: ['selftest', '--lang', 'en'] })
+expect('guard selftest --lang en → 英文结论', /all 12 checks passed/.test(enSelftest.stdout), enSelftest.stdout.slice(0, 120))
+const judgeLang = run(CLI, { args: ['judge', 'ls -la', '--lang', 'en'] })
+// 判定行 + 理由行 = 2 行。若 `--lang` 的**值**被当成了一条命令,这里会多出两行
+// (而且会真的去问一次 API)—— 那种错法必须在这里被抓住。
+expect('--lang 的值不会被当成待判定的命令', judgeLang.stdout.trim().split('\n').length === 2, judgeLang.stdout.slice(0, 200))
+const badLang = run(CLI, { args: ['status', '--lang', 'klingon'] })
+expect('无法识别的语言 → 退回原语言并在 stderr 说明', /klingon/.test(badLang.stderr) && badLang.status === 0, badLang.stderr.slice(0, 160))
 
 // ── 2. 工具脚本:作为入口被执行时要有产出 ─────────────────────────────────────
 const extract = run(EXTRACTOR, { args: ['--limit', '1'], extraEnv: { DSH_HOME: join(HOME, 'no-such-dsh') } })

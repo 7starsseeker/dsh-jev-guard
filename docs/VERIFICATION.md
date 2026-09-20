@@ -61,6 +61,7 @@ node bin/guard.mjs judge 'ls -la /var/log 2>/dev/null'
 
 ```bash
 node tools/selftest-audit.mjs             # 掩码/追加/轮转/汇总/空白 logPath
+node tools/selftest-i18n.mjs              # 双语文案:目录完整性/占位符/英文残留/promptLang 不随界面语言
 node bin/guard.mjs log --tail 5           # 运行实例里真的有记录
 node bin/guard.mjs log --stats
 ```
@@ -186,6 +187,30 @@ node tools/smoke-dsh-adapter.mjs    # 10 组:含"L0 硬规则连试 4 次始终�
 标 `partial`。批准一次之后记得确认:被批准的那条命令**确实执行了**(`kind: 'ask'` 经宿主审批后放行),
 说明转人工不是"拦截换了个说法"。
 
+### 23 · 双语文案与语言开关
+
+机制见 [`DECISIONS.md`](./DECISIONS.md) **D14**,实测见 [`MEASUREMENTS.md`](./MEASUREMENTS.md) §14。
+
+```bash
+node tools/selftest-i18n.mjs          # 24 例:两语言同键/占位符一致/英文无残留中文/问话不受界面语言影响
+node tools/selftest-entry.mjs         # 20 例:含 --lang / JEV_GUARD_LANG / "开关的值不是位置参数"
+```
+
+真机四条(每条都要**两种语言各看一眼**):
+
+| 场景 | 命令 | 期望 |
+|---|---|---|
+| 默认语言 | `node bin/guard.mjs status` | 未显式设置时 = `zh-CN`(不看系统 locale;见 D14 里 WSL `en-US` 兜底值那次教训) |
+| 显式切换 | `node bin/guard.mjs status --lang en` | 全英文;`--lang zh-CN` 全中文 |
+| 环境变量 | `JEV_GUARD_LANG=en node bin/guard.mjs rules` | 规则清单理由变英文(规则 id 不变) |
+| 判定不变 | 同一批命令各语言跑一次 `judge --json` | `action` / `p` / `source` **逐字段一致**,只有理由文案不同 |
+
+**判定:** 离线两套全过 + 真机四条符合。**只跑一种语言不算过** —— 这一项验的正是"两种语言下判定一致、
+文案各自正确"。另需确认:改 `lang` **不得**改变 `guard.log` 里的 action/decision(可用同一批命令前后对比)。
+
+> `promptLang` 不在本项的通过条件里:它不是文案开关而是一个判定参数,切它属于重标定,
+> 见 MEASUREMENTS §14 —— 拿 `tools/probe-prompt-lang.mjs --repeat 3` 重新量过才算数。
+
 ---
 
 ## C. 人工介入三通道(任何机器都要跑)
@@ -243,6 +268,7 @@ node tools/smoke-dsh-adapter.mjs    # 10 组:含"L0 硬规则连试 4 次始终�
 | 20 | 包内现状核对(只描述 DSH) | 见 `SUMMARY.md` |
 | 21 | 改名 `dsh-jev-guard` 后重启激活核对 | 见 `SUMMARY.md` |
 | 22 | 判定动作随审批模式分叉(`ask` 转人工 / `never` 拦死 / L0 绝对闸门) | 见 `SUMMARY.md` |
+| 23 | 双语文案与语言开关(两种语言下判定一致) | 见 `SUMMARY.md` |
 | U1–U3 | 人工介入三通道 | 记在 11 / 12 |
 
 历史:本清单早期还有几条"别的执行通道能不能承载拦截"的前置验证(编号 1–5),已随

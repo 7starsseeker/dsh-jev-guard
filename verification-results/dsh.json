@@ -1,6 +1,6 @@
 {
   "host": "dsh",
-  "updatedAt": "2026-09-20T08:04:08.653Z",
+  "updatedAt": "2026-09-20T14:18:39.104Z",
   "items": {
     "6": {
       "status": "pass",
@@ -120,6 +120,13 @@
       "notes": "",
       "question": "",
       "at": "2026-09-20T07:53:56.640Z"
+    },
+    "23": {
+      "status": "pass",
+      "evidence": "双语与语言开关:1) 离线 selftest-i18n 26 例全过(两语言同键/占位符一致/英文无残留中文/规则 why 双语齐全/界面语言不进请求体 —— 中英两种界面构造出逐字节相同的 state 与问话)。2) 真机 win32:同一批 5 条命令(block-device-write / prefilter / git-force-push / git-reset-hard / truncate-file)用 --lang zh-CN 与 --lang en 各跑一次 guard judge --json,action/source/p/rule.id/decision/usage 逐字段一致,唯一差异是本地化的 rule.why。3) 三条入口都验过:--lang en、JEV_GUARD_LANG=en、以及默认 auto(本机 LANG=C.UTF-8 + Intl=zh-CN → 中文,行为不变)。4) 顺带修掉一个真缺陷:--lang 的值以前会被当成待判定的命令(guard judge 'x' --lang en 会多判一条 en),现在参数解析一次性完成并有断言守着。",
+      "notes": "promptLang 不在本项通过条件内:它是判定参数不是文案开关,切它属于重标定(MEASUREMENTS §14:英文问话 12/21 更低、平均 -0.043、三条翻带全朝放行、噪声地板 0.015;两轮独立运行一致)。默认保持 zh-CN。",
+      "question": "",
+      "at": "2026-09-20T14:18:39.104Z"
     },
     "6-pre": {
       "status": "pass",

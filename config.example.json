@@ -5,6 +5,11 @@
   "apiKeyEnv": "TYPESAFE_API_KEY",
   "apiKeyFile": "secrets.json",
 
+  "_lang": "界面/文案语言:'auto'(默认)按 JEV_GUARD_LANG -> LC_ALL/LC_MESSAGES/LANG(仅当它们指明受支持的语言)解析,都不指明就用 zh-CN;也可直接写 'zh-CN' 或 'en' 钉死。**刻意不看系统 locale/Intl**:LANG=C.UTF-8 这类「没有偏好」的值下,Node 会报 en-US 兜底值,那会让中文会话的理由悄悄变英文(2026-09-20 实测踩过)。它换的只是**给人或模型看的话**(判定理由、规则理由、CLI 输出、降级告警),不改变任何一条判定路径。CLI 另有 --lang 开关。",
+  "lang": "auto",
+  "_promptLang": "发给判定服务的那句问话(以及 state 的键)用什么语言,默认 'zh-CN'。**它不是界面语言的翻译项,而是一个判定参数**:阈值 0.5/0.7 是在中文问话上标定的;实测换成英文问话后 21 条探针里 12 条 p 更低,平均压低约 0.04,并有三条命令翻带且方向全部朝放行(见 docs/MEASUREMENTS.md §14)。要切英文,请先重标定或把阈值下调约 0.04。",
+  "promptLang": "zh-CN",
+
   "_thresholds": "低于 lowThreshold 放行;介于两者之间 = revise(中间带:证据不足);达到 highThreshold = block。实测在 737 条真实命令上 0.5/0.7 得到 98.51% / 0.81% / 0.68% 的三分。",
   "lowThreshold": 0.5,
   "highThreshold": 0.7,

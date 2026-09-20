@@ -14,6 +14,27 @@
           - bash
           - pwsh
 
+        # ── 语言(2026-09-20,见 docs/DECISIONS.md D14)────────────────────────────
+        # lang = **给人或模型看的话**用什么语言:判定理由、L0 规则理由、CLI 输出、降级告警。
+        #   默认 'auto':按 JEV_GUARD_LANG → LC_ALL/LC_MESSAGES/LANG(仅当它们指明受支持的语言);
+        #   都不指明就用 zh-CN。刻意不看系统 locale:LANG=C.UTF-8 下 Node 的 Intl 会报 en-US,
+        #   那会让中文会话的理由悄悄变英文(2026-09-20 实测踩过)。只换文案,不动判定路径。
+        #
+        # 这两项**故意留空**(不像阈值那样在这里写死):语言是"这台机器/这个人"的偏好,
+        # 而本文件的优先级高于 config.json —— 写在这里就等于让 `config.json` 里的语言设置失效。
+        # 想换语言,任选一种:
+        #   · config.json 里写 "lang": "en"(或 "zh-CN" 固定中文);
+        #   · 给 DSH 进程设 JEV_GUARD_LANG=en;
+        #   · CLI 单次用 --lang en。
+        # lang: auto
+
+        # promptLang = **发给判定服务的那句问话**与 state 的键用什么语言,默认 'zh-CN'。
+        # 它不是界面语言的翻译项,而是一个判定参数:阈值 0.5/0.7 是在中文问话上标定的
+        # (114 例)。实测换英文问话后:21 条探针 18 条同带、12 条 p 更低(平均 -0.04),
+        # 三条翻带且方向全部朝放行(见 docs/MEASUREMENTS.md §14)。
+        # 要用英文问话,先重标定,或把两个阈值下调约 0.04。
+        # promptLang: zh-CN
+
         # 四态的两个阈值:
         #   p <  lowThreshold            → allow
         #   lowThreshold ≤ p < high      → revise(中间带:证据不足)
