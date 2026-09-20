@@ -22,8 +22,14 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { setLang, t } from '../lib/i18n.js'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
+
+// `SUMMARY.md` 是**入库给人读**的产物,所以它的默认语言是英文(与仓库里其它文档一致),
+// 而不是这里默认的 zh-CN:换机器重新生成不该让它的语言漂移。要中文就 JEV_GUARD_LANG=zh-CN。
+// 注意证据列里的正文是**逐字引用**(dsh.json 里记录的原话),不翻译 —— 那是史料,不是文案。
+setLang(process.env.JEV_GUARD_LANG ?? 'en')
 const OUT_DIR = join(ROOT, 'verification-results')
 const STATUSES = new Set(['pass', 'fail', 'partial', 'blocked', 'skipped'])
 
@@ -68,30 +74,30 @@ async function writeSummary() {
   for (const host of hosts) {
     const data = await readHost(host)
     for (const [item, r] of Object.entries(data.items ?? {})) {
-      if (r.status === 'blocked' && r.question) blocked.push(`- **${host} / 第 ${item} 项**:${r.question}`)
+      if (r.status === 'blocked' && r.question) blocked.push(t('summary.blockedItem', { host, item, question: r.question }))
     }
   }
   const md = [
-    '# 验证结果汇总(DSH)',
+    t('summary.title'),
     '',
-    '由 `tools/report-result.mjs` 自动生成。编号对照表在 `docs/VERIFICATION.md`。',
+    t('summary.generatedBy'),
     '',
-    '| 宿主 | 验证项 | 结论 | 证据 | 时间 |',
+    `| ${t('summary.colHost')} | ${t('summary.colItem')} | ${t('summary.colStatus')} | ${t('summary.colEvidence')} | ${t('summary.colTime')} |`,
     '|---|---|---|---|---|',
-    ...(rows.length > 0 ? rows : ['| — | — | — | 还没有任何结论 | — |']),
+    ...(rows.length > 0 ? rows : [`| — | — | — | ${t('summary.empty')} | — |`]),
     '',
-    ...(blocked.length > 0 ? ['## 需要主控 AI / 人介入的问题', '', ...blocked, ''] : []),
-    '## 验证项编号(详见 docs/VERIFICATION.md)',
+    ...(blocked.length > 0 ? [t('summary.blockedHeading'), '', ...blocked, ''] : []),
+    t('summary.indexHeading'),
     '',
-    '6-pre 适配器冒烟 + 真实工具管线 | 6 安装后 probe 被拦 | 7 误报防线 | 8/8-fix 审计日志',
-    '9 令牌闭环 | 10 授权入口与理由文案 | 11 人工三通道 | 12 宿主审批通道',
-    '13 额度降级(离线) | 14 降级在真实会话可见 | 15 ask 分支文案 | 16 跨平台入口守卫 | 17 Windows 引号',
-    '18 收窄为 DSH 专用 | 19 清除非 DSH 痕迹 | 20 包内现状核对 | 21 改名后重启激活核对',
-    '22 判定动作随审批模式分叉(ask 转人工 / never 拦死 / L0 绝对闸门)',
+    t('summary.index.0'),
+    t('summary.index.1'),
+    t('summary.index.2'),
+    t('summary.index.3'),
+    t('summary.index.4'),
     '',
-    'U1–U3:人工介入三通道(令牌 / 宿主审批 / 人工手动执行)',
+    t('summary.channels'),
     '',
-    '发布与仓库核对记录见 [publish.json](./publish.json)(不在本表的验证项内)。',
+    t('summary.publish'),
     '',
   ].join('\n')
   await writeFile(join(OUT_DIR, 'SUMMARY.md'), md, 'utf8')

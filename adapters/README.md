@@ -1,35 +1,37 @@
-# adapters/ — 只有一个适配器
+# adapters/ — there is only one adapter
 
-**这里只有"翻译",没有判定。** 判定、规则、令牌、审计全在 [`lib/`](../lib/),那里的代码里
-不含任何 DSH 机制(没有 Cordis、没有 ctx、没有 `PreToolDecision`)。
-`lib/` 之所以保持独立,不是因为要接别的调用方,而是因为**判定逻辑不该知道谁在调用它** ——
-这样才能被 `bin/guard.mjs` 离线复跑、被七份自检覆盖。
+> **English** | [简体中文](README.zh-CN.md)
 
-| 目录 | 拦截形态 | 拦截力 |
+**Here there is only "translation", no judging.** Judging, rules, tokens and the audit log all live in [`lib/`](../lib/), and the code there
+contains no DSH mechanism at all (no Cordis, no ctx, no `PreToolDecision`).
+The reason `lib/` stays independent is not that other callers are going to be attached, but that **the judging logic should not know who is calling it** —
+only that way can it be re-run offline by `bin/guard.mjs` and covered by the seven self-checks.
+
+| Directory | Form of interception | Interception force |
 |---|---|---|
-| `dsh/` | DSH 原生 Cordis 插件,挂 `tools/pre-execute` | **强制** |
+| `dsh/` | DSH-native Cordis plugin, hooks `tools/pre-execute` | **mandatory** |
 
-## 为什么只有这一个(2026-09-20,详见 ../docs/DECISIONS.md D11)
+## Why there is only this one (2026-09-20, see ../docs/DECISIONS.md D11 for details)
 
-历史上试过几种"把阀门挂进别的执行通道"的路线,都没做成 —— 各自宿主的审批/信任机制不同,
-把它们做扎实是各自独立的一轮工作;其中一次实测还暴露出一个结构性缺陷(**拿不到的信息
-被一个默认值假装成拿到了**),修它要重做那套输出契约。于是收窄为只做 DSH。
+Several routes for "hanging the valve into another execution channel" were tried historically, and none of them worked out — each host's approval/trust
+mechanism is different, and making any one of them solid is a separate round of work of its own; one measurement also exposed a structural defect (**information
+that could not be obtained was pretended to be obtained by a default value**), and fixing it would mean redoing that output contract. So the scope was narrowed to DSH only.
 
-**判断标准就一条:那个宿主有没有"执行前必须经过、且能说不许执行"的回调。** 没有就只能做建议层,
-而**未验证的适配器比没有适配器更危险** —— 它看起来装了阀门,实际不拦。
-那些尝试过的实现与逐条原因**已随范围收窄一并移除**(本包不留未验证的代码);保留下来的可迁移教训见
-[`../docs/MEASUREMENTS.md`](../docs/MEASUREMENTS.md) §12 与 [`../docs/DECISIONS.md`](../docs/DECISIONS.md) D11。
+**There is only one criterion: does that host have a callback that execution must pass through, and that can say you may not run this.** Without one you can only build a suggestion layer,
+and **an unverified adapter is more dangerous than no adapter** — it looks like the valve is installed while in fact nothing is blocked.
+Those attempted implementations and the per-item reasons **were removed along with the narrowing of scope** (this package keeps no unverified code); the transferable lessons that were kept are in
+[`../docs/MEASUREMENTS.md`](../docs/MEASUREMENTS.md) §12 and [`../docs/DECISIONS.md`](../docs/DECISIONS.md) D11.
 
-## 写第二个适配器时的四条铁律
+## The four iron laws for writing a second adapter
 
-真要接别的宿主(或把归档的拿回来),先读 [`../docs/DSH-INTEGRATION.md`](../docs/DSH-INTEGRATION.md) §5 与
-`../docs/MEASUREMENTS.md` §10 —— 那里记着三层真实事故。四条:
+If you really are going to attach another host (or bring the archived one back), first read [`../docs/DSH-INTEGRATION.md`](../docs/DSH-INTEGRATION.md) §5 and
+`../docs/MEASUREMENTS.md` §10 — three layers of real accidents are recorded there. The four:
 
-1. **必须在执行前拿到命令原文**,并且**能返回"不许执行"**。做不到就属于"建议层",别写成适配器。
-2. **fail-open**:适配器自己出任何问题都必须放行(超时/解析错/未知 payload 形状)。
-3. **入口守卫内联、跨平台**:
-   `realpathSync(process.argv[1]) === realpathSync(fileURLToPath(import.meta.url))`。
-   **不要抽共享模块** —— `import.meta.url` 跟着模块走,抽出去就恒为 false(实测:连 WSL 都会静默失效)。
-   动态导入用**相对说明符**,别用绝对路径字符串(Windows 上不是合法 ESM 说明符)。
-4. **审计要写 `record()`**,并且**必须有可观察副作用**能让验证者确认"它真的跑了" ——
-   "没报错"不等于"在工作"。
+1. **You must obtain the command text before execution**, and **be able to return "you may not run this"**. If you cannot, that belongs to the "suggestion layer" — do not write it as an adapter.
+2. **fail-open**: whatever goes wrong on the adapter's own side must be allowed through (timeout / parse error / unknown payload shape).
+3. **Inline the entry guard, cross-platform**:
+   `realpathSync(process.argv[1]) === realpathSync(fileURLToPath(import.meta.url))`.
+   **Do not extract it into a shared module** — `import.meta.url` follows the module, so once extracted it is constantly false (measured: even WSL silently stops working).
+   Use **relative specifiers** for dynamic imports, not absolute path strings (not a legal ESM specifier on Windows).
+4. **The audit must write `record()`**, and **there must be an observable side effect** that lets a verifier confirm "it really ran" —
+   "no error reported" is not the same as "it is working".

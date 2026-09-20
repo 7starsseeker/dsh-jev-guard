@@ -1,16 +1,18 @@
 # verification-results
 
-做完一项验证后,用 `tools/report-result.mjs` 把结论写到这里:
+> **English** | [简体中文](README.zh-CN.md)
+
+When a verification item is done, write the conclusion here with `tools/report-result.mjs`:
 
 ```bash
 node tools/report-result.mjs --host dsh --item 6 --status pass \
-  --evidence "重启后 git push --force 被拦,审计里 rule=git-force-push"
+  --evidence "after a restart, git push --force was blocked, and the audit log shows rule=git-force-push"
 ```
 
-- `verification-results/dsh.json` —— 原始记录(机器读)
-- `verification-results/SUMMARY.md` —— 自动生成的总表(人读)
+- `verification-results/dsh.json` — the raw record (read by a machine)
+- `verification-results/SUMMARY.md` — the auto-generated summary table (read by a human)
 
-**没有真正跑过的项不要在这里写 `pass`。** 拿不准就写 `blocked` 并填 `--question`,
-它会被列进汇总里的"需要介入"一节。
+**Do not write `pass` here for an item that has not really been run.** If you are not sure, write `blocked` and fill in `--question`,
+and it will be listed in the "needs intervention" section of the summary.
 
-这个目录里的文件是**唯一允许写在这个包里的运行期产物**,其余文件都是发布的代码与文档。
+The files in this directory are **the only runtime artifacts allowed to be written in this package**; every other file is released code and documentation.

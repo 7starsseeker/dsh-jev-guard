@@ -1,141 +1,141 @@
-# 人怎么介入 — 三条通道,以及它们的证据
+# How a human gets involved — three channels, and their evidence
 
-阀门在一个"没人看着"的模式下工作(YOLO / 完全权限 / 自动批准),所以**"人怎么进来"必须是设计的一部分**,
-不能靠"反正会弹窗"。这份文档把三条通道写清楚:各自需要什么、谁执行、拿什么证明它真的有效。
+> **English** | [简体中文](USER-INTERVENTION.zh-CN.md)
 
-> 所有结论都带**实测证据**(2026-09-20,DSH)。没测过的写"未验证",不写成事实。
+The valve works in a "nobody is watching" mode (YOLO / full permissions / auto-approve), so **"how a human gets in" has to be part of the design** — it cannot rely on "a prompt will pop up anyway". This document spells out the three channels: what each of them needs, who carries it out, and what proves it actually works.
+
+> Every conclusion carries **measured evidence** (2026-09-20, DSH). What has not been measured is written as "unverified", not as fact.
 
 ---
 
-## 0. 一句话
+## 0. In one sentence
 
-**人只有三种介入方式:投递一次执行权、自己动手、当场点头。** 三种都实现,才算真的"有人管"。
+**A human has only three ways to get involved: hand over execution rights once, do it themself, or nod on the spot.** All three implemented — only then is there really "someone in charge".
 
-| 通道 | 谁执行 | 阀门角色 | 依赖宿主? |
+| Channel | Who carries it out | The valve's role | Does it depend on the host? |
 |---|---|---|---|
-| **① 一次性令牌** | **AI**(被拦后重试) | 校验令牌 → 放行**那一条命令**一次 | **不依赖** —— 纯本地哈希 + 文件 |
-| **② 宿主审批** | **AI**(经人点头) | 只负责把命令标成"需要人看" | 依赖宿主的问人能力 |
-| **③ 人工手动执行** | **人** | **完全不参与** | 不依赖 |
+| **① One-shot token** | **the AI** (retries after being blocked) | verify the token → let **that one command** through once | **No dependency** — pure local hash + a file |
+| **② Host approval** | **the AI** (with a human nod) | only marks the command as "a human needs to look at it" | depends on the host's ability to ask a human |
+| **③ A human doing it by hand** | **the human** | **not involved at all** | No dependency |
 
 ---
 
-## 1. 通道①:一次性令牌(宿主无关,任何时候都在)
+## 1. Channel ①: the one-shot token (host-independent, available at any time)
 
-**机制。** 被判定为 `revise` / `block` / `escalate` 的命令,理由里会附一个
-`ALLOW-XXXXXXXXXX`(= `sha256(规范化命令文本)` 的前 10 位十六进制,大写)。
-人把它写进 `~/.jev-guard/allow.txt` 后,AI **重试同一条命令**即被放行一次,令牌随即删除。
+**Mechanism.** A command judged `revise` / `block` / `escalate` gets an
+`ALLOW-XXXXXXXXXX` attached to its reason (= the first 10 hex digits of `sha256(normalised command text)`, uppercase).
+Once a human writes it into `~/.jev-guard/allow.txt`, the AI **retrying the same command** is let through once, and the token is deleted right after.
 
-**六条性质**(每条都有测试):
+**Six properties** (each one has a test):
 
-| 性质 | 含义 | 证据 |
+| Property | Meaning | Evidence |
 |---|---|---|
-| **绑定命令原文** | 换一个字就是另一个令牌;换写法蹭不到授权 | 带尾斜杠的变体被拦,给的是**另一个**令牌 `ALLOW-ADCD5EA86D` |
-| **一次性** | 用掉即删,无法重放 | 放行后 `allow --list` 为空 |
-| **确定性** | 同一条命令永远同一个令牌 | 同一条命令三次出现,永远是 `ALLOW-5031AC2085` |
-| **不越过 L0 deny** | `dd` 写盘 / 格式化 / 删库这类"永不允许"**故意不给令牌** | 理由里**不出现**授权行 |
-| **只在交互终端授权** | `guard allow` 要求 stdin 是 TTY;AI 自己跑会被拒 | 非 TTY 下明确拒绝并打印绝对路径整行命令 |
-| **审计留痕** | 放行记录保留原判定的危险度 | `{source:"token", p:0.83, token:"ALLOW-…", overridden:"block"}` |
+| **Bound to the command's exact text** | change one character and it is a different token; rephrasing gets you no authorisation | a variant with a trailing slash was blocked, and what it gave out was a **different** token, `ALLOW-ADCD5EA86D` |
+| **One-shot** | deleted the moment it is used, impossible to replay | after the pass, `allow --list` is empty |
+| **Deterministic** | the same command always gets the same token | the same command appeared three times, and was always `ALLOW-5031AC2085` |
+| **Does not cross an L0 deny** | "never allowed" things like `dd` writing to a disk / formatting / dropping a database are **deliberately not given a token** | the authorisation line **does not appear** in the reason |
+| **Authorised only from an interactive terminal** | `guard allow` requires stdin to be a TTY; the AI running it itself gets refused | refused outright when not a TTY, and it prints the whole absolute-path command line |
+| **Leaves an audit trail** | the allowance record keeps the danger level of the original verdict | `{source:"token", p:0.83, token:"ALLOW-…", overridden:"block"}` |
 
-**为什么这个通道重要:** 它是**唯一不依赖宿主**的人工通道。宿主没有问人能力(或问不了)时,
-它是人仍然能"只放行这一次"的办法。代价是复制粘贴一次。
+**Why this channel matters:** it is the **only human channel that does not depend on the host**. When the host has no ability to ask a human (or cannot ask), it is how a human can still "let just this one through". The cost is one copy-paste.
 
-**理由里那一行是给人整行复制粘贴用的**:绝对路径、命令原文**不截断**、引号已转义
-(回归测试会把它喂给 `bash -c 'printf %s …'` 要求逐字节还原)。
+**That line in the reason is there for a human to copy-paste whole**: absolute path, the command's exact text **untruncated**, quotes already escaped
+(a regression test feeds it to `bash -c 'printf %s …'` and demands byte-for-byte restoration).
 
 ---
 
-## 2. 通道②:宿主审批(有则更强,没有也不致命)
+## 2. Channel ②: host approval (stronger when you have it, not fatal when you don't)
 
-阀门把 `escalate` 交给宿主,由宿主决定用什么形式问人。**同一套四态、同一份理由**,形态不同:
+The valve hands `escalate` to the host, and the host decides in what form to ask the human. **The same four states, the same reason**, a different shape:
 
-| 会话策略 | 宿主动作 | 阀门记录 | 人怎么做 |
+| Session policy | The host's action | What the valve records | What the human does |
 |---|---|---|---|
-| `ask`(带审批) | **弹审批框** | `action=escalate, decision=ask, policy=ask` | 在弹窗里点 —— 不开终端、不复制命令 |
-| `never`(完全权限) | 没有弹窗可用 → **直接拒绝** | `action=escalate, decision=deny` | 走通道①或在终端自己执行 |
+| `ask` (with approvals) | **pops the approval prompt** | `action=escalate, decision=ask, policy=ask` | click in the prompt — no terminal, no command copying |
+| `never` (full permissions) | no prompt available → **a plain refusal** | `action=escalate, decision=deny` | go through channel ①, or run it yourself in a terminal |
 
-**实测(DSH,2026-09-20):** 用户把会话切到 `ask` 后,同一条被拦命令触发了一次真实审批 ——
-会话日志出现成对的 `approval/asked` + `approval/decided`,`asked.reason` **就是阀门理由的原文**
-(含硬规则 id 与 why),用户点允许后 `outcome=allowed-once`(从弹出到点下间隔 2.2 秒),
-命令随即执行、靶子文件 148 → 0 字节。这条通道**不需要人开终端**。
+**Measured (DSH, 2026-09-20):** after the user switched the session to `ask`, the same blocked command triggered a real approval —
+the session log showed the pair `approval/asked` + `approval/decided`, and `asked.reason` was **verbatim the valve's reason**
+(the hard rule id and why included); after the user clicked allow, `outcome=allowed-once` (2.2 seconds from pop-up to click),
+and the command ran right away, taking the target file from 148 → 0 bytes. This channel **needs no terminal from the human**.
 
-### 2.1 DSH 的答案集是**闭集**:没有"永久允许"
+### 2.1 DSH's answer set is a **closed set**: there is no "always allow"
 
-这一点被专门核实过(源码依据,`deepseek-harness` @ `ddefc45fbc`):
+This was verified specifically (source evidence, `deepseek-harness` @ `ddefc45fbc`):
 
-| 位置 | 内容 |
+| Location | Content |
 |---|---|
 | `packages/interaction/user-approval/src/types.ts:32` | `ApprovalOutcome = 'allowed-once' \| 'rejected' \| 'cancelled' \| 'unavailable'` |
-| `packages/interaction/user-approval/src/index.ts:204` | 注释:`'allowed-once' is the only grant` |
-| `packages/client/ui-approval/.../slots.ts:64` | `ApprovalDecision = 'allowed-once' \| 'rejected'` —— 界面只有两个按钮 |
-| `packages/session/session-format-v0-to-v1/src/payload-validation.ts:40,43` | 校验 outcome 与 policy(`ask`/`never`)都是闭集 |
-| `packages/interaction/user-approval/tests/invariant.spec.ts:103` | 反向断言 `policy: 'always'` **必须被拒** |
+| `packages/interaction/user-approval/src/index.ts:204` | comment: `'allowed-once' is the only grant` |
+| `packages/client/ui-approval/.../slots.ts:64` | `ApprovalDecision = 'allowed-once' \| 'rejected'` — the UI has only two buttons |
+| `packages/session/session-format-v0-to-v1/src/payload-validation.ts:40,43` | validating outcome and policy (`ask`/`never`) are both closed sets |
+| `packages/interaction/user-approval/tests/invariant.spec.ts:103` | a negative assertion that `policy: 'always'` **must be rejected** |
 
-**设计含义(对阀门是好消息):** `ask` 模式下每一次 `escalate` 都是一次**独立的逐次决定**,
-没有任何常驻授权可以把阀门的 ask 悄悄吞掉。所以阀门**不需要**维护"用户已永久同意"这类状态 ——
-也就不存在那份状态被绕过或过期的风险。
+**Design implication (good news for the valve):** under `ask` mode every `escalate` is an **independent, one-at-a-time decision**,
+and there is no standing authorisation that can silently swallow the valve's ask. So the valve **does not need** to maintain
+state like "the user has already agreed permanently" — and therefore there is no risk of that state being bypassed or going stale.
 
-### 2.2 只有 DSH 这一条被支持(其余已归档)
+### 2.2 Only DSH is supported (the rest are archived)
 
-2026-09-20 起本包**只支持 DSH**(见 [`DECISIONS.md`](./DECISIONS.md) D11)。历史上试过的其它执行通道
-都没有做成:各自宿主的审批/信任机制不同,把某一条做扎实是各自独立的一轮工作;
-其中一次实测还暴露出一个结构性缺陷 —— **拿不到的信息被一个默认值假装成拿到了**,
-于是"宿主能不能问人"这件事在里面等于永远是否,宿主审批通道不可达。
+As of 2026-09-20 this package **supports DSH only** (see [`DECISIONS.md`](./DECISIONS.md) D11). The other execution channels
+tried historically never got finished: each host's approval/trust mechanism is different, and making any one of them solid is a
+separate round of work of its own; one of those measurements also exposed a structural defect — **information that was unavailable was pretended to be available by a default value**,
+so "can the host ask a human" came out permanently no there, and the host approval channel was unreachable.
 
-判断标准只有一条:**那个宿主有没有"执行前必须经过、且能说不许执行"的回调。**
-没有就只能做建议层(模型可以不遵守),而**未验证的适配器比没有适配器更危险**——
-它看起来装了阀门,实际不拦。那些实现已随范围收窄一并移除;可迁移的教训见
-[`MEASUREMENTS.md`](./MEASUREMENTS.md) §12 与 [`DECISIONS.md`](./DECISIONS.md) D11。
-
----
-
-## 3. 通道③:人直接执行(阀门不参与)
-
-人可以在自己终端里直接把那条命令跑了 —— 那**不经过阀门**,也不会给 AI 任何权限。
-
-**实测(2026-09-20):** 人在终端里把靶子文件截成 0 字节(153 → 0),然后:
-
-- 审计日志**零新增** —— 精确过滤后,那条命令的判定记录仍是 3 条(2 次 escalate + 1 次令牌放行)。
-  阀门审计的是 **agent 的动作**,不是人的动作:它守的是你,不是监视你。
-- AI 随后重试**一字不差的同一条命令**,仍然被拦,并且公示**同一个**令牌。
-
-**结论:`人做了一次` ≠ `给 agent 开了口子`。** 后者必须显式投递(通道①或②)。
+There is only one criterion: **does that host have a callback that execution must pass through, and that can say you may not run this?**
+Without one you can only build a suggestion layer (the model may simply not comply), and **an unverified adapter is more dangerous than no adapter** —
+it looks like the valve is installed while in fact nothing is blocked. Those implementations were removed along with the narrowing of scope; the
+transferable lessons are in [`MEASUREMENTS.md`](./MEASUREMENTS.md) §12 and [`DECISIONS.md`](./DECISIONS.md) D11.
 
 ---
 
-## 4. 为什么阀门不需要记住"人已经同意了"
+## 3. Channel ③: the human runs it directly (the valve is not involved)
 
-因为三条通道里**没有一条需要阀门记忆**:
+A human can just run that command in their own terminal — that **does not go through the valve**, and it gives the AI no permission whatsoever.
 
-- 通道①:令牌文件即事实,读一次、消费一次、删掉;
-- 通道②:宿主决定,阀门每次都重新问;
-- 通道③:阀门根本不在路上。
+**Measured (2026-09-20):** a human truncated the target file to 0 bytes in a terminal (153 → 0), and then:
 
-这条设计的价值在于:阀门**没有**一张"已批准清单"可以被改坏、被过期策略坑、被并发写乱。
-每次判定都是一次干净的、可重放的独立计算。
+- the audit log gained **zero new entries** — after precise filtering, that command still had 3 verdict records (2 escalates + 1 token allowance).
+  The valve audits **the agent's actions**, not the human's: it guards you, it does not watch you.
+- the AI then retried **the exact same command, character for character**, was still blocked, and was shown **the same** token.
 
----
-
-## 5. 怎么在**新宿主**上验证这三条
-
-协议化步骤在 [`VERIFICATION.md`](./VERIFICATION.md) 的 **U1–U3**(任何宿主都适用,
-结论用 `tools/report-result.mjs --host <宿主> --item U1` 写回 `verification-results/`)。
-
-三个最小判据:
-
-- **U1**:被拦命令的理由里**有**令牌;走一遍"授权 → 重试 → 放行 → 令牌消失",审计里出现 `source=token`。
-- **U2**:宿主**有没有**问人通道?若有,弹窗里是否带着阀门理由原文?点允许后命令是否真的执行?
-  若没有,写明"本宿主只能走通道①"。
-- **U3**:人在终端里手动执行同一条命令 —— 审计**零新增**,且 AI 重试**仍然被拦**。
+**Conclusion: `the human did it once` ≠ `a door was opened for the agent`.** The latter has to be delivered explicitly (channel ① or ②).
 
 ---
 
-## 6. 记录在案的错误推测(保持诚实)
+## 4. Why the valve does not need to remember "the human already agreed"
 
-2026-09-20,本项目曾推测:*"若用户在弹窗里选『永久允许』,宿主可能替阀门自动应答后续 ask,
-使逐次确认退化为常驻策略。"*
+Because **not one of the three channels needs the valve to remember**:
 
-**该推测不成立** —— DSH 没有这个选项(依据见 §2.1)。提出它的是 AI,指出错误的是**用户**。
-入库记录见仓库记忆里的 `Correction: DSH has no persistent/always approval`。
+- channel ①: the token file is the fact — read once, consumed once, deleted;
+- channel ②: the host decides, and the valve asks afresh every time;
+- channel ③: the valve is not on the path at all.
 
-留着这一节不是自我批评,而是为了说明一件事:**这份文档里"未验证"的标注不是客套**,
-写下来的猜测会被当真,所以要么测,要么标注。
+The value of this design is that the valve has **no** "approved list" that can be corrupted, tripped up by an expiry policy, or scrambled by concurrent writes.
+Every judging is a clean, replayable, independent computation.
+
+---
+
+## 5. How to verify these three on a **new host**
+
+The protocol steps are in [`VERIFICATION.md`](./VERIFICATION.md) **U1–U3** (they apply to any host;
+write the conclusion back into `verification-results/` with `tools/report-result.mjs --host <host> --item U1`).
+
+Three minimal criteria:
+
+- **U1**: the reason for a blocked command **contains** a token; walk through "authorise → retry → let through → token gone", and `source=token` shows up in the audit.
+- **U2**: does the host **have** a channel for asking a human? If so, does the prompt carry the valve's reason verbatim? After clicking allow, does the command actually run?
+  If not, write down "on this host only channel ① is available".
+- **U3**: a human runs the same command by hand in a terminal — the audit gains **zero new entries**, and the AI's retry is **still blocked**.
+
+---
+
+## 6. A wrong guess on the record (staying honest)
+
+On 2026-09-20, this project guessed: *"if the user picks 'always allow' in the prompt, the host might answer the valve's later asks
+automatically, degrading one-at-a-time confirmation into a standing policy."*
+
+**That guess does not hold** — DSH has no such option (evidence in §2.1). The one who raised it was the AI; the one who pointed out the error was **the user**.
+The recorded entry is `Correction: DSH has no persistent/always approval` in the repository's memory.
+
+This section is kept not as self-criticism but to make one point: **the "unverified" marks in this document are not politeness** —
+a guess written down will be taken at face value, so either measure it, or label it.

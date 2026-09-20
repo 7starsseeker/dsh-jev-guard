@@ -1,209 +1,211 @@
-# 已接受的设计取舍(不要再"顺手修"它们)
+# Accepted design trade-offs (do not "helpfully fix" them)
 
-这份文件是给**后来的人 / AI** 看的:下面每一条都是**有意为之**的取舍,带着当时的实测依据。
-如果你觉得某条"显然不该这样",请先读完理由;要改就作为一次显式决策来改,并更新这里。
+> **English** | [简体中文](DECISIONS.zh-CN.md)
+
+This file is for **whoever comes later — human or AI**: every entry below is a trade-off that was **made on purpose**, with the measurement evidence from the time.
+If you think one of them "obviously shouldn't be this way", read the reasoning through first; if you want to change it, change it as an explicit decision and update this file.
 
 ---
 
-## D1 · 阀门是**事故安全网**,不是**安全边界**(2026-09-20 用户拍板)
+## D1 · The valve is an **accident net**, not a **security boundary** (user's call, 2026-09-20)
 
-**决策:** 不追求"防住蓄意绕过的 agent"。只防**事故**:模型/人写错的命令、不透明的脚本、
-YOLO 模式下没人拦的那一下。
+**Decision:** We do not aim to "stop an agent that deliberately bypasses". We only prevent **accidents**: a mistyped command by a model/human, an opaque script,
+the one shot nobody stops in YOLO mode.
 
-**这是有意接受的旁路清单:**
+**This is the bypass list we deliberately accept:**
 
-| 旁路 | 现状 | 为什么不堵 |
+| Bypass | Current state | Why we don't plug it |
 |---|---|---|
-| agent 用文件写入工具直接写 `~/.jev-guard/allow.txt` | 完全可以做到(阀门只挂在 `bash`/`pwsh` 工具上) | 堵它需要把 `write`/`edit` 也纳入判定(问句要重新设计),或者做文件层权限 —— 那是**另一个产品**(沙箱/容器/seccomp 的活),不是这个阀门的活 |
-| agent 换写法绕过判定(`rm -rf` → `find -delete` → `python -c shutil.rmtree`) | Jev 通常仍能看懂,但不能保证 | 见 D2 的兜底思想:靠**分层**而不是靠单点 |
-| 提示注入让 agent 主动作恶 | 不设防 | 要防这个必须上沙箱/容器/权限模型 |
+| The agent writes `~/.jev-guard/allow.txt` directly with a file-writing tool | Entirely possible (the valve hangs only on the `bash`/`pwsh` tools) | Plugging it would mean bringing `write`/`edit` into judging too (the question would have to be redesigned), or doing file-level permissions — that is **another product** (the job of a sandbox/container/seccomp), not this valve's job |
+| The agent rewrites the command to bypass judging (`rm -rf` → `find -delete` → `python -c shutil.rmtree`) | Jev usually still understands it, but there is no guarantee | See D2's fallback idea: rely on **layering**, not on a single point |
+| Prompt injection makes the agent act maliciously | Not defended | Defending against this requires a sandbox/container/permission model |
 
-**用户原话(定调):** *"这个仍然存在的旁路可以在说明中记录下来,不用去堵 —— 只要这个能防住事故就行。"*
+**The user's own words (the tone-setter):** *"This bypass that still exists can be recorded in the documentation, no need to plug it — as long as this can prevent accidents, that's enough."*
 
-**什么情况下该重新考虑:** 如果哪天要把这台机器上的 agent 借给别人、或让不可信输入驱动它。
-那时正确的做法是**另加一层**(沙箱/低权限用户/容器),不是把阀门改造成安全边界。
+**When to reconsider this:** if some day you want to lend the agent on this machine to someone else, or let untrusted input drive it.
+The right move then is to **add another layer** (sandbox / low-privilege user / container), not to rebuild the valve into a security boundary.
 
 ---
 
-## D2 · L0 硬规则用"命令位置"锚定,引号里的命令交给 Jev
+## D2 · L0 hard rules are anchored on "command position"; commands inside quotes go to Jev
 
-**决策:** 除两个结构性例外外,**所有** L0 规则都只在**命令位置**匹配。
-命令位置 = 行首(`m` 标志下即**每一行**行首)/ `;` `&` `|` `(` `$(` 之后 /
-`bash -c "` 这类"把字符串当脚本执行"的引号之后,并允许一串包装器
-(`sudo` / `timeout 30` / `xargs -0` / `nice -n 5` / `find … -exec` …)。
-两个例外显式标为 `where: 'anywhere'`:`redirect-to-device`(模式以 `>` 开头)
-与 `fork-bomb`(纯语法 `:(){…};:`)—— 它们锚不到"命令位置"这个概念上。
-`RULE_STATS.anywhere` 恒为 2,`tools/selftest-rules.mjs` 会打印它。
+**Decision:** Except for two structural exceptions, **all** L0 rules match only at **command position**.
+Command position = start of line (under the `m` flag, the start of **every line**) / after `;` `&` `|` `(` `$(` /
+after the quotes of the `bash -c "` kind, where "a string is executed as a script", with a chain of wrappers allowed
+(`sudo` / `timeout 30` / `xargs -0` / `nice -n 5` / `find … -exec` …).
+The two exceptions are explicitly marked `where: 'anywhere'`: `redirect-to-device` (the pattern starts with `>`)
+and `fork-bomb` (pure syntax `:(){…};:`) — they cannot be anchored to the concept of "command position".
+`RULE_STATS.anywhere` is always 2, and `tools/selftest-rules.mjs` prints it.
 
-**依据:** L0 全文匹配曾**三次**拦住操作者自己的正当操作(在参数里写命令原文、在 heredoc 里
-写含测试用例的自检代码)。而实测 Jev 对这类"散文式提及"只给 **p=0.02–0.08**,对真实调用给
-**0.8–1.0** —— 所以把引号里的散文交给它兜底,覆盖率没有实质损失。
+**Evidence:** whole-text matching in L0 **three times** blocked the operator's own legitimate operations (writing the command text inside an argument,
+writing self-check code containing test cases inside a heredoc). And measured, Jev gives these "prose-style mentions" only **p=0.02–0.08**, while for a real invocation it gives
+**0.8–1.0** — so handing the prose inside quotes to it as a fallback costs no real coverage.
 
-**2026-09-20 第二次修正(发现了第一次没做全,且两个方向都偏):**
+**Second correction, 2026-09-20 (the first pass turned out to be incomplete, and wrong in both directions):**
 
-第一次只改了 7 条 deny + 全部 16 条 ask,`mkfs` / `dd` / `shred` / `chmod -R` / `vssadmin` /
+The first pass changed only the 7 deny rules + all 16 ask rules, while `mkfs` / `dd` / `shred` / `chmod -R` / `vssadmin` /
 `wbadmin` / `cipher` / `diskpart` / `wsl --unregister` / `kubectl delete ns` / `Clear-Disk` /
-`Remove-Item … -Recurse` 这 **12 条仍是全文匹配**,于是引号里的数据、注释、变量赋值、
-**代码里的字符串**(实测:`c.startswith('mkfs.ext4 /dev/sdb1')`)都会命中 deny
-—— 而 L0 的 `deny` **没有一次性令牌通道**,被误拦时人只能自己去终端执行。
+`Remove-Item … -Recurse` — these **12 rules still matched the whole text**, so data inside quotes, comments, variable assignments and
+**strings inside code** (measured: `c.startswith('mkfs.ext4 /dev/sdb1')`) all hit deny
+— and L0's `deny` has **no one-shot token channel**, so when it is wrongly blocked a human can only go run it in a terminal themself.
 
-更严重的是**反方向**:锚定用的 `^` 没有 `m` 标志,所以"命令位置"实际只等于**整串开头**
-(外加分隔符之后)。后果是凡被锚定的规则,多行脚本(heredoc)与多行 `-c` 里的真命令**全部漏判**:
+More serious is the **opposite direction**: the `^` used for anchoring had no `m` flag, so "command position" actually equalled only **the start of the whole string**
+(plus after a separator). The consequence was that for any anchored rule, real commands inside multi-line scripts (heredocs) and multi-line `-c` were **all missed**:
 
-| 形态 | 修正前 | 修正后 |
+| Form | Before the fix | After the fix |
 |---|---|---|
-| `git push --force origin main`(单行) | HIT | HIT |
-| `cd /tmp && git push --force …`(分隔符后) | HIT | HIT |
+| `git push --force origin main` (single line) | HIT | HIT |
+| `cd /tmp && git push --force …` (after a separator) | HIT | HIT |
 | `echo x \| xargs git push --force …` | **MISS** | HIT |
-| `bash - <<'SH'` + `git push --force …`(多行) | **MISS** | HIT |
-| `bash -c "` + 多行 + `git push --force …` | **MISS** | HIT |
-| heredoc 里的 `rm -rf /` / `DROP DATABASE` | **MISS** | HIT |
-| 引号/注释/赋值/代码字符串里的原文 | **HIT(假阳)** | —(交给 Jev) |
+| `bash - <<'SH'` + `git push --force …` (multi-line) | **MISS** | HIT |
+| `bash -c "` + multi-line + `git push --force …` | **MISS** | HIT |
+| `rm -rf /` / `DROP DATABASE` inside a heredoc | **MISS** | HIT |
+| the raw text inside quotes/comments/assignments/code strings | **HIT (false positive)** | — (handed to Jev) |
 
-**为什么这个漏判要紧:** L0 存在的全部理由就是在**没有网络、没有额度**(`degradePolicy: 'l0-only'`)
-时兜住 `mkfs` / `dd of=/dev/*` / `git push --force` 这一类(见 D9)。平时漏判被 Jev 补上,所以一直没人发现;
-降级时它就是真空。讽刺的是:修正前 heredoc 里的 `mkfs` **反而是命中的** —— 只因为它没锚定。
+**Why this missed detection matters:** the whole reason L0 exists is to hold the `mkfs` / `dd of=/dev/*` / `git push --force` class
+when there is **no network and no quota** (`degradePolicy: 'l0-only'`) (see D9). In normal times Jev covers the missed detection, so nobody ever found out;
+while degraded it is a vacuum. Ironically: before the fix, `mkfs` inside a heredoc **did hit** — only because it was not anchored.
 
-边界矩阵(18 种形态)与性能用例(4KB 包装器前缀,防灾难性回溯)在
-[`../tools/selftest-rules.mjs`](../tools/selftest-rules.mjs),第 7 项验收照着跑。
-
----
-
-## D3 · 判定失败一律 **fail-open**(放行)
-
-**决策:** 超时、网络错、服务 5xx、代码异常 → 放行,并记 `source: error` 到审计日志。
-
-**依据:** 宿主自己的沙箱与审批策略仍在执行之前;阀门只是**增量**检查。若改成 fail-closed,
-Typesafe 抖一下你就干不了活。想"服务挂了也拦"应当**把 L0 规则加厚**(不依赖网络的那层),
-而不是改这条策略。
-
-**健康信号:** `guard log --stats` 里的 `fail-open` 计数;持续为 0 说明判定服务没偷偷挂过。
+The boundary matrix (18 forms) and the performance cases (a 4KB wrapper prefix, against catastrophic backtracking) are in
+[`../tools/selftest-rules.mjs`](../tools/selftest-rules.mjs); acceptance item 7 is run against them.
 
 ---
 
-## D4 · 阈值保持 0.5 / 0.7,靠令牌解决摩擦,而不是放低标准
+## D3 · A failed judging is always **fail-open** (allow)
 
-**决策:** `lowThreshold: 0.5` / `highThreshold: 0.7`(在 737 条真实命令上实测
-98.51% 放行 / 0.81% 灰区 / 0.68% 拦截)。
+**Decision:** timeout, network error, service 5xx, code exception → allow, and record `source: error` in the audit log.
 
-**依据:** 抬高阈值会放走真实破坏 —— `rm -rf ~/真实目录` 实测落在 **0.68–0.82**,
-灰区里还有 `docker compose down -v`(0.69)。既然有了**一次性放行令牌**,"被拦"不再等于"卡死",
-所以宁可偏严。真要少打扰,改 `config.json` 一行即可(0.6/0.8),但那是显式换风险。
+**Evidence:** the host's own sandbox and approval policy are still enforced before execution; the valve is only an **incremental** check. If it were changed to fail-closed,
+one wobble at Typesafe and you can't get any work done. To "block even when the service is down" you should **thicken the L0 rules** (the layer that does not depend on the network),
+not change this policy.
 
----
-
-## D5 · 一次性令牌只覆盖灰区与拦截,**不越过 L0**
-
-**决策:** 令牌能放行 `revise`/`block`;对 L0 的 `deny` 规则**无效**,理由里也不展示令牌。
-绑定完整命令文本(空白折叠)、用掉即删、放行写审计(`source: token` + `overridden`)。
-
-**依据:** L0 是四层设计里的硬地板;如果令牌能越过它,"永不允许"就名存实亡。
+**Health signal:** the `fail-open` counter in `guard log --stats`; if it stays 0, the judging service has never quietly gone down.
 
 ---
 
-## D6 · 授权(`guard allow`)只能在**交互终端**里做
+## D4 · The thresholds stay 0.5 / 0.7 — solve the friction with tokens, not by lowering the bar
 
-**决策:** `guard allow` / `--revoke` 检测 `stdin.isTTY`,非 TTY 直接拒绝并打印可复制的整行命令。
+**Decision:** `lowThreshold: 0.5` / `highThreshold: 0.7` (measured on 737 real commands:
+98.51% allowed / 0.81% grey zone / 0.68% blocked).
 
-**依据:** 实测 agent 自己跑授权命令时,它**本身也会被判危险**(p=56%)—— 因为命令文本里就带着
-那条破坏性命令。这本来是巧合挡住的;与其靠巧合,不如把它变成明确的设计:**授权 = 人的动作。**
-(注意这不是安全边界,见 D1:agent 仍可写文件绕过;它只是让"被监管者给自己开后门"不会**顺手发生**。)
-
----
-
-## D7 · 脚本正文会被上传到 TypeSafe 的 API
-
-**决策:** 默认 `inlineScripts: true` —— 读取被调用脚本的正文作为判定输入。
-
-**依据:** 只看命令行时,`node migrate.mjs`(体内 `DROP COLUMN`)只有 **p=0.32**;
-把正文读进去后 **0.82**。这是"看懂不透明命令"的必要代价。
-
-**已有的缓解:** 敏感路径(`.env` / `.ssh` / `*.pem` / `*credential*` / `*secret*` / `*token*`)
-自动跳过不上传;单文件 8KB 上限;`inlineScripts: false` 可整体关闭(代价:退回 0.31 的盲区)。
+**Evidence:** raising the threshold lets real destruction through — `rm -rf ~/真实目录` measured at **0.68–0.82**,
+and the grey zone also contains `docker compose down -v` (0.69). Now that a **one-shot allow token** exists, "blocked" no longer equals "stuck",
+so we would rather err strict. If you really want less interruption, one line in `config.json` changes it (0.6/0.8), but that is an explicit trade of risk.
 
 ---
 
-## D8 · 包结构是"判定核心 + 一层薄适配",`lib/` 里不放 DSH 机制
+## D5 · A one-shot token covers only the grey zone and blocks; it **does not cross L0**
 
-**决策:** `lib/` 只放与调用方无关的判定核心(`gate` / `rules` / `verdict` / `token` / `audit` / `quota`),
-DSH 相关的一切都放在 `adapters/dsh/index.js` 这一个文件里。
-(`package.json` 的 `exports["."]` 指向它,`main` 同步。)
+**Decision:** a token can allow `revise`/`block`; for L0's `deny` rules it is **ineffective**, and no token is shown in the reason either.
+It is bound to the full command text (whitespace collapsed), deleted once used, and the allow is written to the audit (`source: token` + `overridden`).
 
-**依据:** 这个项目最初的写法容易让人以为判定与 DSH 绑在一起。但实际上判定不看宿主的任何东西
-(不看文件系统状态、不看会话历史、不需要模型参与),所以本来就该分开 ——
-**分开的理由在 D11 里改过一次**:不是为了接别的调用方,而是为了让判定能被离线复跑
-(校准、回归、事故复盘全靠这一点)。放进 `lib/` 会让下一个维护者把宿主逻辑继续往核心里加。
-
-**可验证的形式:** `grep -riE "cordis|PreToolDecision|ctx\.|approval/policy" lib/*.js` 只应命中**注释**
-(目前那条注释用来解释"为什么 escalate 在完全权限下会变成拒绝")。
-代码里的宿主差异只有一个与 DSH 无关的布尔值:`canPrompt`。
-
-**契约文档:** 当时写的是 `docs/HOST-CONTRACT.md`(宿主无关契约)。**已被 D11 取代** ——
-现在对应的是 [`DSH-INTEGRATION.md`](./DSH-INTEGRATION.md)(DSH 集成:用到哪些机制、四态怎么映射、降级契约)。
-D8 里"把宿主逻辑挡在 `lib/` 之外"这条**仍然有效**,但理由在 D11 里改了:不是为了支持更多调用方,
-而是为了让判定能被离线复跑。
-
-**回滚:** 这次搬迁在部署实例上留过一份 `lib/index.js.bak-moved-to-adapters-dsh`;重启验证插件照常装载后已删除。
+**Evidence:** L0 is the hard floor in the four-layer design; if a token could cross it, "never allowed" would exist in name only.
 
 ---
 
-## D9 · 额度耗尽时**降级为 L0-only 并显式告警**(默认),而不是静默 fail-open
+## D6 · Authorisation (`guard allow`) can only be done in an **interactive terminal**
 
-**决策:** 判定服务是**收费**的,额度用完是必然事件。一旦失败属于持久性类别
-(`quota` / `auth` / `no-key`),就:
+**Decision:** `guard allow` / `--revoke` check `stdin.isTTY`; a non-TTY is refused outright and the whole line is printed, ready to copy.
 
-1. **写一份可读状态** `<JEV_GUARD_HOME>/degraded.json`(原因、开始时间、恢复时间、失败次数、原始错误);
-2. 在冷却窗口内(**quota 15 分钟 / 密钥 30 分钟**)**不再发请求** —— 省钱、也省掉每条命令都要等一次注定失败的请求;
-3. 窗口到期放**一次**探测请求:成功 → 自动恢复正常(人不需要做任何事);失败 → 续期继续降级;
-4. **降级期间默认只跑免费的 L0 + 预筛**(`degradePolicy: 'l0-only'`),瞬态失败(超时/网络/5xx/429限流)
-   照旧逐次 fail-open、**不**降级,但会被分类记录。
-
-**为什么不能只靠 D3 的 fail-open:** 功能上它没错(命令照跑),但它是**静默**的 —— 命令照样放行、
-日志里堆满 `source: error`,而**没有任何人能一眼看出阀门已经不在防护了**。这个项目已经吃过一次
-"静默失效"的亏(审计日志那轮,见 MEASUREMENTS §7),所以这次不重复。
-
-**为什么降级还保留 L0(而不是"整条阀门全停"):** L0 与预筛**不花钱、不联网、确定性强**,
-而且正好覆盖最坏的一类(`mkfs` / `dd of=/dev/*` / `git push --force` / `wsl --unregister`)。
-把它们也停掉,等于用"额度没了"换"最危险的一类命令失去保护"。想连它们一起停是**显式选择**:
-`degradePolicy: 'off'`(实测已覆盖:该配置下连 `mkfs` 也放行)。
-
-> **用户确认(2026-09-20):** 原话 *"「要花钱的那层不生效」这个就可以了"* —— 即
-> `degradePolicy: 'l0-only'` 就是想要的默认,不是权宜之计。这一条与 D1 同源:阀门的工作是
-> 把"要花钱的语义判断"和"免费的确定性规则"分开,额度没了只停前者。
-
-**告警出现在哪(「必须有人能发现」这件事的落点):**
-- 每条非 allow 判定的**理由里**(所以审批弹窗、拒绝信息、模型反馈都带着它);
-- 降级放行时 `source: degraded`,审计里是**独立来源**,不是混在 error 里;
-- 进入降级的那一刻写一条 `level: 'warn'` 的审计记录(每个窗口最多一条,不刷屏);
-- CLI 的 **stderr**;DSH 插件的 `ctx.logger.warn`;
-- `guard status`(退出码 **3** = 正在降级,可当健康检查)、`guard log --stats`。
-
-**已知取舍:** 降级期间**语义层对新命令完全不起作用** —— 一条精心伪装的破坏性命令会被放行。
-这是"额度没了"的必然结果,不是可以靠代码消掉的东西;能做的只有①保留免费层②让人尽快知道。
-按 D1,这不是安全边界问题(它本来就不防蓄意绕过)。
-
-**依据:** 2026-09-20 用无效密钥打真实 API 实测:`HTTP 401` → 分类 `auth` → 降级 30 分钟、
-状态文件写出真实错误体、第二次调用 `source: degraded` 且**零请求**、`guard status` 退出码 3。
-另有 54 条离线断言(`tools/selftest-quota.mjs`,替身 fetch 覆盖 402/401/429/5xx/超时/网络/坏状态文件)。
+**Evidence:** measured, when the agent runs the authorisation command itself it is **also judged dangerous** (p=56%) — because the destructive command is right there in
+the command text. This used to be stopped by coincidence; rather than rely on coincidence, make it an explicit design point: **authorisation = a human action.**
+(Note this is not a security boundary, see D1: the agent can still write a file to bypass it; it just means "the supervised party opening a back door for itself" will not **happen casually**.)
 
 ---
 
-## D10 · 入口守卫**内联**、动态导入用**相对说明符**;降级集合只收"服务态度变了"的两类
+## D7 · The script body gets uploaded to TypeSafe's API
 
-两条都是被真实事故逼出来的,而且**看起来都像是在"改善代码"**,所以必须写下来免得被改回去。
+**Decision:** `inlineScripts: true` by default — read the body of the invoked script as judging input.
 
-### D10.1 入口守卫必须内联在各自文件里
+**Evidence:** looking at the command line alone, `node migrate.mjs` (with `DROP COLUMN` inside) scores only **p=0.32**;
+with the body read in, **0.82**. This is the necessary price for "understanding opaque commands".
 
-**决策:** 判断"我是不是被当作入口执行"的那几行,在**每个入口脚本里各写一份**
-(包内现存的是 `tools/extract-commands.mjs`;当时还有两处,已随范围收窄归档到包外)。
+**Existing mitigations:** sensitive paths (`.env` / `.ssh` / `*.pem` / `*credential*` / `*secret*` / `*token*`)
+are automatically skipped and not uploaded; an 8KB per-file cap; `inlineScripts: false` turns it off entirely (the price: falling back to a 0.31 blind spot).
 
-**依据:** 旧写法 `import.meta.url === \`file://${process.argv[1]}\`` 在 Windows 上**恒为 false**
-(argv1 是 `T:\…`、url 是 `file:///T:/…`)→ 脚本加载完**直接退出 0**,而在不少调用约定里
-**退出码 0 就是"放行"**:阀门既不拦也不记、还没人知道。修它时为了 DRY 把守卫抽进了 `lib/entry.js` ——
-于是**连 WSL 上也恒为 false**,因为 **`import.meta.url` 是每个模块各自的**,进了共享模块之后
-比较的就是那个文件自己的路径。
+---
 
-**所以这不是重复代码,而是"每份代码只谈自己的身份"。** 正确写法:
+## D8 · The package structure is "judging core + a thin adapter layer"; no DSH mechanics in `lib/`
+
+**Decision:** `lib/` holds only the caller-independent judging core (`gate` / `rules` / `verdict` / `token` / `audit` / `quota`),
+and everything DSH-related lives in the single file `adapters/dsh/index.js`.
+(`package.json`'s `exports["."]` points at it, and `main` is in sync.)
+
+**Evidence:** the way this project was first written makes it easy to assume judging is tied to DSH. But in fact judging looks at nothing belonging to the host
+(it doesn't look at filesystem state, doesn't look at session history, doesn't need a model to take part), so it should have been separated anyway —
+**the reason for separating was changed once, in D11**: not to take on other callers, but so that judging can be **replayed offline**
+(calibration, regression and accident retrospectives all depend on this). Putting it in `lib/` would lead the next maintainer to keep adding host logic into the core.
+
+**A verifiable form:** `grep -riE "cordis|PreToolDecision|ctx\.|approval/policy" lib/*.js` should hit only **comments**
+(the comment there currently explains "why escalate turns into a rejection under full permissions").
+The only host difference in the code is one boolean unrelated to DSH: `canPrompt`.
+
+**Contract document:** at the time it was `docs/HOST-CONTRACT.md` (a host-independent contract). **It has been superseded by D11** —
+what corresponds now is [`DSH-INTEGRATION.md`](./DSH-INTEGRATION.md) (DSH integration: which mechanisms are used, how the four states map, the degradation contract).
+D8's "keep host logic out of `lib/`" **is still in force**, but the reason changed in D11: not to support more callers,
+but so that judging can be replayed offline.
+
+**Rollback:** this move left a `lib/index.js.bak-moved-to-adapters-dsh` on the deployed instance; after verifying on restart that the plugin loaded as usual, it was deleted.
+
+---
+
+## D9 · When the quota runs out, **degrade to L0-only and warn explicitly** (default), rather than a silent fail-open
+
+**Decision:** the judging service is **paid**, so running out of quota is a certain event. Once a failure falls into a persistent category
+(`quota` / `auth` / `no-key`), we:
+
+1. **Write a readable state file** `<JEV_GUARD_HOME>/degraded.json` (reason, start time, recovery time, failure count, the raw error);
+2. Within the cooldown window (**quota 15 minutes / key 30 minutes**) **send no more requests** — saving money, and saving every command from waiting on a request that is bound to fail;
+3. When the window expires, send **one** probe request: success → recover automatically (a human need do nothing); failure → extend and stay degraded;
+4. **During degradation, run only the free L0 + pre-screen by default** (`degradePolicy: 'l0-only'`); transient failures (timeout/network/5xx/429 rate limiting)
+   still fail open per occurrence and do **not** degrade, but are classified and recorded.
+
+**Why D3's fail-open alone is not enough:** functionally it is not wrong (commands still run), but it is **silent** — commands keep being allowed,
+the log fills up with `source: error`, and **nobody can see at a glance that the valve is no longer protecting anything**. This project has already been burned once by
+a "silent failure" (the audit-log round, see MEASUREMENTS §7), so this time we don't repeat it.
+
+**Why degradation still keeps L0 (rather than "stopping the whole valve"):** L0 and the pre-screen **cost nothing, need no network, and are deterministic**,
+and they happen to cover the worst class (`mkfs` / `dd of=/dev/*` / `git push --force` / `wsl --unregister`).
+Stopping them too amounts to trading "the quota is gone" for "the most dangerous class of commands loses its protection". Stopping them as well is an **explicit choice**:
+`degradePolicy: 'off'` (measured and covered: with that config even `mkfs` is allowed).
+
+> **User confirmation (2026-09-20):** in their own words, *"if the layer that costs money is not in effect, that's fine"* — that is,
+> `degradePolicy: 'l0-only'` is the desired default, not a stopgap. This entry shares its root with D1: the valve's job is
+> to separate "the semantic judgment that costs money" from "the deterministic rules that are free"; when the quota is gone, only the former stops.
+
+**Where the warning shows up (the landing place of "someone must be able to find out"):**
+- In the **reason of every non-allow verdict** (so the approval prompt, the rejection message and the model feedback all carry it);
+- On a degraded allow, `source: degraded`, a **separate source** in the audit, not mixed into error;
+- At the moment degradation starts, one audit entry with `level: 'warn'` (at most one per window, so it doesn't spam);
+- The CLI's **stderr**; the DSH plugin's `ctx.logger.warn`;
+- `guard status` (exit code **3** = currently degraded, usable as a health check), `guard log --stats`.
+
+**Known trade-off:** during degradation **the semantic layer has no effect at all on new commands** — a carefully disguised destructive command will be allowed.
+That is the inevitable consequence of "the quota is gone", not something code can remove; all we can do is ① keep the free layer ② let people find out quickly.
+Per D1, this is not a security-boundary problem (it never defended against deliberate bypass anyway).
+
+**Evidence:** on 2026-09-20 a real API was hit with an invalid key: `HTTP 401` → classified `auth` → degraded for 30 minutes,
+the state file wrote out the real error body, the second call was `source: degraded` with **zero requests**, and `guard status` exited 3.
+There are also 54 offline assertions (`tools/selftest-quota.mjs`, with a stand-in fetch covering 402/401/429/5xx/timeout/network/bad state file).
+
+---
+
+## D10 · The entry guard is **inlined**, dynamic imports use **relative specifiers**; the degradation set takes in only the two classes where "the service's attitude changed"
+
+Both were forced out by real accidents, and **both look like "improving the code"**, so they must be written down to keep them from being changed back.
+
+### D10.1 The entry guard must be inlined in each file
+
+**Decision:** the lines that decide "am I being executed as the entry point?" are **written separately in each entry script**
+(the one left in the package is `tools/extract-commands.mjs`; there used to be two more, archived outside the package as the scope narrowed).
+
+**Evidence:** the old form `import.meta.url === \`file://${process.argv[1]}\`` is **always false** on Windows
+(argv1 is `T:\…`, the url is `file:///T:/…`) → the script **exits 0 immediately** after loading, and under many calling conventions
+**exit code 0 means "allow"**: the valve neither blocks nor records, and nobody knows. When fixing it, DRY led the guard to be pulled into `lib/entry.js` —
+and so it became **always false on WSL too**, because **`import.meta.url` is each module's own**; once it is in a shared module,
+what gets compared is that file's own path.
+
+**So this is not duplicated code, it is "each copy speaks only about its own identity".** The correct form:
 
 ```js
 function isMainModule() {
@@ -216,159 +218,180 @@ function isMainModule() {
 }
 ```
 
-`realpathSync` 同时解决盘符、反斜杠、相对路径与软链。**姊妹条款:** 动态导入要用**相对说明符**
-(`await import('../../lib/gate.js')`),不要 `import(join(ROOT, …))` —— Windows 上绝对路径不是
-合法 ESM 说明符(`ERR_UNSUPPORTED_ESM_URL_SCHEME`),相对说明符按本模块自己的 URL 解析,两平台都成立。
+`realpathSync` also handles drive letters, backslashes, relative paths and symlinks. **Companion clause:** a dynamic import must use a **relative specifier**
+(`await import('../../lib/gate.js')`), not `import(join(ROOT, …))` — on Windows an absolute path is not a valid ESM specifier
+(`ERR_UNSUPPORTED_ESM_URL_SCHEME`), whereas a relative specifier resolves against this module's own URL, which holds on both platforms.
 
-**护栏:** `tools/selftest-entry.mjs` 真的 spawn 每个入口脚本,并断言"三个文件各自定义守卫、
-没有从共享模块导入"。**这一层只有跑在 Windows 上才算验过** —— WSL 上永远验不出盘符问题。
+**Guard rail:** `tools/selftest-entry.mjs` really spawns each entry script and asserts that "the three files each define the guard and
+do not import it from a shared module". **This layer only counts as verified when run on Windows** — on WSL the drive-letter problem can never be caught.
 
-### D10.2 只有 `quota` 与 `auth` 触发降级,`no-key` 不触发
+### D10.2 Only `quota` and `auth` trigger degradation; `no-key` does not
 
-**决策:** 降级集合收窄为 `{quota, auth}`。`no-key` 归类、告警,但**不写共享的 `degraded.json`**。
+**Decision:** the degradation set narrows to `{quota, auth}`. `no-key` is classified and warned about, but **does not write the shared `degraded.json`**.
 
-**依据:** `degraded.json` 是**全局共享**的,而密钥解析**每条入口各自独立**
-(DSH 插件走 `ctx.credentials`,CLI 与离线脚本走环境变量或文件)。出现过这样的放大链:某条入口因为 cwd 不对
-读不到密钥 → 写一份共享的 `no-key` 降级 → **密钥正常的其它入口也一起停掉联网判定 30 分钟**。
-而 `no-key` 一次 HTTP 都不发,降级省不下任何东西 —— 它是**本地配置**状况,不是"服务对我们的态度变了"。
-同时把触发源一起修掉:`bin/guard.mjs` 里**相对路径的 `apiKeyFile` 一律按包根解析**(与 cwd 无关)。
+**Evidence:** `degraded.json` is **globally shared**, while key resolution **is independent per entry**
+(the DSH plugin uses `ctx.credentials`, the CLI and the offline scripts use an environment variable or a file). This amplification chain has occurred: one entry could not
+read the key because the cwd was wrong → wrote a shared `no-key` degradation → **other entries with a working key also stopped network judging for 30 minutes**.
+And `no-key` does not send a single HTTP request, so degrading saves nothing — it is a **local configuration** condition, not "the service's attitude toward us changed".
+At the same time the trigger itself was fixed: in `bin/guard.mjs`, **a relative-path `apiKeyFile` is always resolved against the package root** (independent of cwd).
 
-**规律:** 凡是"共享状态 + 各组件独立前提"的组合,先问一句"这个局部故障会不会被写进全局状态"。
-
----
-
-## D11 · **只支持 DSH**(2026-09-20 收窄,用户决定)
-
-**决策:** 本包不再维持"通用"的承诺。历史上试过的其它执行通道,其实现与验证工具
-**已从本包移除**(用户于 2026-09-20 决定不再保留那份档案),包内只留 DSH:
-
-- `adapters/` 下只有 `dsh/`;
-- 文档只讲 DSH 的机制(`docs/DSH-INTEGRATION.md` 取代了原来的 `HOST-CONTRACT.md`);
-- 验收清单只剩 DSH 的项(`docs/VERIFICATION.md`);
-- **包内任何文件都不再提及别的工具**(2026-09-20 清理);
-- 值得留下的**可迁移教训**写在 [`MEASUREMENTS.md`](./MEASUREMENTS.md) §12,不点具体工具名。
-
-**依据(不是"做不到",是性价比):**
-
-1. **各自宿主的审批/信任机制互不相同**,把任何一条做扎实都是各自独立的一轮工作。
-2. **实测暴露过一个结构性缺陷**:在"宿主能不能问人"这件事上,那套实现**等于永远是否** ——
-   策略取自宿主注入不了的 env、又忽略 payload 里的权限字段,且无论什么策略都输出同一个拒绝结论。
-   于是"能不能问人"退化成"一律硬拒",**宿主审批这条人工通道不可达**。修它要重做那套输出契约。
-   (可迁移的教训:**拿不到的信息要显式承认拿不到,别用一个默认值假装它存在**。)
-3. **未验证的适配器比没有适配器更危险**:它看起来装了阀门,实际不拦。
-
-**保留的东西:**
-
-- `lib/` 仍然与调用方无关 —— **理由变了**:不是为了接别的宿主,而是因为判定必须能被**离线复跑**
-  (校准、回归、事故复盘全靠这一点)。`bin/guard.mjs` 与七份自检都靠它。
-- **跨平台(WSL + Windows)不变** —— 平台不是宿主。两条平台差异都处理了:`bash`/`pwsh` 两个工具都在默认列表里;
-  授权行的引号按平台分叉(见 D12)。
-- 归档目录里的代码带着入口守卫的跨平台修复,将来复活别丢。
-
-**复活任何一条路线的门槛:** 先在那个宿主上跑完整验收(含"命令真的被拦 + 日志真的有记录"),
-再把它加回支持列表;只跑通"脚本能执行"不算。**包内文件不要预先提及它们** ——
-等真的做成了再写进文档。
+**The rule of thumb:** whenever you have "shared state + each component's own premises", first ask "can this local failure get written into global state?".
 
 ---
 
-## D12 · 授权行的引号**按平台分叉**;Windows 上另给与 shell 无关的 `--command-file`
+## D11 · **DSH only** (narrowed 2026-09-20, user decision)
 
-**决策:** `shellQuote(value, platform)`:POSIX 用 `'…'` + `'\''`;Windows 用 `'…'` + `''`(PowerShell)。
-理由文案在 Windows 上额外点明"用 PowerShell"。另外 `guard allow --command-file <文件>` 从文件读命令原文,
-**完全不过 shell 的引号规则** —— 给 cmd.exe 用(它两种写法都不认)。
+**Decision:** this package no longer keeps a "generic" promise. The other execution channels tried historically, together with their implementation and verification tooling,
+**have been removed from this package** (on 2026-09-20 the user decided not to keep that archive), and only DSH is left:
 
-**依据(实测):**
+- under `adapters/` there is only `dsh/`;
+- the docs talk only about DSH's mechanisms (`docs/DSH-INTEGRATION.md` replaced the old `HOST-CONTRACT.md`);
+- the acceptance checklist keeps only DSH's items (`docs/VERIFICATION.md`);
+- **no file in the package mentions other tools any more** (cleaned up 2026-09-20);
+- the **transferable lessons** worth keeping are written in [`MEASUREMENTS.md`](./MEASUREMENTS.md) §12, without naming specific tools.
 
-| 形式 | 在 PowerShell 里 |
+**Evidence (it is not "we can't", it is cost-effectiveness):**
+
+1. **Each host's approval/trust mechanism differs**, and doing any one of them solidly is a separate round of work.
+2. **A structural defect was exposed by measurement**: on the question "can the host ask a human", that implementation **was permanently equivalent to no** —
+   the policy came from an env the host could not inject, it ignored the permission fields in the payload, and whatever the policy it emitted the same rejection verdict.
+   So "can it ask a human" degraded into "always hard-reject", and **the host-approval human channel was unreachable**. Fixing it would mean redoing that output contract.
+   (The transferable lesson: **information you cannot obtain must be acknowledged as unobtainable; don't use a default value to pretend it exists.**)
+3. **An unverified adapter is more dangerous than no adapter**: it looks like it has the valve installed, but in fact it doesn't block.
+
+**What is kept:**
+
+- `lib/` is still caller-independent — **the reason changed**: not to take on other hosts, but because judging must be **replayable offline**
+  (calibration, regression and accident retrospectives all depend on this). `bin/guard.mjs` and the seven self-checks depend on it.
+- **Cross-platform (WSL + Windows) is unchanged** — a platform is not a host. Both platform differences are handled: both the `bash`/`pwsh` tools are in the default list;
+  the quotes in the authorisation line fork by platform (see D12).
+- The code in the archive directory carries the cross-platform fix for the entry guard; don't lose it if it is ever revived.
+
+**The bar for reviving any route:** first run the full acceptance on that host (including "the command really gets blocked + the log really has a record"),
+then add it back to the supported list; merely "the script runs" does not count. **Files in the package must not mention them in advance** —
+write them into the docs once they are actually done.
+
+---
+
+## D12 · The quotes in the authorisation line **fork by platform**; on Windows there is also a shell-independent `--command-file`
+
+**Decision:** `shellQuote(value, platform)`: POSIX uses `'…'` + `'\''`; Windows uses `'…'` + `''` (PowerShell).
+The reason text additionally points out "use PowerShell" on Windows. Also `guard allow --command-file <file>` reads the raw command from the file,
+**completely bypassing the shell's quoting rules** — for cmd.exe (which understands neither form).
+
+**Evidence (measured):**
+
+| Form | In PowerShell |
 |---|---|
-| `'a''b'`(本包 win32 形式) | ✅ 往返还原成 `a'b` |
-| `'a'\''b'`(旧的 POSIX 形式) | ❌ **ParserError**,语法都不成立 |
+| `'a''b'` (this package's win32 form) | ✅ round-trips back to `a'b` |
+| `'a'\''b'` (the old POSIX form) | ❌ **ParserError**, the syntax isn't even valid |
 
-这段话是给用户**照抄**的:粘进去语法错 = 授权入口不可用 = 人唯一的出口被堵住。而"一次判定都还没发生"
-之前没人会发现(R2 只在被拦时才出现)。
+This text is for the user to **copy verbatim**: paste it and get a syntax error = the authorisation entry is unusable = the human's only exit is blocked. And nobody would find out before
+"not a single verdict has happened yet" (R2 only appears when something is blocked).
 
-**为什么默认用 `process.platform`:** DSH 跑在 WSL 上时,用户能粘贴的终端通常也是 WSL/POSIX;
-DSH 跑在 Windows 上时,那是 PowerShell。"宿主与终端在同一侧"是常态。
-两边不同侧时(DSH 在 WSL、终端在 Windows),用 `--command-file` 那条与 shell 无关的路。
+**Why `process.platform` by default:** when DSH runs on WSL, the terminal the user can paste into is usually WSL/POSIX too;
+when DSH runs on Windows, that is PowerShell. "Host and terminal on the same side" is the norm.
+When they are on different sides (DSH on WSL, the terminal on Windows), use the `--command-file` route, which is shell-independent.
 
 ---
 
-## D13 · 判定动作**随审批模式分叉**:`ask` 下 `revise`/`block` 转人工,L0 硬规则仍拦死(2026-09-20 用户拍板)
+## D13 · The judging action **forks with the approval mode**: under `ask`, `revise`/`block` go to a human, and L0 hard rules still hard-block (user's call, 2026-09-20)
 
-**决策:**
+**Decision:**
 
-| 判定 | `approval: ask`(人就在场) | `approval: never`(全自动) |
+| Verdict | `approval: ask` (a human is present) | `approval: never` (fully automatic) |
 |---|---|---|
-| `revise`(50–70%) | **转人工弹窗**(附三种降级模板) | 直接拒绝(+ 模板 + 令牌) |
-| `block` ≥70%(语义层) | **转人工弹窗** | 直接拒绝(+ 令牌) |
-| L0 的 `deny` 类硬规则 | **拒绝**(不弹窗、不发令牌) | **拒绝** |
-| L0 的 `ask` 类规则 / 重试预算升级 | 转人工弹窗 | 直接拒绝 |
+| `revise` (50–70%) | **goes to a human approval prompt** (with the three downgrade templates) | rejected outright (+ template + token) |
+| `block` ≥70% (semantic layer) | **goes to a human approval prompt** | rejected outright (+ token) |
+| L0's `deny`-class hard rules | **rejected** (no prompt, no token issued) | **rejected** |
+| L0's `ask`-class rules / retry-budget escalation | goes to a human approval prompt | rejected outright |
 
-配置开关 `reviseInAskMode` / `blockInAskMode`(取值 `'ask'`(默认)/ `'deny'`),留一条**不用改代码**的回退路。
+The config switches `reviseInAskMode` / `blockInAskMode` (values `'ask'` (default) / `'deny'`) leave a fallback path that needs **no code change**.
 
-**依据(实测,2026-09-20):** 改之前只有 `escalate` 会看审批策略,`revise`/`block` 一律直接拒绝。
-审计日志当天 **59 条** `revise`/`block` 拒绝里,**有 9 条发生在 `policy=ask` 的会话中**(p 全在 0.50–0.63),
-命令分别是 `cp` 到部署目录、`sed -i`、`mkdir -p`、`git add -A && git commit` —— 全是操作者自己的维护动作,
-**人就在旁边,却只拿到一句"请改用更安全的形式"**。用户原话:"我实际上想的是,在全自动模式下拦,
-而在需要审批的模式里面所有的拦截都改成弹审批"。
+**Evidence (measured, 2026-09-20):** before the change only `escalate` looked at the approval policy; `revise`/`block` were always rejected outright.
+Of the **59** `revise`/`block` rejections in that day's audit log, **9 happened in sessions with `policy=ask`** (all p in 0.50–0.63);
+the commands were `cp` to a deployment directory, `sed -i`, `mkdir -p`, `git add -A && git commit` — all the operator's own maintenance actions,
+**with the human right there, yet getting only a "please use a safer form"**. The user's own words: "what I actually had in mind was to block
+in fully automatic mode, and in the modes that need approval turn all the blocks into an approval prompt".
 
-这同时补上了 **D1 三分类里的第 (3) 类** —— "中间态:先别跑,找替代;**找不到就等用户**"。
-"等用户"必须有一条能到人的通道,而当时只有 `escalate` 有。
+This also closes **class (3) in D1's three-way classification** — "the middle state: don't run it yet, look for an alternative; **if you can't find one, wait for the user**".
+"Wait for the user" needs a channel that can reach a human, and at the time only `escalate` had one.
 
-**为什么不会因此变松:**
+**Why this does not make it looser:**
 
-1. `never`(全自动)语义上就是 `danger-full-access` preset;那种会话里 DSH 会把任何 `ask` 直接判成
-   `rejected`,所以"没人可问时由阀门直接拒"是唯一正确的落法。
-2. `ask` 模式下**没有应答者时审批 fail-closed**(直接 rejected)—— 转人工不会变成无人自动放行。
-3. 弹窗只授予 `allowed-once`,不存在"以后都放行"。
-4. 频率低:0.5–0.7 在 737 条语料里只占 0.81%(约 1/125),不会把弹窗变成噪音。
+1. `never` (fully automatic) is semantically the `danger-full-access` preset; in such a session DSH judges any `ask` directly as
+   `rejected`, so "when there is nobody to ask, the valve rejects directly" is the only correct landing.
+2. Under `ask`, **with no responder the approval fails closed** (rejected outright) — going to a human does not become an unattended automatic allow.
+3. The prompt grants only `allowed-once`; there is no "allow from now on".
+4. The frequency is low: 0.5–0.7 is only 0.81% of the 737-command corpus (about 1/125), so it won't turn prompts into noise.
 
-**同时堵上一个潜在洞:** 重试预算原本会把"任何非 escalate 判定"在第 `retryLimit+1` 次尝试后升级为
-escalate —— 对带 L0 `deny` 规则的硬命中也一样。那意味着 `ask` 模式下把 `git push --force` 连交三次就会弹窗,
-而弹窗里点"允许"**越过了硬地板**(与 D5"令牌不越过 L0"自相矛盾)。现在硬命中**不参与**预算升级
-(仍记 `attempts` 供审计)。审计显示这条路径在修复前**从未被触发过**(纯潜在洞)。
+**It also plugs a latent hole:** the retry budget used to escalate "any non-escalate verdict" to
+escalate after the `retryLimit+1`-th attempt — including for a hard hit on a rule with an L0 `deny` rule. That meant under `ask` mode, submitting `git push --force` three times in a row would pop a prompt,
+and clicking "allow" in it **crossed the hard floor** (contradicting D5's "a token does not cross L0"). Now a hard hit **does not take part** in budget escalation
+(it still records `attempts` for the audit). The audit shows this path was **never triggered** before the fix (a purely latent hole).
 
-**代价(明说):** `ask` 模式下高分的破坏性命令现在会**弹窗等你点**,而不是立刻被拒 —— 手快点错,
-后果由决定的人承担,阀门不再替你兜底。想要"高分一律拦死"的,把 `blockInAskMode` 填成 `deny`;
-但 **L0 那一档无论怎么配都拦死**。
+**The price (stated plainly):** under `ask` mode, a high-scoring destructive command now **pops a prompt and waits for your click**, instead of being rejected at once — click too fast and get it wrong,
+and the consequence is borne by whoever decided; the valve no longer covers for you. If you want "high scores always hard-blocked", set `blockInAskMode` to `deny`;
+but **the L0 tier hard-blocks no matter how it is configured**.
 
-## D14 · 文案双语化,但**界面语言与判定问话语言分开**:`promptLang` 默认仍是中文(2026-09-20)
+## D14 · Copy is bilingual, but **the interface language and the language of the judging question are separate**: `promptLang` still defaults to Chinese (2026-09-20)
 
-**决定:**
+**Decision:**
 
-1. 所有**给人或模型看的文案**(判定理由、L0 规则理由、CLI 输出、降级告警与状态、引用的脚本
-   skip 说明、审计汇总标题)都有中英两份,集中放在 `lib/i18n.js`(L0 规则理由例外:它写在
-   规则自己旁边,保持"一条规则一个自洽单元",见 `lib/rules.js` 的 typedef)。
-2. `lang` 控制界面语言,默认 `'auto'`:`JEV_GUARD_LANG` → `LC_ALL`/`LC_MESSAGES`/`LANG`
-   (**仅当它们指明一种受支持的语言**)→ 否则 `zh-CN`。CLI 另有 `--lang zh-CN|en`。
-   **`Intl`/系统 locale 刻意不在链上**:第一版把它放在最后,结果真实部署当场踩到 ——
-   DSH 插件跑在 WSL 里,那里 `LANG=C.UTF-8` 表示"没有偏好",`Intl` 于是报出 Node 自己的
-   `en-US` 兜底值,会话里的理由悄悄变英文,而同一台机器的 Windows 侧 CLI(其 Node 报 `zh-CN`)
-   仍是中文。同一个阀门两种语言,事后复盘时极难解释。`C`/`POSIX`/未设置 = **没有信号**,
-   落回项目主语言;要英文就明说。
-3. `promptLang` 控制**发给判定服务的那句问话**与 state 的键,**默认 `'zh-CN'`,与 `lang` 无关**。
-4. 代码注释与 `tools/` 里的自检标签**不翻译**:前者是维护者读的,后者是测试用例名;
-   翻译它们会让每一次改动的维护成本翻倍,却不改变产品对外的任何一句话。
+1. All **copy meant for a human or a model** (verdict reasons, L0 rule reasons, CLI output, degradation warnings and status, the referenced script's
+   skip note, audit summary titles) exists in both Chinese and English, kept together in `lib/i18n.js` (the L0 rule reasons are the exception: they are written
+   next to the rule itself, keeping "one rule, one self-contained unit", see the typedef in `lib/rules.js`).
+2. `lang` controls the interface language, default `'auto'`: `JEV_GUARD_LANG` → `LC_ALL`/`LC_MESSAGES`/`LANG`
+   (**only when they name a supported language**) → otherwise `zh-CN`. The CLI also has `--lang zh-CN|en`.
+   **`Intl`/the system locale is deliberately not in the chain**: the first version put it last, and the real deployment tripped over it right away —
+   the DSH plugin runs in WSL, where `LANG=C.UTF-8` means "no preference", so `Intl` reported Node's own
+   `en-US` fallback, the reasons in the session quietly turned English, while the CLI on the Windows side of the same machine (whose Node reports `zh-CN`)
+   stayed Chinese. One valve, two languages; extremely hard to explain in a retrospective afterwards. `C`/`POSIX`/unset = **no signal**,
+   falling back to the project's primary language; if you want English, say so explicitly.
+3. `promptLang` controls **the one question sent to the judging service** and the state keys, and **defaults to `'zh-CN'`, independent of `lang`**.
+4. Code comments and the self-check labels in `tools/` are **not translated**: the former are read by maintainers, the latter are test-case names;
+   translating them would double the maintenance cost of every change, without changing a single sentence of the product's outward-facing copy.
 
-**为什么第 3 条要单独拎出来(这是本条的核心):** 阈值 0.5 / 0.7 是在**中文问话**上标定的
-(114 例,见 MEASUREMENTS §2)。§14 的实测表明:换成英文问话后,21 条探针里 **12 条 p 更低 /
-4 条更高**,平均压低约 **0.04**,并且**三条命令直接翻带**——`DELETE ... WHERE`(block→revise)、
-无 WHERE 的 `UPDATE`(block→revise)、内联 `node -e rmSync`(revise→allow),方向**全部**朝更宽松。
-两轮独立运行结论一致,噪声地板只有 0.015。也就是说:把界面切成英文,如果顺手把问话也切成英文,
-就等于**悄悄把一条被测过的边界往放行方向挪了一格**。所以两者必须分开配置,默认保持中文;
-要切就得承认那是一次重标定,而不是翻译。
+**Why item 3 has to be pulled out on its own (this is the core of this entry):** the thresholds 0.5 / 0.7 were calibrated on the **Chinese question**
+(114 cases, see MEASUREMENTS §2). The measurements in §14 show: after switching to an English question, of the 21 probes **12 had a lower p /
+4 a higher one**, the average dropping by about **0.04**, and **three commands flipped bands outright** — `DELETE ... WHERE` (block→revise),
+an `UPDATE` without WHERE (block→revise), inline `node -e rmSync` (revise→allow), with the direction **all** toward the more permissive side.
+Two independent runs agreed, and the noise floor is only 0.015. That is to say: switching the interface to English and casually switching the question to English as well
+is equivalent to **quietly moving a measured boundary one notch toward allow**. So the two must be configured separately, defaulting to Chinese;
+switching must be acknowledged as a recalibration, not a translation.
 
-**为什么不是"干脆不做英文问话":** 非中文部署里,模型看到英文问话更自然,而英文问话并非不可用 ——
-18/21 同带。把它做成**显式选项 + 写明代价**,比藏起来或假装没有强。
+**Why not "just don't do an English question at all":** in a non-Chinese deployment, an English question is more natural for the model, and an English question is not unusable —
+18/21 agree. Making it an **explicit option with the price written down** beats hiding it or pretending it doesn't exist.
 
-**代价(明说):**
+**The price (stated plainly):**
 
-- 多了一份目录要维护;`selftest-i18n` 会在"某个键只写了一种语言""占位符两边不一致"
-  "英文里残留中文"这三件事上直接判失败。
-- 语言随系统 locale 自动解析意味着:**英文 locale 的机器上,升级后输出会变成英文**(行为变更)。
-  想固定就说 `lang: "zh-CN"`。
-- 判定行为本身**不受影响**:L0 规则、预筛、阈值、缓存键、promptLang 默认值都不变 ——
-  `lang` 只换文案。
+- One more catalogue to maintain; `selftest-i18n` fails outright on three things: "a key written in only one language",
+  "placeholders that differ between the two sides", "Chinese left over in the English".
+- Automatically resolving the language from the system locale means: **on a machine with an English locale, the output turns English after the upgrade** (a behaviour change).
+  If you want it fixed, say `lang: "zh-CN"`.
+- The judging behaviour itself is **unaffected**: L0 rules, the pre-screen, thresholds, cache keys and the promptLang default all stay the same —
+  `lang` only swaps copy.
 
-**与 D2/D5/D13 的关系:** 不改变任何一条判定路径。唯一动到判定输入的是显式设置 `promptLang: "en"`,
-而那属于"你自己选的、且现在有数了"的一类(§14)。
+5. **The repository's documents are English-first too**: every document defaults to English, with the
+   Chinese kept byte-for-byte as `<name>.zh-CN.md` in the same directory and a language line at the top
+   of both (point 1 above was about *messages*; this one is about the documents themselves). The rules:
+   - **the Chinese file is a byte-for-byte copy of the original**, differing only by that one language
+     line; **change both together**;
+   - **mechanical comparison instead of trust**, run by `node tools/check-doc-pairs.mjs`: the Chinese
+     file must equal the baseline byte-for-byte plus that one language line, and the two sides must
+     agree on heading-level sequence, code-fence count, table row count, link-target set and numeric
+     multiset (the tool also prints every Chinese line left in the English file, so you can check that
+     they are all quotations);
+   - **quoted measurements are not translated** — log lines, command samples and Chinese corpus entries
+     (such as `xargs 删除 mkfs.ext4 …`) stay exactly as observed wherever they are quoted; a translated
+     quote would be a forged one. Any Chinese left in an English document should only ever be of this kind;
+   - **generated files follow the language switch**: `verification-results/SUMMARY.md` is produced by
+     `tools/report-result.mjs`, which defaults to English (it is a committed artifact read by people, and
+     regenerating it on another machine should not make its language drift), while its evidence column
+     remains a verbatim quote, i.e. Chinese;
+   - code comments and the labels inside `tools/` are still not translated (point 4). The line is:
+     **what a reader outside the repository sees** (GitHub visitors, users, models) → bilingual;
+     **what only a maintainer reads** → Chinese.
+
+**Relationship to D2/D5/D13:** it changes no judging path. The only thing that touches the judging input is explicitly setting `promptLang: "en"`,
+and that belongs to the category "you chose it yourself, and now you have the numbers" (§14).

@@ -271,11 +271,13 @@ docs/                      机制、取舍、实测、验收清单
 
 ## 文档
 
+下面的文档**默认是英文**;把扩展名写成 `*.zh-CN.md`(例如 `docs/DECISIONS.zh-CN.md`)就是与它同步的中文版。
+
 | 文档 | 内容 |
 |---|---|
 | [docs/DSH-INTEGRATION.md](docs/DSH-INTEGRATION.md) | 它用 DSH 的哪些机制、四态怎么映射、降级契约、为什么"装上了≠真的在拦" |
 | [docs/USER-INTERVENTION.md](docs/USER-INTERVENTION.md) | 人的三条介入通道 + 实测证据 |
-| [docs/DECISIONS.md](docs/DECISIONS.md) | 已接受的设计取舍 D1–D12(**改之前先读**) |
+| [docs/DECISIONS.md](docs/DECISIONS.md) | 已接受的设计取舍 D1–D14(**改之前先读**) |
 | [docs/MEASUREMENTS.md](docs/MEASUREMENTS.md) | 全部实测数字、延迟/成本、事故复盘 |
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | 判定分层、为何判定与拦截必须分开 |
 | [docs/VERIFICATION.md](docs/VERIFICATION.md) | 验收清单与逐项判据 |

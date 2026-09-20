@@ -1,115 +1,118 @@
-# 架构:为什么是四层,以及为什么判定与拦截必须分开
+# Architecture: why four layers, and why judging must be separate from interception
 
-## 一句话
+> **English** | [简体中文](ARCHITECTURE.zh-CN.md)
 
-**可移植的是判断,不是权力。** 判定可以做成一个与调用方无关的函数(本包就是这么做的);
-而**强制拦截必须落在 DSH 自己的执行前拦截位上**。把这两件事分开,方案才成立 ——
-也是它能在 Windows 与 WSL 上跑同一套判定的原因。
+## In one sentence
 
-## 四层
+**What is portable is the judgment, not the power.** Judging can be made a caller-agnostic function (which is what this package does);
+but **enforcement interception must land on DSH's own pre-execution interception point**. Only by separating these two things does the approach hold up —
+and it is also the reason it can run the same judging on both Windows and WSL.
 
-```
-                        ┌──────────── jev-guard ────────────┐
-                        │  L0 静态硬规则   不联网 · 不可覆盖    │
-      DSH ──原生插件────▶ │  L1 Jev 语义判定 300ms · 四态 · 缓存  │ ──▶ TypeSafe API
-                          │  L2 执行前快照(规划中)              │
-      (只支持 DSH)  ─────▶│  三张皮:CLI · 库 · 离线自检        │
-                          └──────────────────────────────────┘
-```
-
-### L0 — 静态硬规则(不联网)
-
-**职责:** "永不允许"和"必须人工确认"两类清单。`lib/rules.js`,21 条 deny + 16 条 ask。
-
-**为什么单独一层:** 它必须不依赖网络、不依赖模型、不可被任何下游覆盖。DSH 里对应的是
-`ctx.tools.guard()` —— 文档原话:may deny or abstain, **never force-allow**。
-拿语义模型当硬规则的实现,等于把安全建立在一句网络请求上。
-
-### L1 — Jev 语义判定
-
-**职责:** 灰区判断。"这条命令/脚本会不会不可逆地删或覆盖真实数据?"
-
-**为什么是这一个问句:** 114 项实测里,同一个问句在中文下 **12/12**;而同批样本里
-"该怎么做"(语义相邻的三选一)只有 75%、"风险档位"只有 50%。**是非题准,程度题不准** ——
-所以档位由代码合成,不问模型。
-
-**四态而不是三态:** "让模型再试一次"(秒级闭环)和"等人来"(可能几小时)是两条不同的控制流。
-混在一起要么把人拖进小事,要么让模型在同一个坑里换写法无限重试。`revise` 必须附三种确定性
-降级模板(只读等价 / 缩小作用域 / 先备份),因为它给不出命令 —— 它不产出文本。
-
-### L2 — 执行前快照(规划中)
-
-**职责:** 判定不可能 100% 准,这一层兜住误判。**先只做 git provider**(覆盖率最高、代价最低),
-可枚举且体积在预算内才快照;枚举不出或超预算就直接拦。本机实测约束见 `docs/MEASUREMENTS.md` §5。
-
-### L3 — 人工出口
-
-不在这条流水线里,但属于设计的一部分:**一次性令牌**(放行某一条命令一次)、
-**DSH 审批弹窗**(`approval: ask`)、**人手动执行**。三条通道各自的性质与实测证据见
-[`USER-INTERVENTION.md`](./USER-INTERVENTION.md)。
-
-## 数据流(一次判定)
+## The four layers
 
 ```
-命令文本 + cwd
-   │
-   ├─ L0 命中? ──是──▶ block / escalate(结束,零网络)
-   │
-   ├─ 确定性预筛命中? ──是──▶ allow(结束,零网络)
-   │        (只读命令 / 可重建路径的 rm;复合命令逐段判断)
-   │
-   ├─ 缓存命中? ──是──▶ 返回上次结论(仍走当前策略映射)
-   │
-   ├─ 补齐 state:
-   │     · 命令里调用的脚本正文(`node x.mjs` → 读 x.mjs)
-   │     · package.json 里的脚本体(`pnpm run deploy:prod` → 读 scripts)
-   │     · 敏感路径跳过、8KB 上限
-   │
-   └─ Jev 一问 ──▶ p
-          p < low          → allow
-          low ≤ p < high   → revise(附模板)
-          p ≥ high         → block
-          超时/报错         → allow(fail-open)
+                            ┌─────────────────────── jev-guard ────────────────────────┐
+                            │  L0 static hard rules   offline · cannot be overridden   │
+      DSH ──native plugin──▶│  L1 Jev semantic judgment 300ms · the four states · cache│ ──▶ TypeSafe API
+                            │  L2 pre-execution snapshot (planned)                     │
+      (DSH only)  ─────▶    │  Three surfaces: CLI · library · offline self-check      │
+                            └──────────────────────────────────────────────────────────┘
 ```
 
-## 宿主映射(同一个 verdict,不同宿主不同落地)
+### L0 — static hard rules (offline)
 
-| verdict | DSH(审批策略 `ask`) | DSH(审批策略 `never`,即完全权限) |
+**Responsibility:** the two lists "never allowed" and "must be confirmed by a human". `lib/rules.js`, 21 deny + 16 ask.
+
+**Why it is a separate layer:** it must not depend on the network, must not depend on a model, and must not be overridable
+by anything downstream. In DSH the counterpart is
+`ctx.tools.guard()` — the documentation's own words: may deny or abstain, **never force-allow**.
+Implementing hard rules with a semantic model amounts to building safety on one network request.
+
+### L1 — Jev semantic judgment
+
+**Responsibility:** grey-zone judgment. "Will this command/script irreversibly delete or overwrite real data?"
+
+**Why it is this one question:** across 114 measured cases, the same question scored **12/12** in Chinese; while in the
+same batch "what should be done" (a semantically adjacent three-way choice) scored only 75%, and "risk level" only 50%. **Yes/no questions are accurate, degree questions are not** —
+so the level is composed by code, not asked of the model.
+
+**The four states rather than three:** "let the model try again" (a seconds-long closed loop) and "wait for a human" (possibly hours) are two different control flows.
+Mixed together, they either drag a person into small matters, or let the model retry without end in the same pit with a different phrasing. `revise` must carry three deterministic
+degradation templates (read-only equivalent / narrower scope / back up first), because it cannot give a command — it produces no text.
+
+### L2 — pre-execution snapshot (planned)
+
+**Responsibility:** judging can never be 100% accurate; this layer catches the misjudgment. **Do only the git provider first** (highest coverage, lowest cost):
+snapshot only when it can be enumerated and the size is within budget; when it cannot be enumerated or is over budget, block outright. The measured constraints on this machine are in `docs/MEASUREMENTS.md` §5.
+
+### L3 — the human exit
+
+It is not in this pipeline, but it is part of the design: the **one-shot token** (lets one command through once),
+the **DSH approval prompt** (`approval: ask`), and **a human running it by hand**. The properties of the three channels and the measured evidence for each are in
+[`USER-INTERVENTION.md`](./USER-INTERVENTION.md).
+
+## Data flow (one judgment)
+
+```
+command text + cwd
+   │
+   ├─ L0 hit? ──yes──▶ block / escalate (end, zero network)
+   │
+   ├─ deterministic pre-screen hit? ──yes──▶ allow (end, zero network)
+   │        (read-only commands / rm on rebuildable paths; compound commands judged segment by segment)
+   │
+   ├─ cache hit? ──yes──▶ return the previous verdict (still goes through the current policy mapping)
+   │
+   ├─ fill in state:
+   │     · the body of the script the command invokes (`node x.mjs` → read x.mjs)
+   │     · the script body in package.json (`pnpm run deploy:prod` → read scripts)
+   │     · sensitive paths skipped, 8KB cap
+   │
+   └─ one Jev question ──▶ p
+          p < low        → allow
+          low ≤ p < high → revise (with templates)
+          p ≥ high       → block
+          timeout/error  → allow (fail-open)
+```
+
+## Host mapping (the same verdict lands differently on different hosts)
+
+| verdict | DSH (approval policy `ask`) | DSH (approval policy `never`, i.e. full permissions) |
 |---|---|---|
-| allow | 放行 | 放行 |
-| revise | 拒绝 + 三种降级模板 | 拒绝 + 一次性令牌提示 |
-| block | 拒绝 | 拒绝 + 一次性令牌提示 |
-| escalate | **弹审批框**(由人决定) | **直接拒绝** + 一次性令牌提示 |
+| allow | run it | run it |
+| revise | refuse + three degradation templates | refuse + one-shot token hint |
+| block | refuse | refuse + one-shot token hint |
+| escalate | **raises the approval prompt** (a human decides) | **refuse outright** + one-shot token hint |
 
-> 最后一行是这个项目里最容易踩的坑:**完全权限模式下 `ask` 不是"弹窗",而是"被拒绝"**。
-> DSH 源码里 `approval: 'never'` 的定义就是 *never prompt anyone: every ask resolves rejected*。
-> 如果在这种会话里直接返回 `ask`,模型会收到一句**错话**("the user rejected tool bash");
-> 所以我们自己拒绝,并把真实原因(命中哪条硬规则、这不是人手动拒绝)写清楚。
+> The last row is the easiest pit to fall into in this project: **under full-permissions mode `ask` is not "a prompt", it is "being rejected"**.
+> In the DSH source the definition of `approval: 'never'` is exactly *never prompt anyone: every ask resolves rejected*.
+> If we returned `ask` directly in such a session, the model would receive a **false statement** ("the user rejected tool bash");
+> so we refuse ourselves, and write the real reason out clearly (which hard rule was hit, and that this is not a human refusing by hand).
 
-## 为什么"建议层"不能当防线
+## Why a "suggestion layer" cannot be a line of defence
 
-任何"把判定塞给模型自己决定要不要问"的做法(提示词 / 一个可选工具)都**不是拦截**:
+Any approach that "hands the judging to the model to decide for itself whether to ask" (a prompt / an optional tool) is **not interception**:
 
-- **提示词** = 模型可以不遵守;
-- **一个供模型调用的判定工具** = 模型**自己决定**调不调用。
+- **A prompt** = the model may disobey it;
+- **A judgment tool the model can call** = the model **decides for itself** whether to call it.
 
-两者都无法拦下别的工具调用。本包因此只走**执行前拦截位**这条强制路线:
-DSH 的 `tools/pre-execute`。判定本身仍然做成与调用方无关的函数,是为了能**离线复跑**,
-不是为了把权力交出去。
+Neither can stop any other tool call. This package therefore takes only the enforcement route of the **pre-execution interception point**:
+DSH's `tools/pre-execute`. That the judging itself is still made a caller-agnostic function is so that it can be **replayed offline**,
+not so that the power is handed away.
 
-## 已知盲区(设计里认下的,不是 bug)
+## Known blind spots (accepted in the design, not bugs)
 
-| 盲区 | 现状 | 对策 |
+| blind spot | current state | mitigation |
 |---|---|---|
-| 基础设施工具 | `terraform apply -auto-approve` 实测 0.48,低于阈值会放行 | 给这类命令单独压低阈值,或加 L0 ask 规则 |
-| 运行时才算出的路径 | 脚本按配置决定删哪个目录,只能靠源码猜 | 补 state 只能补正文;这类归入"枚举不出就拦" |
-| 内联长代码 | `node -e` 短句可见(0.91),超长 heredoc / 变量拼接看不见 | 已知;必要时把 heredoc 也当"脚本正文"处理 |
-| 非 shell 工具 | 文件写入工具、`run_code` 尚未接入 | 扩 `tools` 列表(DSH 侧改 config 即可) |
-| 远端/云端状态 | `git push --force`、`npm publish`、删云资源 | 已进 L0;其余靠并行加问"会不会改远端状态" |
-| 蓄意绕过 | 换壳/编码/绝对路径 | **不设防** —— 这是事故安全网,不是安全边界 |
-| 授权文件被直接改写 | 有文件写入类工具的 agent 可以直接写 `~/.jev-guard/allow.txt`(等效于自己给自己发授权) | **有意保留,不堵** —— 见 [DECISIONS.md](./DECISIONS.md) **D1**;这不是 bug,是范围声明 |
+| Infrastructure tooling | `terraform apply -auto-approve` measured at 0.48, below the threshold it is let through | lower the threshold for this class of command separately, or add an L0 ask rule |
+| Paths only computed at runtime | the script decides from configuration which directory to delete; we can only guess from the source | filling in state can only supply the body text; this class falls under "cannot be enumerated → block" |
+| Inline long code | a short `node -e` is visible (0.91); an over-long heredoc / concatenated variables are not | known; when necessary, treat heredoc as "script body" too |
+| Non-shell tools | file-writing tools and `run_code` are not wired up yet | extend the `tools` list (a config change on the DSH side is enough) |
+| Remote/cloud state | `git push --force`, `npm publish`, deleting cloud resources | already in L0; the rest relies on adding a parallel question "will this change remote state?" |
+| Deliberate bypass | re-wrapping/encoding/absolute paths | **not defended** — this is an accident net, not a security boundary |
+| The authorisation file being rewritten directly | an agent with file-writing tools can write `~/.jev-guard/allow.txt` directly (equivalent to issuing an authorisation to itself) | **deliberately kept, not sealed** — see [DECISIONS.md](./DECISIONS.md) **D1**; this is not a bug, it is a scope statement |
 
-> 表里最后两行是一件事的两种说法:这个阀门防的是**事故**(模型没看清、命令写顺手了、状态搞混了),
-> 不是**对手**。用户对这个范围的定调原文见 D1。**看到这两行不要"顺手修掉"**:
-> 那等于要求把文件写入类工具也纳入判定 + 做文件层权限,是另一个产品的工作量,
-> 而收益只针对"蓄意绕过"这个本项目明确不覆盖的场景。
+> The last two rows of the table are two ways of saying one thing: this valve guards against **accidents** (the model did not look carefully, the command was written out of habit, the state got mixed up),
+> not an **adversary**. The user's own wording on this scope is in D1. **On seeing these two rows, do not "helpfully" seal them**:
+> that would amount to requiring file-writing tools to be brought into the judging as well + file-level permissions, which is another product's worth of work,
+> and the benefit would only target the "deliberate bypass" scenario that this project explicitly does not cover.

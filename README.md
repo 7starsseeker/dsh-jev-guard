@@ -268,15 +268,17 @@ docs/                      Mechanics, trade-offs, measurements, acceptance check
 
 Two more deliberate omissions: judging **does not simulate filesystem state** (it will not reason "that file is empty anyway"), and it does not accept "this command is harmless" arguments that would require reading runtime state — that is precisely the crack accidents come in through.
 
-> The documents under `docs/` are written in Chinese. Every number in this README is reproducible from them.
+> Every document ships **in English by default, with a Chinese sibling** (`*.zh-CN.md`, linked from a language line at the top of each file). Every number in this README is reproducible from them.
 
 ## Documentation
+
+Each document below is English by default; add `.zh-CN` before `.md` (e.g. `docs/DECISIONS.zh-CN.md`) for the Chinese version, which is kept in step with it.
 
 | Document | Contents |
 |---|---|
 | [docs/DSH-INTEGRATION.md](docs/DSH-INTEGRATION.md) | Which DSH mechanisms it uses, how the four states map, the degradation contract, and why "installed" ≠ "actually blocking" |
 | [docs/USER-INTERVENTION.md](docs/USER-INTERVENTION.md) | The three human channels + measured evidence |
-| [docs/DECISIONS.md](docs/DECISIONS.md) | Accepted design trade-offs D1–D12 (**read before changing anything**) |
+| [docs/DECISIONS.md](docs/DECISIONS.md) | Accepted design trade-offs D1–D14 (**read before changing anything**) |
 | [docs/MEASUREMENTS.md](docs/MEASUREMENTS.md) | Every measured number, latency/cost, incident retrospectives |
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | The judgment layers, and why judging and intercepting must stay separate |
 | [docs/VERIFICATION.md](docs/VERIFICATION.md) | The acceptance checklist and per-item criteria |

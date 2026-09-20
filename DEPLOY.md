@@ -1,86 +1,88 @@
-# DEPLOY.md — 部署手册(DSH)
+# DEPLOY.md — Deployment manual (DSH)
 
-你正在读的是 jev-guard 的部署说明。目标:让这条"执行前安全阀门"在 **DSH** 上生效,
-并且**每一步都有可验收的证据**。**WSL 与 Windows 都支持。**
+> **English** | [简体中文](DEPLOY.zh-CN.md)
 
-> **先读这两份,再读本文:**
-> [`docs/DSH-INTEGRATION.md`](./docs/DSH-INTEGRATION.md) —— 它用 DSH 的哪些机制、四态怎么映射、
-> 降级契约、以及"插件装上了≠真的在拦"这件事的复盘。
-> [`docs/USER-INTERVENTION.md`](./docs/USER-INTERVENTION.md) —— 人的三条介入通道。
+You are reading the deployment instructions for jev-guard. The goal: make this "pre-execution safety valve" take effect on **DSH**,
+and **have acceptable evidence for every step**. **Both WSL and Windows are supported.**
+
+> **Read these two first, then this document:**
+> [`docs/DSH-INTEGRATION.md`](./docs/DSH-INTEGRATION.md) — which of DSH's mechanisms it uses, how the four states map,
+> the degradation contract, and the retrospective on "the plugin is installed ≠ it is really blocking".
+> [`docs/USER-INTERVENTION.md`](./docs/USER-INTERVENTION.md) — the three channels a human can step in through.
 >
-> **如果你是"被派来部署的 AI",先读 [START-HERE.md](./START-HERE.md)** —— 那里有可粘贴的任务
-> 提示词与硬约束(能改哪些文件)。读完再回到本文按步骤执行;
-> 结论用 `tools/report-result.mjs` 写回 `verification-results/`。
+> **If you are "an AI sent to deploy this", read [START-HERE.md](./START-HERE.md) first** — it has the pasteable task
+> prompt and the hard constraints (which files may be changed). When you have finished, come back to this document and follow the steps;
+> write the conclusion back to `verification-results/` with `tools/report-result.mjs`.
 
-## 0. 工作方式(先读这一段)
+## 0. How to work (read this first)
 
-1. **不要跳步。** 顺序是:先证明判定层能工作(§2.3)→ 再装进 DSH(§2.4)→ 最后验收(§3)。
-2. **改任何 DSH 配置前先备份原值**,并在结论里写清怎么回滚(§6)。
-3. **验证要看副作用,不看"没报错"。** 本包真实发生过三层静默失效:脚本一声不响地退出 0、
-   命令照跑、日志什么都没有(见 `docs/MEASUREMENTS.md` §10)。
-4. **绝不打印密钥。** 需要时从 `secrets.json` 或凭据层读,只报长度或哈希尾号。
-5. 所有命令都可以先只读地试跑(`selftest`、`rules`、`judge`、`status`)—— 它们不改任何宿主配置。
+1. **Do not skip steps.** The order is: first prove the judging layer works (§2.3) → then install it into DSH (§2.4) → finally the acceptance (§3).
+2. **Back up the original value before changing any DSH configuration**, and state clearly in the conclusion how to roll back (§6).
+3. **Verify against side effects, not against "it didn't error".** This pack has really had three layers of silent failure: the script exits 0 without a sound,
+   the command runs anyway, and the log has nothing at all (see `docs/MEASUREMENTS.md` §10).
+4. **Never print the key.** Read it from `secrets.json` or the credentials layer when needed, and report only its length or the last digits of a hash.
+5. Every command can first be trial-run read-only (`selftest`, `rules`, `judge`, `status`) — they change no host configuration.
 
-## 1. 前置条件
+## 1. Prerequisites
 
-| 项 | 要求 | 检查 |
+| Item | Requirement | Check |
 |---|---|---|
-| Node | ≥ 20(用到全局 `fetch`、`AbortSignal.any`) | `node -v` |
-| TypeSafe 密钥 | 形如 `apikey_...`;没有就去 https://console.typesafe.ai 申请 | §2.2 |
-| 目录位置 | 建议 `T:\dsh-jev-guard`(WSL 里是 `/mnt/t/dsh-jev-guard`) | `ls /mnt/t/dsh-jev-guard` |
-| 网络 | 能访问 `https://api.typesafe.ai` | `node bin/guard.mjs judge 'pnpm test'` |
-| DSH | 能装本地插件(profile 的 `package.json` 有 `dsh.profile` / bundles) | `dsh --profile <名> --dump-config` |
+| Node | ≥ 20 (uses the global `fetch`, `AbortSignal.any`) | `node -v` |
+| TypeSafe key | of the form `apikey_...`; if you don't have one, apply at https://console.typesafe.ai | §2.2 |
+| Directory location | `T:\dsh-jev-guard` recommended (in WSL that is `/mnt/t/dsh-jev-guard`) | `ls /mnt/t/dsh-jev-guard` |
+| Network | able to reach `https://api.typesafe.ai` | `node bin/guard.mjs judge 'pnpm test'` |
+| DSH | able to install local plugins (the profile's `package.json` has `dsh.profile` / bundles) | `dsh --profile <name> --dump-config` |
 
-## 2. 安装与配置
+## 2. Install and configure
 
-### 2.1 放好目录
+### 2.1 Put the directory in place
 
-整个 `jev-guard` 目录放到 `T:\dsh-jev-guard`(WSL 侧即 `/mnt/t/dsh-jev-guard`,**同一份文件**)。
-**不需要 `npm install`** —— 零依赖,只用 Node 内置模块。
+Put the whole `jev-guard` directory at `T:\dsh-jev-guard` (on the WSL side that is `/mnt/t/dsh-jev-guard`, **the same files**).
+**`npm install` is not needed** — zero dependencies, only Node's built-in modules.
 
-### 2.2 密钥
+### 2.2 The key
 
-三种来源,优先级从高到低:
+Three sources, highest precedence first:
 
-1. **DSH 凭据层**(推荐):`ctx.credentials.resolve('TYPESAFE_API_KEY')` —— 走 DSH 自己的凭据存储,
-   轮换后**无需重启**。
-2. 环境变量 `TYPESAFE_API_KEY`(名字由 `config.json` 的 `apiKeyEnv` 决定)。
-3. 包内 `secrets.json`,内容 `{"TYPESAFE_API_KEY": "apikey_..."}`
-   (**`apiKeyFile` 若给相对路径,按包根解析,与当前目录无关** —— Windows/WSL 都成立)。
+1. **The DSH credentials layer** (recommended): `ctx.credentials.resolve('TYPESAFE_API_KEY')` — goes through DSH's own credential store,
+   and after a rotation **needs no restart**.
+2. The environment variable `TYPESAFE_API_KEY` (the name is decided by `apiKeyEnv` in `config.json`).
+3. The bundled `secrets.json`, containing `{"TYPESAFE_API_KEY": "apikey_..."}`
+   (**if `apiKeyFile` is given a relative path it resolves against the package root, independently of the current directory** — true on both Windows and WSL).
 
-三种都不要提交进任何仓库。
+Do not commit any of the three into any repository.
 
-### 2.2b 语言(可选,不配也能跑)
+### 2.2b Language (optional, it runs without configuring it)
 
-文案(判定理由 / CLI 输出 / 降级告警)有中英两份,`lang` 默认 `'auto'`:
-按 `JEV_GUARD_LANG` → `LC_ALL`/`LC_MESSAGES`/`LANG` 解析,**只有当这些变量真的指明了一种受支持的语言**
-(如 `en_US.UTF-8` / `zh_CN.UTF-8`)才生效;否则(含 `C.UTF-8`、未设置)一律用 `zh-CN`。
-**这里刻意不看系统 locale**:WSL 常见的 `LANG=C.UTF-8` 下 Node 的 `Intl` 会报 `en-US`,
-那会让中文会话的理由悄悄变英文(2026-09-20 实测)。想显式选语言:`config.json` 里写 `"lang": "en"`,
-给 DSH 进程设 `JEV_GUARD_LANG=en`,或 CLI 单次 `--lang en`。
+The copy (verdict reasons / CLI output / degradation warnings) exists in Chinese and English, and `lang` defaults to `'auto'`:
+it resolves from `JEV_GUARD_LANG` → `LC_ALL`/`LC_MESSAGES`/`LANG`, **and only takes effect when those variables really name a supported language**
+(such as `en_US.UTF-8` / `zh_CN.UTF-8`); otherwise (including `C.UTF-8`, or unset) it always uses `zh-CN`.
+**This deliberately does not look at the system locale**: under WSL's common `LANG=C.UTF-8`, Node's `Intl` reports `en-US`,
+which would quietly turn a Chinese session's reasons into English (measured 2026-09-20). To choose the language explicitly: write `"lang": "en"` in `config.json`,
+set `JEV_GUARD_LANG=en` for the DSH process, or use the CLI's one-off `--lang en`.
 
-**别顺手改 `promptLang`。** 它管的是发给判定服务的那句问话,默认中文,正是阈值 0.5/0.7 的标定语言;
-实测换成英文后 p 平均压低约 0.04,且有三条探针翻向放行(`docs/MEASUREMENTS.md` §14)。
-真要切:先重标定,或把两个阈值一起下调约 0.04。
+**Do not casually change `promptLang`.** What it governs is the question sent to the judging service; it defaults to Chinese, which is exactly the language the 0.5/0.7 thresholds were calibrated against;
+measured, switching it to English lowers p by about 0.04 on average, and three probes flip towards allow (`docs/MEASUREMENTS.md` §14).
+If you really want to switch: re-calibrate first, or lower both thresholds by about 0.04 together.
 
-### 2.3 先证明判定层能工作(还没装进 DSH)
+### 2.3 First prove the judging layer works (not yet installed into DSH)
 
 ```bash
 cd /mnt/t/dsh-jev-guard
-node bin/guard.mjs selftest                                    # 期望:12 项全部通过(不联网)
-node bin/guard.mjs rules | head -5                             # 期望:列出 21 条 deny + 16 条 ask
+node bin/guard.mjs selftest                                    # expect: all 12 checks pass (offline)
+node bin/guard.mjs rules | head -5                             # expect: 21 deny + 16 ask rules listed
 node bin/guard.mjs judge 'ls -la' 'git push --force origin main' 'pnpm test'
 ```
 
-| 命令 | 期望 action | 期望 source |
+| Command | Expected action | Expected source |
 |---|---|---|
-| `ls -la` | `allow` | `prefilter`(不联网) |
-| `git push --force origin main` | `block` | `static-rule`(不联网) |
-| `pnpm test` | `allow` | `jev`(联网,`p` 应远低于 0.5) |
+| `ls -la` | `allow` | `prefilter` (offline) |
+| `git push --force origin main` | `block` | `static-rule` (offline) |
+| `pnpm test` | `allow` | `jev` (online, `p` should be far below 0.5) |
 
-失败时:`source: error` = 密钥或网络问题(看 `errorKind` 分类);`selftest` 失败 = 包不完整。
+On failure: `source: error` = a key or a network problem (see the `errorKind` classification); a `selftest` failure = the pack is incomplete.
 
-**再跑一次整套离线自检**(七份,跨平台):
+**Then run the whole set of offline self-checks again** (seven of them, cross-platform):
 
 ```bash
 for t in selftest-entry selftest-i18n selftest-quota selftest-reason selftest-token selftest-rules selftest-audit; do
@@ -88,100 +90,100 @@ for t in selftest-entry selftest-i18n selftest-quota selftest-reason selftest-to
 done
 ```
 
-### 2.4 装进 DSH
+### 2.4 Install it into DSH
 
 ```bash
-dsh plugin --profile <profile> add /mnt/t/dsh-jev-guard      # Windows 侧换成 T:\dsh-jev-guard
-# 然后重启 DSH —— 插件没有热加载
+dsh plugin --profile <profile> add /mnt/t/dsh-jev-guard      # on the Windows side use T:\dsh-jev-guard
+# then restart DSH — plugins are not hot-reloaded
 ```
 
-装完后**确认插件真的挂上了**(别看"没报错"):
+After installing, **confirm the plugin is really mounted** (don't look at "it didn't error"):
 
-1. 在会话里跑一条**必然被拦**的命令(例如 `git push --force origin main`,它命中 L0 硬规则,不花钱)。
-   期望:被拒绝,理由里有 `命中硬规则 git-force-push`。
-2. 看审计:`node bin/guard.mjs log --tail 3` —— 应出现那一条记录,且带 `policy` 与 `preset`。
+1. In a session, run a command that **is certain to be blocked** (for example `git push --force origin main`, which hits an L0 hard rule and costs nothing).
+   Expect: refused, with `hard rule git-force-push hit` in the reason.
+2. Look at the audit: `node bin/guard.mjs log --tail 3` — that entry should appear, with `policy` and `preset`.
 
-两条都成立才算装上。**只有第 1 条不成立时**,先查 `docs/DSH-INTEGRATION.md` §5 那三层静默失效。
+It only counts as installed when both hold. **Only when item 1 does not hold**, first check the three layers of silent failure in `docs/DSH-INTEGRATION.md` §5.
 
-### 2.5 Windows 上的差异
+### 2.5 Differences on Windows
 
-| 项 | WSL | Windows |
+| Item | WSL | Windows |
 |---|---|---|
-| 要拦的工具 | `bash` | `pwsh`(**已在默认 `tools` 列表里**) |
-| 授权行引号 | POSIX `'\''` | **PowerShell `''`**(插件按平台自动切换) |
-| cmd.exe 用户 | — | 用 `guard allow --command-file cmd.txt`(与 shell 的引号规则无关) |
-| 状态/日志目录 | `~/.jev-guard/` | `%USERPROFILE%\.jev-guard\` |
+| Tool to intercept | `bash` | `pwsh` (**already in the default `tools` list**) |
+| Quoting in the authorisation line | POSIX `'\''` | **PowerShell `''`** (the plugin switches automatically by platform) |
+| cmd.exe users | — | use `guard allow --command-file cmd.txt` (independent of the shell's quoting rules) |
+| State/log directory | `~/.jev-guard/` | `%USERPROFILE%\.jev-guard\` |
 
-## 3. 验收(必须全过才继续)
+## 3. Acceptance (all must pass before continuing)
 
-验收清单在 **[docs/VERIFICATION.md](./docs/VERIFICATION.md)**,含**三条人工介入通道**(U1–U3)。
-摘要:
+The acceptance checklist is in **[docs/VERIFICATION.md](./docs/VERIFICATION.md)**, and includes **the three human intervention channels** (U1–U3).
+Summary:
 
-| # | 验收 | 判定依据 |
+| # | Acceptance | Criteria |
 |---|---|---|
-| 1 | 安装后 probe 命令被拦 | 命令真的被拒 + `guard.log` 有记录 |
-| 2 | L0 路径(不联网、不可覆盖) | `mkfs` / `git push --force` → `block` / `static-rule` |
-| 3 | Jev 路径(联网语义判定) | 真实目录 `rm -rf` → `revise` 或 `block`,记录里带 `p` |
-| 4 | 误报防线(散文/重定向不误伤) | 命令文本里的危险短语、以 `2>/dev/null` 结尾的命令都**不被拦** |
-| 5 | 审计日志 | 每个判定一行 JSONL;`log --stats` 有动作/来源/规则/失败分类/成本 |
-| 6 | 令牌闭环 | 授权 → 重试同一条 → 放行一次 → 令牌消失,记录里 `source: token` |
-| 7 | 授权入口只在交互终端 | 非 TTY 被拒并打印可复制的整行命令 |
-| 8 | 审批弹窗(策略 `ask`) | 弹窗出现且带阀门理由原文;点允许后命令执行 |
-| 9 | 额度降级 | 402/401 → 降级、零请求、`guard status` 退出码 3、L0 仍拦 |
-| 10 | 人工手动执行 ≠ 给 AI 授权 | 审计零新增,且 AI 重试**仍然被拦** |
+| 1 | The probe command is blocked after installation | the command really is refused + `guard.log` has the record |
+| 2 | The L0 path (offline, cannot be overridden) | `mkfs` / `git push --force` → `block` / `static-rule` |
+| 3 | The Jev path (online semantic judgment) | `rm -rf` on a real directory → `revise` or `block`, with `p` in the record |
+| 4 | The false-positive defence (prose / redirection not hit by mistake) | a dangerous phrase inside the command text, and a command ending in `2>/dev/null`, are both **not blocked** |
+| 5 | Audit log | one JSONL line per verdict; `log --stats` has actions/sources/rules/failure breakdown/cost |
+| 6 | The token closed loop | authorise → retry the same one → allowed once → the token disappears, with `source: token` in the record |
+| 7 | The authorisation entry point is only on an interactive terminal | a non-TTY is refused and prints the whole copyable command line |
+| 8 | The approval prompt (policy `ask`) | the prompt appears and carries the valve's reason text as it stands; after clicking allow the command runs |
+| 9 | Quota degradation | 402/401 → degradation, zero requests, `guard status` exit code 3, L0 still blocks |
+| 10 | A human running it by hand ≠ granting the AI permission | zero new audit entries, and an AI retry is **still blocked** |
 
-## 4. 运行期
+## 4. Runtime
 
 ```bash
-node bin/guard.mjs log --tail 20     # 最近 20 条判定
-node bin/guard.mjs log --stats       # 汇总:动作/来源/规则/失败分类/成本
-node bin/guard.mjs status            # 健康状态(降级时退出码 3)
+node bin/guard.mjs log --tail 20     # the last 20 verdicts
+node bin/guard.mjs log --stats       # summary: actions/sources/rules/failure breakdown/cost
+node bin/guard.mjs status            # health status (exit code 3 while degraded)
 ```
 
-## 5. 总验收清单
+## 5. Overall acceptance checklist
 
 - [ ] `node bin/guard.mjs selftest` 12/12
-- [ ] 七份 `tools/selftest-*.mjs` 全过(**Windows 与 WSL 各跑一遍**)
-- [ ] `judge 'ls -la'` = allow / prefilter(零网络调用)
+- [ ] all seven `tools/selftest-*.mjs` pass (**run once each on Windows and WSL**)
+- [ ] `judge 'ls -la'` = allow / prefilter (zero network calls)
 - [ ] `judge 'git push --force origin main'` = block / static-rule
-- [ ] `judge 'rm -rf ~/某个真实目录'` = revise 或 block(联网判定)
-- [ ] 装进 DSH 后,一条必然被拦的命令**真的被拦**,且 `guard.log` 有记录
-- [ ] `guard status` 输出"✅ 正常"(健康自检;降级时退出码为 3)
-- [ ] **人工介入三通道 U1–U3** 各走一遍(令牌 / 审批弹窗 / 人工手动执行)
-- [ ] 回滚演练:按 §6 撤掉,确认恢复原状
+- [ ] `judge 'rm -rf ~/<a real directory>'` = revise or block (online judgment)
+- [ ] after installing it into DSH, a command that is certain to be blocked **really is blocked**, and `guard.log` has the record
+- [ ] `guard status` outputs "✅ healthy" (health self-check; exit code 3 while degraded)
+- [ ] **the three human intervention channels U1–U3** run through once each (token / approval prompt / a human running it by hand)
+- [ ] rollback drill: remove it per §6 and confirm the original state is restored
 
-## 6. 回滚
+## 6. Rollback
 
-| 动作 | 命令 |
+| Action | Command |
 |---|---|
-| 卸掉插件 | `dsh plugin --profile <profile> remove jev-guard` + 重启 |
-| 一键回到某个配置快照 | `dsh-undo-savepoint` 的 `undo_list` / `undo_restore` |
-| 只想停用 | `dsh-undo-savepoint` 的 SAFE MODE(`undo_safe_mode on`)让所有用户插件停用 |
-| 清状态/日志 | 删 `~/.jev-guard/`(它不写其他位置) |
+| Uninstall the plugin | `dsh plugin --profile <profile> remove jev-guard` + restart |
+| One-click return to a configuration snapshot | `dsh-undo-savepoint`'s `undo_list` / `undo_restore` |
+| Only want to disable it | `dsh-undo-savepoint`'s SAFE MODE (`undo_safe_mode on`) disables all user plugins |
+| Clear state/log | delete `~/.jev-guard/` (it writes nowhere else) |
 
-## 7. 故障排查
+## 7. Troubleshooting
 
-| 症状 | 原因 | 处理 |
+| Symptom | Cause | Handling |
 |---|---|---|
-| 装了插件但什么都不拦 | 插件没挂上,或包路径不对 | 跑 `selftest-entry` + 看 `guard.log` 有没有记录;读 `DSH-INTEGRATION.md` §5 |
-| `source: error`,理由是 `HTTP 401` | 密钥无效或被撤销 | 换密钥;**同时阀门已自动降级 30 分钟**(不再发请求),修好后等冷却到期自动恢复,或 `guard status --clear` |
-| `source: error`,理由是 `HTTP 402` | 额度用尽 | 同上一行(这条会**降级**而不是逐次重试,省钱) |
-| `source: degraded` | 处在降级窗口内 | `guard status` 会说明是哪一类 + 还剩多久;免费的 L0 + 预筛仍在工作 |
-| `source: error`,理由是 `fetch failed` | 网络/代理不通 | 检查 `https://api.typesafe.ai` 可达性。**不会降级**(瞬态),但会累计在"失败分类"里 |
-| 危险命令没被拦 | 不在 L0 且 `p < lowThreshold` | 看 `judge` 输出的 `p`;必要时调低 `lowThreshold` 或给该类命令加 L0 规则 |
-| 全被拦,干不了活 | 阈值过低或 L0 太激进 | 先看 `judge` 的 `rule.id`;编辑 `lib/rules.js` 或调高 `lowThreshold` |
-| 授权行粘到 cmd.exe 里报语法错 | cmd 不认 POSIX/PowerShell 的引号 | 改用 `guard allow --command-file cmd.txt` |
-| 判定服务抖动导致干不了活 | 不该发生(fail-open) | 若确实发生,查 `guard.log` 里的 `source: error` 与 `errorKind` |
+| The plugin is installed but nothing is blocked | the plugin is not mounted, or the package path is wrong | run `selftest-entry` + see whether `guard.log` has records; read `DSH-INTEGRATION.md` §5 |
+| `source: error`, with the reason `HTTP 401` | the key is invalid or revoked | change the key; **in the meantime the valve has already degraded automatically for 30 minutes** (it sends no more requests), so once it is fixed either wait for the cooldown to expire and it recovers by itself, or `guard status --clear` |
+| `source: error`, with the reason `HTTP 402` | the credit is used up | same as the line above (this one **degrades** rather than retrying every time, which saves money) |
+| `source: degraded` | inside a degradation window | `guard status` will say which class it is + how much is left; the free L0 + pre-screen still work |
+| `source: error`, with the reason `fetch failed` | the network/proxy is unreachable | check that `https://api.typesafe.ai` is reachable. It does **not degrade** (transient), but it accumulates in the "failure breakdown" |
+| A dangerous command was not blocked | not in L0 and `p < lowThreshold` | look at the `p` in the `judge` output; if necessary lower `lowThreshold` or add an L0 rule for that class of command |
+| Everything is blocked and no work can be done | the threshold is too low or L0 is too aggressive | look at the `rule.id` from `judge` first; edit `lib/rules.js` or raise `lowThreshold` |
+| The authorisation line pasted into cmd.exe reports a syntax error | cmd does not accept POSIX/PowerShell quoting | switch to `guard allow --command-file cmd.txt` |
+| A judging-service hiccup makes work impossible | this should not happen (fail-open) | if it really does happen, check `source: error` and `errorKind` in `guard.log` |
 
-## 8. 安全与隐私(必须原样转告用户)
+## 8. Security and privacy (must be passed on to the user as it stands)
 
-1. **脚本正文会被发送到 TypeSafe 的 API。** 这是"看懂 `node x.mjs` 干了什么"的代价。
-   敏感路径(`.env` / `.ssh` / `*.pem` / `*credential*` / `*secret*` / `*token*`)自动跳过,单文件 8KB 上限。
-   想彻底关闭:`config.json` 里 `inlineScripts: false`(代价是这类命令退回 p≈0.31 的盲区)。
-2. **密钥只从凭据层 / 环境变量 / `secrets.json` 读取,不写进任何日志和报告。** 报告里的命令文本会经过掩码。
-3. **失败一律放行(fail-open)**:判定服务不可用时阀门不拦任何东西 —— 因为 DSH 自己的沙箱档位
-   (除 `danger-full-access` 外)仍在执行之前。想"服务挂了也拦",把 L0 规则加厚,而不是改这条策略。
-4. **它挡不住蓄意绕过。** 换壳、编码、直接写 `~/.jev-guard/allow.txt` 都可能绕开。
-5. **它防的是事故,不是对手 —— 这个范围是用户显式定下来的,别自作主张收窄。**
-   已知且**有意保留**的旁路至少两条:文件写入类工具直接写 `allow.txt`;换一种写法绕开判定。
-   处置方式是**记录在案**,不是堵。决策原文与理由:[docs/DECISIONS.md](./docs/DECISIONS.md) **D1**。
+1. **The script body is sent to TypeSafe's API.** That is the price of "understanding what `node x.mjs` does".
+   Sensitive paths (`.env` / `.ssh` / `*.pem` / `*credential*` / `*secret*` / `*token*`) are skipped automatically, with an 8KB per-file cap.
+   To turn it off entirely: `inlineScripts: false` in `config.json` (at the cost of those commands dropping back into the p≈0.31 blind spot).
+2. **The key is read only from the credentials layer / environment variable / `secrets.json`, and is written into no log and no report.** The command text in a report goes through masking.
+3. **Every failure is fail-open**: when the judging service is unavailable the valve blocks nothing — because DSH's own sandbox preset
+   (anything except `danger-full-access`) is still in force before execution. If you want "block even when the service is down", thicken the L0 rules rather than changing this policy.
+4. **It cannot stop a deliberate bypass.** Rewrapping it, encoding it, or writing `~/.jev-guard/allow.txt` directly can all get around it.
+5. **What it guards against is accidents, not an adversary — that scope was fixed explicitly by the user; do not narrow it on your own initiative.**
+   There are at least two known and **deliberately kept** bypasses: file-writing tools writing `allow.txt` directly; and writing the same thing another way to get around the judgment.
+   The handling is to **record it**, not to seal it. The original decision text and the reasoning: [docs/DECISIONS.md](./docs/DECISIONS.md) **D1**.

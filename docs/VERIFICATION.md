@@ -1,276 +1,279 @@
-# DSH 验收清单
+# DSH acceptance checklist
 
-这份清单是**这份包在 DSH 上"到底验过什么"的账本**,也是**换一台机器时该怎么重验**的步骤。
-每条都写了:怎么验、判定标准、以及它在 `verification-results/` 里的记录编号。
+> **English** | [简体中文](VERIFICATION.zh-CN.md)
 
-**验收铁律(三条事故换来的):**
+This checklist is **the ledger of "what exactly this package has been verified for on DSH"**, and also **the steps for how to re-verify it when you move to another machine**.
+Every item says: how to verify it, the criteria, and its record number in `verification-results/`.
 
-1. **看副作用,不看"没报错"。** "命令真的被拒"+"日志真的有那条记录"才算过。
-   本包出现过三层静默失效:脚本一声不响退出 0、命令照跑、日志空白(见 `MEASUREMENTS.md` §10)。
-2. **两个平台各跑一遍。** Windows 与 WSL 的路径/引号/模块解析规则不同,一个平台过不代表另一个过。
-3. **记录要带时间戳与原文。** `at` / `token` / `source` 这几个字段是唯一能把"我说它拦了"与"它真的拦了"分开的东西。
+**The iron laws of acceptance (bought with three accidents):**
 
-记录方式(写完自动汇总到 `SUMMARY.md`):
+1. **Look at side effects, not at "it reported no error".** Only "the command really was refused" + "the log really has that entry" counts as passing.
+   This package has had three layers of silent failure: the script exits 0 without a sound, the command runs all the same, the log is blank (see `MEASUREMENTS.md` §10).
+2. **Run it once on each of the two platforms.** Windows and WSL differ in path/quoting/module-resolution rules; passing on one platform does not mean passing on the other.
+3. **Records must carry a timestamp and the original text.** The `at` / `token` / `source` fields are the only thing that can separate "I say it blocked" from "it really did block".
+
+How to record (what you write is summarised automatically into `SUMMARY.md`):
 
 ```bash
-node tools/report-result.mjs --host dsh --item <编号> --status <pass|fail|partial|blocked|skipped> \
-  --evidence "证据(带时间戳/令牌/关键输出)" --notes "补充或疑问"
-# 卡住时:--status blocked --question "你的问题"
+node tools/report-result.mjs --host dsh --item <item number> --status <pass|fail|partial|blocked|skipped> \
+  --evidence "evidence (with timestamp/token/key output)" --notes "additional notes or questions"
+# when stuck: --status blocked --question "your question"
 ```
 
 ---
 
-## A. 判定层(不装 DSH 也能验,纯离线 + 一次联网)
+## A. The judgment layer (verifiable without installing DSH; purely offline + one network call)
 
-### 6-pre · 适配器冒烟 + 真实工具管线
+### 6-pre · Adapter smoke test + the real tool pipeline
 
 ```bash
-node tools/smoke-dsh-adapter.mjs          # 假 ctx:接线/断言/审批策略/审计字段
-node tools/smoke-dsh-pipeline.mjs         # 真 ToolRuntime 五阶段管线(需在 DSH 检出目录内跑)
+node tools/smoke-dsh-adapter.mjs          # fake ctx: wiring/assertions/approval policy/audit fields
+node tools/smoke-dsh-pipeline.mjs         # the real ToolRuntime five-stage pipeline (must be run from inside a DSH checkout)
 ```
 
-**判定:** 冒烟全过(含"审计里记下了 `policy` 与 `preset`");管线测试给出预期的 `ToolExecutionResult`。
+**Judging:** the smoke tests all pass (including "`policy` and `preset` are recorded in the audit"); the pipeline test gives the expected `ToolExecutionResult`.
 
-### 7 · 误报防线(改规则时必跑)
+### 7 · The false-positive defence line (must be run whenever a rule changes)
 
 ```bash
 node tools/selftest-rules.mjs
-# 双探针:命令文本里提到危险短语、以及以 2>/dev/null 结尾的普通命令,都不得被拦
+# two probes: a command whose text mentions a dangerous phrase, and an ordinary command ending in 2>/dev/null — neither may be blocked
 echo "git push --force origin main" > /tmp/jev-anchor-test.txt
 node bin/guard.mjs judge 'ls -la /var/log 2>/dev/null'
 ```
 
-**判定:** 探针不被拦(散文归 Jev 判,实测 p≈0.02–0.08)。
+**Judging:** the probes are not blocked (prose is left to Jev to judge; measured p≈0.02–0.08).
 
-**2026-09-20 扩充 —— 锚定必须**两个方向**都测**(48 例:25 旧 + 22 矩阵 + 1 性能):
+**Expanded 2026-09-20 — anchoring must be tested in **both directions** (48 cases: 25 old + 22 matrix + 1 performance):
 
-| 方向 | 要钉住的形态 | 期望 |
+| Direction | The shape it must pin down | Expectation |
 |---|---|---|
-| 防假阳 | 引号里的参数、注释、变量赋值、python `-c`/heredoc 里的字符串、grep 参数、`c.startswith('mkfs.ext4 …')` 这类**代码字符串** | 不命中(交给 Jev) |
-| 防漏判 | 多行 heredoc / 多行 `bash -c "` 里的真命令;`\| xargs`、`timeout 30`、`nice -n 5`、`find … -exec`、多级包装 | **命中对应规则** |
-| 防误伤散文 | `xargs 删除 mkfs.ext4 …`(包装器后面是中文) | 不命中 |
-| 防灾难性回溯 | 4KB 纯包装器前缀(最坏输入) | < 50ms(实测 0.6ms) |
+| Prevent false positives | arguments inside quotes, comments, variable assignments, strings inside python `-c`/heredoc, grep arguments, **code strings** like `c.startswith('mkfs.ext4 …')` | no hit (left to Jev) |
+| Prevent missed detections | real commands inside a multi-line heredoc / a multi-line `bash -c "`; `\| xargs`, `timeout 30`, `nice -n 5`, `find … -exec`, multi-level wrapping | **a hit on the corresponding rule** |
+| Prevent collateral damage to prose | `xargs 删除 mkfs.ext4 …` (what follows the wrapper is Chinese) | no hit |
+| Prevent catastrophic backtracking | a 4KB pure-wrapper prefix (the worst-case input) | < 50ms (measured 0.6ms) |
 
-> **只看假阳会漏掉一半问题。** 第一轮修正只测了"散文不该命中",于是谁也没发现
-> 锚定缺 `m` 标志导致**多行脚本里的真命令全部漏判**(见 [`MEASUREMENTS.md`](./MEASUREMENTS.md) §7.5
-> 与 [`DECISIONS.md`](./DECISIONS.md) D2)。改规则时**两个方向都要跑**。
-> 另外一个总是不变的量:`staticRule` 打印的 `RULE_STATS.anywhere` 必须**恒为 2**
-> (`redirect-to-device`、`fork-bomb`);它变大就意味着又有一条规则退回了全文匹配。
+> **Looking only at false positives misses half the problem.** The first round of fixes only tested
+> "prose must not be a hit", so nobody noticed that the anchoring was missing the `m` flag, which made
+> **every real command inside a multi-line script a missed detection** (see [`MEASUREMENTS.md`](./MEASUREMENTS.md) §7.5
+> and [`DECISIONS.md`](./DECISIONS.md) D2). When you change a rule, **run both directions**.
+> One more quantity that is always unchanging: the `RULE_STATS.anywhere` printed by `staticRule` must
+> **always be 2** (`redirect-to-device`, `fork-bomb`); if it grows, that means another rule has fallen back to whole-text matching.
 
-### 8 · 审计日志(离线)+ 8-fix(运行实例)
+### 8 · Audit log (offline) + 8-fix (running instance)
 
 ```bash
-node tools/selftest-audit.mjs             # 掩码/追加/轮转/汇总/空白 logPath
-node tools/selftest-i18n.mjs              # 双语文案:目录完整性/占位符/英文残留/promptLang 不随界面语言
-node bin/guard.mjs log --tail 5           # 运行实例里真的有记录
+node tools/selftest-audit.mjs             # masking/appending/rotation/summary/blank logPath
+node tools/selftest-i18n.mjs              # bilingual copy: catalogue completeness/placeholders/leftover English/promptLang does not follow the UI language
+node bin/guard.mjs log --tail 5           # the running instance really has entries
 node bin/guard.mjs log --stats
 ```
 
-**判定:** 离线全过;**并且**运行实例里能读到真实记录(曾经出现过"阀门在工作、日志一条没有")。
+**Judging:** the offline suites all pass; **and** the running instance yields real records (there was once a case of "the valve was working and the log had not a single entry").
 
-### 13 · 额度降级(离线)
+### 13 · Quota degradation (offline)
 
 ```bash
-node tools/selftest-quota.mjs             # 替身 fetch:402/401/403/429两种/5xx/超时/网络/坏状态文件
+node tools/selftest-quota.mjs             # stand-in fetch: 402/401/403/two kinds of 429/5xx/timeout/network/bad state file
 ```
 
-**判定:** 全过。重点确认三件事:持久性失败**降级**、瞬态失败**不降级**、
-降级期间 L0 仍然拦且**零 HTTP 请求**。
+**Judging:** all pass. Three things to confirm specifically: a persistent failure **degrades**, a transient failure **does not degrade**,
+and while degraded L0 still blocks and there are **zero HTTP requests**.
 
 ---
 
-## B. 装进 DSH 之后
+## B. After installing it into DSH
 
-### 6 · 安装后 probe 被拦
+### 6 · The probe is blocked after installation
 
-跑一条**必然被拦**的命令(不花钱):
+Run a command that **is certain to be blocked** (costs nothing):
 
 ```bash
-# 在 DSH 会话里让 AI 执行:git push --force origin main
+# in a DSH session, have the AI execute: git push --force origin main
 node bin/guard.mjs log --tail 1
 ```
 
-**判定:** 命令真的被拒,理由含 `命中硬规则 git-force-push`;`guard.log` 里出现该记录。
-**不通过时先读** `DSH-INTEGRATION.md` §5(三层静默失效)。
+**Judging:** the command really is refused, the reason contains `hard rule git-force-push hit`; that entry appears in `guard.log`.
+**If it does not pass, read first** `DSH-INTEGRATION.md` §5 (three layers of silent failure).
 
-### 9 · 一次性令牌闭环
+### 9 · The one-shot token closed loop
 
-1. 让 AI 执行一条会被拦的真实命令(例如 `rm -rf <一个演示目录>`)。
-2. 理由里应有 `ALLOW-XXXXXXXXXX` + 一行**绝对路径**的授权命令。
-3. **人**在自己的终端里粘贴那一行(非 TTY 会被拒 —— 那是正确行为)。
-4. 让 AI **重试一字不差的同一条命令**。
+1. Have the AI execute a real command that will be blocked (for example `rm -rf <a demo directory>`).
+2. The reason should contain `ALLOW-XXXXXXXXXX` + one line of **absolute-path** authorisation command.
+3. **The human** pastes that line into their own terminal (a non-TTY is refused — that is the correct behaviour).
+4. Have the AI **retry the exact same command, character for character**.
 
-**判定:** 命令真的被执行、令牌文件变空、`guard.log` 出现 `source: token` 与 `overridden: <原动作>`。
-另外验绑定:把命令换一个字 → **仍然被拦**,且公示的是**另一个**令牌。
+**Judging:** the command really is executed, the token file goes empty, and `guard.log` shows `source: token` and `overridden: <original action>`.
+Also verify the binding: change one character in the command → it is **still blocked**, and what is published is **a different** token.
 
-### 10 · 授权入口与理由文案
-
-```bash
-echo | node bin/guard.mjs allow 'rm -rf /tmp/x'   # 非 TTY:应被拒并打印整行命令
-node tools/selftest-reason.mjs                    # 28+ 例:绝对路径/不截断/引号转义/策略分叉
-```
-
-**判定:** 非 TTY 拒绝且给出可复制的整行;`selftest-reason` 全过。
-**Windows 追加:** 理由里的引号必须是 **PowerShell** 形式(`''` 转义);`--command-file` 可用。
-
-### 14 · 降级在真实会话里可见
-
-注入一份降级状态(故障注入),再跑两条命令:
+### 10 · The authorisation entry point and the reason wording
 
 ```bash
-# 写一份 kind=quota 的 ~/.jev-guard/degraded.json(until 设在未来)
-# 然后:mkfs.ext4 /dev/whatever   → L0 拒绝,理由尾部应带 ⚠️ 降级告警
-#      touch /tmp/whatever        → source=degraded、ms=0(零请求)
-node bin/guard.mjs status --clear   # 收工:清掉注入的状态
+echo | node bin/guard.mjs allow 'rm -rf /tmp/x'   # non-TTY: should be refused and print the whole command line
+node tools/selftest-reason.mjs                    # 28+ cases: absolute path/no truncation/quote escaping/policy branching
 ```
 
-**判定:** 告警出现在**拒绝理由**里、审计里有 `level: warn` 一条、非 L0 命令为 `source=degraded` 且 `ms=0`;
-`status --clear` 后回到"✅ 正常"(退出码 0)。
+**Judging:** the non-TTY is refused and gives the whole line in a copyable form; `selftest-reason` all passes.
+**Windows addition:** quotes in the reason must be in **PowerShell** form (`''` escaping); `--command-file` is available.
 
-### 16 · 跨平台入口守卫(WSL **与** Windows 各跑一遍)
+### 14 · Degradation is visible in a real session
+
+Inject a degraded state (fault injection), then run two commands:
+
+```bash
+# write a kind=quota ~/.jev-guard/degraded.json (with until set in the future)
+# then: mkfs.ext4 /dev/whatever   → L0 refuses it; the tail of the reason should carry a ⚠️ degradation warning
+#       touch /tmp/whatever       → source=degraded, ms=0 (zero requests)
+node bin/guard.mjs status --clear   # wrap up: clear the injected state
+```
+
+**Judging:** the warning appears in the **refusal reason**, the audit has one `level: warn` entry, a non-L0 command is `source=degraded` with `ms=0`;
+after `status --clear` it goes back to "✅ healthy" (exit code 0).
+
+### 16 · The cross-platform entry guard (run it once on WSL **and** Windows)
 
 ```bash
 node tools/selftest-entry.mjs             # WSL
-# Windows(若 DSH/Windows 或本机有 node.exe):
+# Windows (if DSH/Windows, or this machine, has node.exe):
 "C:\Program Files\nodejs\node.exe" T:\dsh-jev-guard\tools\selftest-entry.mjs
 ```
 
-**判定:** 两个平台都全过。**只有 Windows 能暴露**"盘符 + 反斜杠的 argv[1]"那一类问题;
-若只跑 WSL,请把它标成 `partial` 而不是 `pass`。
+**Judging:** both platforms pass everything. **Only Windows can expose** that class of problem — "a drive letter + backslash in argv[1]";
+if you only ran WSL, mark it `partial` rather than `pass`.
 
-### 17 · 平台相关的 shell 引号(Windows)
-
-```bash
-node tools/selftest-reason.mjs    # 含真实 PowerShell 往返 + "POSIX 形式在 PS 里解析失败"的反例
-```
-
-**判定:** 全过。手工复核:把理由里那一行粘进 **PowerShell**,`--list` 应出现公示的那个令牌。
-
-### 21 · 改名 `dsh-jev-guard` 后重启激活核对
-
-改名、审计新增 `preset` 字段、降级/审批文案修正、移除 `serve`/`mcp` 这些改动**都要重启 DSH 才生效**。
-重启后按顺序核三件,再补一次实拦:
+### 17 · Platform-dependent shell quoting (Windows)
 
 ```bash
-node bin/guard.mjs status                                  # ① 退出码 0 且打印 "✅ ... 正常"
-dsh --profile <你的> --dump-config | grep -A2 jev-guard     # ② bundle 的 id 与 name 都是 dsh-jev-guard
-tail -n 1 ~/.jev-guard/guard.log                           # ③ 新记录应同时含 policy 与 preset
+node tools/selftest-reason.mjs    # includes a real PowerShell round-trip + the negative case "the POSIX form fails to parse in PS"
 ```
 
-**判定:** ① 与 ② 必过(**有 `degraded.json` 时 `status` 退出码是 3**,那是降级不是故障)。
-③ 要**重启之后**的新记录里出现 `preset`(如 `danger-full-access` / `workspace-write`)——
-这是"跑的是改名后的新适配器"的硬证据,旧版没有这个字段;`policy` 同理。
+**Judging:** all pass. Check by hand: paste that line from the reason into **PowerShell**; `--list` should show the token that was published.
 
-最后交一条**本来就该被拦**的命令做端到端复验(挑效果无害的那种,例如 `truncate -s 0` 一个 /tmp 探针文件),
-确认三件事:拦截理由照常给出、审计里出现对应记录(`action=escalate` / `decision=deny` /
-`source=static-rule` + 同一个令牌)、且**命令确实没被执行**(探针文件不存在 = 拦在事前,不是事后告警)。
+### 21 · Activation check after restarting once renamed to `dsh-jev-guard`
 
-### 22 · 判定动作随审批模式分叉(`ask` 转人工 / `never` 拦死 / L0 绝对闸门)
-
-改的是 [`DECISIONS.md`](./DECISIONS.md) **D13**。先跑两个离线的,它们覆盖路由矩阵本身:
+These changes — the rename, the new `preset` field in the audit, the degradation/approval copy fixes, the removal of `serve`/`mcp` — **all take effect only after DSH is restarted**.
+After the restart, check three things in order, then do one more real block:
 
 ```bash
-node tools/selftest-reason.mjs      # 56 例:含 revise/block × ask/never × L0 的路由矩阵
-node tools/smoke-dsh-adapter.mjs    # 10 组:含"L0 硬规则连试 4 次始终是 deny(不被预算升级成弹窗)"
+node bin/guard.mjs status                                  # ① exit code 0 and prints "✅ ... healthy"
+dsh --profile <yours> --dump-config | grep -A2 jev-guard     # ② the bundle's id and name are both dsh-jev-guard
+tail -n 1 ~/.jev-guard/guard.log                           # ③ the new entry should carry policy and preset as well
 ```
 
-然后**真机两边都要跑**(策略切换在会话里就能改,不必重启):
+**Judging:** ① and ② must pass (**with a `degraded.json` present, the `status` exit code is 3** — that is degradation, not a fault).
+③ requires `preset` (such as `danger-full-access` / `workspace-write`) to appear in an entry written **after the restart** —
+this is the hard evidence that "what is running is the renamed new adapter"; the old version has no such field; ditto `policy`.
 
-| 场景 | 交什么命令 | 期望 |
+Finally hand it one command that **was going to be blocked anyway** for an end-to-end re-verification (pick a harmless one, e.g. `truncate -s 0` on a /tmp probe file),
+and confirm three things: the block reason is given as usual, the corresponding entry appears in the audit (`action=escalate` / `decision=deny` /
+`source=static-rule` + the same token), and **the command really was not executed** (the probe file does not exist = the block happened before the fact, not a warning after it).
+
+### 22 · The verdict action branches with the approval policy (`ask` hands it to a human / `never` blocks hard / L0 is an absolute gate)
+
+This changes [`DECISIONS.md`](./DECISIONS.md) **D13**. First run the two offline suites; they cover the routing matrix itself:
+
+```bash
+node tools/selftest-reason.mjs      # 56 cases: includes the revise/block × ask/never × L0 routing matrix
+node tools/smoke-dsh-adapter.mjs    # 10 groups: includes "an L0 hard rule tried 4 times in a row is always deny (the retry budget does not upgrade it into a prompt)"
+```
+
+Then **both sides must be run on the real deployment** (the policy can be switched inside a session; no restart needed):
+
+| Scenario | What command to hand it | Expectation |
 |---|---|---|
-| `ask` + 灰区 | 一条落在 50–70% 的命令(看 `guard.log` 里的 `p`) | **弹审批框**;理由抬头是"需要人工确认",且带三种降级模板;**不出现**令牌授权行 |
-| `never` + 同一条 | 同上 | **直接拒绝**,附令牌授权行 |
-| `ask` + L0 硬规则 | `git push --force origin main`(在无 remote 或安全仓库里) | **直接拒绝、不弹窗**;审计 `decision=deny` |
-| `ask` + L0 硬规则连试 4 次 | 同上,重复提交 | 仍然**一次都不弹**(预算不升级硬规则);审计里 `attempts` 递增到 4 |
+| `ask` + grey zone | a command landing at 50–70% (look at `p` in `guard.log`) | **the approval prompt pops up**; the reason header is "needs human confirmation" and it carries the three degradation templates; the token authorisation line **does not appear** |
+| `never` + the same one | as above | **a plain refusal**, with the token authorisation line attached |
+| `ask` + L0 hard rule | `git push --force origin main` (in a repo with no remote or a safe repo) | **a plain refusal, no prompt**; audit `decision=deny` |
+| `ask` + L0 hard rule tried 4 times in a row | as above, submitted repeatedly | still **not a single prompt** (the budget does not upgrade hard rules); `attempts` in the audit increments up to 4 |
 
-**判定:** 离线两套全过 + 真机四行都符合。**只跑 `never` 一侧不算过**(路由分叉正是这次改的东西),
-标 `partial`。批准一次之后记得确认:被批准的那条命令**确实执行了**(`kind: 'ask'` 经宿主审批后放行),
-说明转人工不是"拦截换了个说法"。
+**Judging:** both offline suites pass + all four rows on the real deployment match. **Running only the `never` side does not count as passing** (the routing branch is exactly what this change introduced),
+mark `partial`. After approving one, remember to confirm: the approved command **really was executed** (`kind: 'ask'` passes once the host has approved it),
+which shows that handing it to a human is not "the block reworded".
 
-### 23 · 双语文案与语言开关
+### 23 · Bilingual copy and the language switch
 
-机制见 [`DECISIONS.md`](./DECISIONS.md) **D14**,实测见 [`MEASUREMENTS.md`](./MEASUREMENTS.md) §14。
+Mechanics in [`DECISIONS.md`](./DECISIONS.md) **D14**, measurements in [`MEASUREMENTS.md`](./MEASUREMENTS.md) §14.
 
 ```bash
-node tools/selftest-i18n.mjs          # 24 例:两语言同键/占位符一致/英文无残留中文/问话不受界面语言影响
-node tools/selftest-entry.mjs         # 20 例:含 --lang / JEV_GUARD_LANG / "开关的值不是位置参数"
+node tools/selftest-i18n.mjs          # 24 cases: same keys in both languages/identical placeholders/no leftover Chinese in English/the question is unaffected by the UI language
+node tools/selftest-entry.mjs         # 20 cases: includes --lang / JEV_GUARD_LANG / "the switch's value is not a positional argument"
 ```
 
-真机四条(每条都要**两种语言各看一眼**):
+Four rows on the real deployment (each one must be **looked at once in each language**):
 
-| 场景 | 命令 | 期望 |
+| Scenario | Command | Expectation |
 |---|---|---|
-| 默认语言 | `node bin/guard.mjs status` | 未显式设置时 = `zh-CN`(不看系统 locale;见 D14 里 WSL `en-US` 兜底值那次教训) |
-| 显式切换 | `node bin/guard.mjs status --lang en` | 全英文;`--lang zh-CN` 全中文 |
-| 环境变量 | `JEV_GUARD_LANG=en node bin/guard.mjs rules` | 规则清单理由变英文(规则 id 不变) |
-| 判定不变 | 同一批命令各语言跑一次 `judge --json` | `action` / `p` / `source` **逐字段一致**,只有理由文案不同 |
+| Default language | `node bin/guard.mjs status` | when not set explicitly = `zh-CN` (the system locale is not consulted; see the lesson about the WSL `en-US` fallback value in D14) |
+| Explicit switch | `node bin/guard.mjs status --lang en` | all English; `--lang zh-CN` all Chinese |
+| Environment variable | `JEV_GUARD_LANG=en node bin/guard.mjs rules` | the rule-list reasons become English (the rule ids do not change) |
+| The verdict does not change | run the same batch of commands once per language with `judge --json` | `action` / `p` / `source` are **identical field by field**; only the reason copy differs |
 
-**判定:** 离线两套全过 + 真机四条符合。**只跑一种语言不算过** —— 这一项验的正是"两种语言下判定一致、
-文案各自正确"。另需确认:改 `lang` **不得**改变 `guard.log` 里的 action/decision(可用同一批命令前后对比)。
+**Judging:** both offline suites pass + all four rows on the real deployment match. **Running only one language does not count as passing** — what this item verifies is exactly "the verdict is consistent in both languages and
+the copy is correct in each". Also confirm: changing `lang` **must not** change the action/decision in `guard.log` (compare the same batch of commands before and after).
 
-> `promptLang` 不在本项的通过条件里:它不是文案开关而是一个判定参数,切它属于重标定,
-> 见 MEASUREMENTS §14 —— 拿 `tools/probe-prompt-lang.mjs --repeat 3` 重新量过才算数。
+> `promptLang` is not among this item's pass conditions: it is not a copy switch but a judging parameter, and switching it amounts to re-calibration,
+> see MEASUREMENTS §14 — it only counts once it has been re-measured with `tools/probe-prompt-lang.mjs --repeat 3`.
 
 ---
 
-## C. 人工介入三通道(任何机器都要跑)
+## C. The three human-intervention channels (must be run on any machine)
 
-三条通道的机制与各性质见 [`USER-INTERVENTION.md`](./USER-INTERVENTION.md)。
+The mechanics and properties of the three channels are in [`USER-INTERVENTION.md`](./USER-INTERVENTION.md).
 
-### U1 · 一次性令牌通道(**宿主无关**的那条)
+### U1 · The one-shot token channel (**the host-independent** one)
 
-1. 制造一次拦截,记下理由里公示的令牌。
-2. 在人自己的终端里粘贴授权行;`node bin/guard.mjs allow --list` 应出现该令牌。
-3. 让 AI 重试**一字不差**的同一条命令 → 放行、令牌消失、`guard.log` 记 `source=token`。
+1. Produce a block and note down the token published in the reason.
+2. Paste the authorisation line into the human's own terminal; `node bin/guard.mjs allow --list` should show that token.
+3. Have the AI retry **the exact same command, character for character** → it is allowed, the token disappears, `guard.log` records `source=token`.
 
-### U2 · 宿主审批通道(DSH 有,**必测**)
+### U2 · The host approval channel (DSH has it, **must be tested**)
 
-1. 把会话切到带审批的模式(`approval: ask`)。
-2. 触发一次 `escalate` 类拦截(命中 L0 `ask` 规则的命令,如 `truncate -s 0 <演示文件>`)。
-3. **人**应真的看到审批弹窗,且弹窗里的理由**就是阀门的原文**(硬规则 id + why),并且
-   **不再附**"复制到终端授权"那一行(人就在窗口前面)。
+1. Switch the session to a mode with approval (`approval: ask`).
+2. Trigger one `escalate`-class block (a command that hits an L0 `ask` rule, such as `truncate -s 0 <demo file>`).
+3. **The human** should really see the approval prompt, and the reason in it **is the valve's own original text** (hard-rule id + why), and
+   the "copy into the terminal to authorise" line is **no longer attached** (the human is right in front of the window).
 
-**判定:** 弹窗出现且带原文;点允许后命令执行(`outcome=allowed-once`)。
-会话日志里能查到成对的 `approval/asked` + `approval/decided`。
+**Judging:** the prompt appears and carries the original text; after clicking allow the command executes (`outcome=allowed-once`).
+The session log shows a matching pair of `approval/asked` + `approval/decided`.
 
-### U3 · 人工手动执行 ≠ 给 AI 授权(反直觉,但必须验)
+### U3 · Running it by hand ≠ authorising the AI (counter-intuitive, but it must be verified)
 
-1. 让人在终端里**直接**执行那条被拦的命令(不走令牌、不走弹窗)。
-2. 观察两件事:审计里那条命令的判定记录**零新增**;让 AI 重试同一条命令 → **仍然被拦**。
+1. Have the human execute that blocked command **directly** in the terminal (no token, no prompt).
+2. Watch two things: the judgment record for that command in the audit gains **zero new entries**; have the AI retry the same command → it is **still blocked**.
 
-**判定:** "零新增 + 仍被拦" = 通过。失败意味着存在未察觉的授权泄漏。
+**Judging:** "zero new entries + still blocked" = pass. Failure means there is an unnoticed authorisation leak.
 
-> 统计审计时注意一个陷阱:`guard.log` 记录的是**每条经过判定的命令文本**,
-> 所以用子串 `grep` 统计某条命令时,**自己的检查命令**(里面引用了那段文本)也会被数进去。
-> 请用「`command` 字段以该命令开头」精确过滤。
+> When counting the audit, mind one trap: `guard.log` records **the text of every command that went through judging**,
+> so when you count a command with a substring `grep`, **your own checking command** (which quotes that text) gets counted too.
+> Filter precisely with "the `command` field starts with that command".
 
 ---
 
-## D. 编号速查
+## D. Number quick reference
 
-| 编号 | 验的是什么 | 记录 |
+| Number | What it verifies | Record |
 |---|---|---|
-| 6-pre | 适配器冒烟 + 真实工具管线 | ✅ pass |
-| 6 | 安装后 probe 被拦 | ✅ pass |
-| 7 | 误报防线 | ✅ pass |
-| 8 / 8-fix | 审计日志(离线 / 运行实例) | ✅ pass |
-| 9 | 令牌闭环 | ✅ pass |
-| 10 | 授权入口与理由文案 | ✅ pass |
-| 11 | 人工三通道(用户手工验收) | ✅ pass |
-| 12 | 宿主审批通道 | ✅ pass |
-| 13 | 额度降级(离线 + CLI) | ✅ pass |
-| 14 | 降级在真实会话可见 | ✅ pass |
-| 15 | `ask` 分支文案分叉 | ✅ pass |
-| 16 | 跨平台入口守卫(WSL + Windows) | 见 `SUMMARY.md` |
-| 17 | 平台相关 shell 引号(Windows) | 见 `SUMMARY.md` |
-| 18 | 收窄为 DSH 专用 | 见 `SUMMARY.md` |
-| 19 | 包内清除非 DSH 痕迹 | 见 `SUMMARY.md` |
-| 20 | 包内现状核对(只描述 DSH) | 见 `SUMMARY.md` |
-| 21 | 改名 `dsh-jev-guard` 后重启激活核对 | 见 `SUMMARY.md` |
-| 22 | 判定动作随审批模式分叉(`ask` 转人工 / `never` 拦死 / L0 绝对闸门) | 见 `SUMMARY.md` |
-| 23 | 双语文案与语言开关(两种语言下判定一致) | 见 `SUMMARY.md` |
-| U1–U3 | 人工介入三通道 | 记在 11 / 12 |
+| 6-pre | adapter smoke test + the real tool pipeline | ✅ pass |
+| 6 | probe blocked after installation | ✅ pass |
+| 7 | the false-positive defence line | ✅ pass |
+| 8 / 8-fix | audit log (offline / running instance) | ✅ pass |
+| 9 | the token closed loop | ✅ pass |
+| 10 | authorisation entry point and reason wording | ✅ pass |
+| 11 | the three human channels (accepted by hand by the user) | ✅ pass |
+| 12 | the host approval channel | ✅ pass |
+| 13 | quota degradation (offline + CLI) | ✅ pass |
+| 14 | degradation visible in a real session | ✅ pass |
+| 15 | the `ask` branch copy branches | ✅ pass |
+| 16 | the cross-platform entry guard (WSL + Windows) | see `SUMMARY.md` |
+| 17 | platform-dependent shell quoting (Windows) | see `SUMMARY.md` |
+| 18 | narrowed to DSH only | see `SUMMARY.md` |
+| 19 | non-DSH traces cleared out of the package | see `SUMMARY.md` |
+| 20 | checking the package's current state (describes DSH only) | see `SUMMARY.md` |
+| 21 | activation check after restarting once renamed to `dsh-jev-guard` | see `SUMMARY.md` |
+| 22 | the verdict action branches with the approval policy (`ask` hands it to a human / `never` blocks hard / L0 absolute gate) | see `SUMMARY.md` |
+| 23 | bilingual copy and the language switch (consistent verdicts in both languages) | see `SUMMARY.md` |
+| U1–U3 | the three human-intervention channels | recorded under 11 / 12 |
 
-历史:本清单早期还有几条"别的执行通道能不能承载拦截"的前置验证(编号 1–5),已随
-"只支持 DSH"的决定作废 —— 那些实现**已从本包移除**,可迁移的教训保留在
-[`MEASUREMENTS.md`](./MEASUREMENTS.md) §12 与 [`DECISIONS.md`](./DECISIONS.md) D11。
+History: this checklist once had several preliminary verifications (numbers 1–5) of "can some other execution channel carry the block", which were voided by
+the decision to "support DSH only" — those implementations **have been removed from this package**, and the transferable lessons are kept in
+[`MEASUREMENTS.md`](./MEASUREMENTS.md) §12 and [`DECISIONS.md`](./DECISIONS.md) D11.
