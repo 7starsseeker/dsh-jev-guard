@@ -3,6 +3,51 @@
 本项目遵循「按日期记录事实」的写法:每条都写清**改了什么、为什么、以及怎么验证的**。
 完整的设计取舍见 [`docs/DECISIONS.md`](./docs/DECISIONS.md),实测数据见 [`docs/MEASUREMENTS.md`](./docs/MEASUREMENTS.md)。
 
+## [0.3.1] — 2026-09-20
+
+**L0 锚定补完:假阳与漏判两个方向一起修**(同一个根因 —— 第一轮锚定只做了一半)。
+取舍见 [`DECISIONS.md`](./DECISIONS.md) **D2**,实测见 [`MEASUREMENTS.md`](./MEASUREMENTS.md) **§7.5**,
+边界矩阵见 [`VERIFICATION.md`](./VERIFICATION.md) 第 7 项。
+
+**起因(用户实测反馈):** 一条"查日志"的命令把 `mkfs.ext4 /dev/…` 的原文写进 python 源码的
+字符串里,被 L0 当成命令拦下 —— 顺着查下去才发现反方向的偏差更要紧。
+
+**假阳方向(放松):** 第一轮只锚定了 7 条 deny + 全部 16 条 ask,`mkfs` / `dd` / `shred` /
+`chmod -R /` / `vssadmin` / `wbadmin` / `cipher /w` / `diskpart` / `wsl --unregister` /
+`kubectl delete ns` / `Clear-Disk` / `Remove-Item … -Recurse` 这 **12 条仍在全文匹配**,
+于是引号里的数据、注释、变量赋值、代码字符串都会命中 `deny` —— 而 L0 的 `deny`
+**没有一次性令牌通道**,误拦时人只能自己去终端执行。现在这 12 条统一锚定到命令位置。
+
+**漏判方向(收紧,这条更要紧):** 锚定用的 `^` **没有 `m` 标志**,所以"命令位置"实际只等于
+**整串开头**。凡被锚定的规则,多行脚本里的真命令全部漏判:
+
+| 形态 | 修正前 | 修正后 |
+|---|---|---|
+| `echo x \| xargs git push --force …` | MISS(`xargs` 不在包装器列表) | HIT |
+| `bash - <<'SH'` + `git push --force …` | MISS(`^` 只匹配串首) | HIT |
+| `bash -c "` + 多行 + `git push --force …` | MISS | HIT |
+| heredoc 里的 `rm -rf /`、`DROP DATABASE` | MISS | HIT |
+
+漏判只在 `l0-only` 降级(没有额度、没有网络)时才致命 —— 而 L0 的存在理由正是那一刻(D9)。
+平时由 Jev 兜着,所以从没被发现。讽刺的是:修正前 heredoc 里的 `mkfs` **反而是命中的**,
+只因为它没锚定 —— 两个偏差是同一个根因的两个方向。
+
+**具体改动**
+
+- 锚定正则加 `m` 标志(`^` 从此匹配**每一行**行首)。
+- 包装器扩到 `sudo/doas/env/command/nohup/time/nice/ionice/setsid/stdbuf/watch/timeout/xargs/parallel/find`;
+  吞掉的参数只允许 ASCII 词/flag/路径字符 —— 中文散文因此仍不会被顺带命中(实测 `xargs 删除 mkfs…` 不命中)。
+- `bash -c "` / `sh -c '` 也算命令位置。
+- 只剩 `redirect-to-device`(`>`)与 `fork-bomb`(`:(){…};:`)显式标为 `where: 'anywhere'`;
+  新增计数器 `RULE_STATS.anywhere`(恒为 2,变大就说明又退回了全文匹配)。
+
+**怎么验证的**
+
+- `tools/selftest-rules.mjs`:25 → **48 例**(22 条矩阵用例分 A 防假阳 / B 防漏判 / C 防误伤散文,
+  外加 1 例性能:4KB 包装器前缀 **0.6ms**,确认没有灾难性回溯)。
+- 其余六套无回归(entry 15 / quota 54 / reason 56 / token 17 / audit 20 / smoke 10)。
+- 真机:第 7 项扩了三行(原来的假阳探针 + 两条"必须被 L0 抓住"的多行/包装器形态)。
+
 ## [0.3.0] — 2026-09-20
 
 判定动作**随 DSH 的审批模式分叉**;并修掉重试预算能绕过 L0 硬地板的潜在洞。取舍见

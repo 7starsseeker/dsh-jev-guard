@@ -143,6 +143,10 @@ L0 原本对**整条命令**(含参数)做正则匹配,于是:
 依据:实测 Jev 对同类散文只给 **p=0.02–0.08**,对真实调用给 **0.8–1.0**,
 所以引号里藏的命令交给 Jev 兜底不丢覆盖率。自检:`tools/selftest-rules.mjs`(25 例)。
 
+> **更正(2026-09-20 晚):**上面这句"21 条改为命令位置匹配"**当时并没有做全** ——
+> 实际只覆盖了 7 条 deny + 全部 16 条 ask,`mkfs` / `dd` 这类 12 条仍是全文匹配。
+> 两个方向上的偏差在 **§7.5** 里一并修掉了。
+
 ### 7.2 `truncate-file` 的 `>` 分支匹配**任何以重定向结尾**的命令
 
 原正则第二段 `>\s*[^\s|]+\s*$` 没有 `m` 标志,`$` 即字符串末尾 —— 实际语义变成
@@ -176,6 +180,45 @@ node bin/guard.mjs log --tail 4 2>/dev/null      # ← 实测被拦
 1. 面向用户的"空串即默认"约定,必须在解析处显式处理 —— `??` 不够。
 2. **静默 catch 会掩盖整整一轮工作。** 审计模块"绝不抛错"是对的(不能因为写日志影响判定),
    但必须留一个可见的出口;这次就是没有任何出口,于是"0 条记录"看起来像"插件没跑"。
+
+### 7.5 锚定只做了一半 + 缺 `m` 标志 → 假阳与漏判**同时**存在(2026-09-20 第二次修正)
+
+第 7.1 节当时写的是"21 条规则改为命令位置匹配",**实际只改了 7 条 deny + 全部 16 条 ask**;
+`mkfs` / `dd` / `shred` / `chmod -R /` / `vssadmin` / `wbadmin` / `cipher /w` / `diskpart` /
+`wsl --unregister` / `kubectl delete ns` / `Clear-Disk` / `Remove-Item … -Recurse` 这 **12 条**
+仍在**全文匹配**。触发这次排查的是一条"查日志"的命令:它把 `mkfs.ext4 /dev/…` 的原文写进了
+python 源码的字符串里(`c.startswith('mkfs.ext4 …')`),被 `mkfs` 规则当成命令拦下。
+
+顺着查下去发现了反方向的、更要紧的偏差:`COMMAND_POSITION` 用了 `^` 但**没有 `m` 标志**,
+所以"命令位置"实际只等于整串开头。凡被锚定的规则,多行命令里第二行起的命令位置全部失效:
+
+| 形态 | 修正前 | 修正后 |
+|---|---|---|
+| `git push --force origin main` | HIT | HIT |
+| `cd /tmp && git push --force …` | HIT | HIT |
+| `echo x \| xargs git push --force …` | **MISS**(`xargs` 不在包装器列表里) | HIT |
+| `bash - <<'SH'` + `git push --force …` | **MISS**(`^` 只匹配串首) | HIT |
+| `bash -c "` + 多行 + `git push --force …` | **MISS**(同上,且引号后不算命令位置) | HIT |
+| heredoc 里的 `rm -rf /`、`DROP DATABASE` | **MISS** | HIT |
+| python heredoc 里的字符串 / 注释 / 赋值 / grep 参数 | **HIT(假阳)** | —(交给 Jev) |
+
+注意最后两行的因果关系:**修正前 heredoc 里的 `mkfs` 反而是命中的** —— 只因为它没锚定。
+假阳与漏判是同一个根因(锚定只做了一半)的两个方向。
+
+**修法:** ① 12 条命令开头型规则补 `where: 'command'`;② 锚定正则加 `m`;
+③ 包装器扩到 `sudo/doas/env/command/nohup/time/nice/ionice/setsid/stdbuf/watch/timeout/xargs/parallel/find`,
+且吞掉的参数只允许 ASCII 词/flag/路径字符(中文散文因此仍不会被顺带命中 —— 实测 `xargs 删除 mkfs…` 不命中);
+④ `bash -c "` 也算命令位置;⑤ 只剩 `redirect-to-device`(`>`)与 `fork-bomb`(`:(){…};:`)
+显式标为 `where: 'anywhere'`,`RULE_STATS.anywhere` 恒为 2。
+自检 `tools/selftest-rules.mjs` 从 25 例扩到 **48 例**(含 1 例性能:4KB 包装器前缀 0.6ms,防灾难性回溯)。
+
+**为什么漏判比假阳要紧:** L0 存在的理由就是在 `l0-only` 降级(没有额度、没有网络)时兜住
+`mkfs` / `dd of=/dev/*` / `git push --force` 这一类(见 D9)。平时漏判被 Jev 补上,所以一直没人发现;
+降级时它就是真空。假阳的代价则只有"AI 不能用 bash 写含这些字面量的东西"(文件工具不经阀门)。
+
+**同一个 `m` 标志的坑,这个项目已经踩了两次:** §7.2 的 `truncate-file` 是规则里的 `$` 缺 `m`
+(表现是**误拦**),这次是锚定里的 `^` 缺 `m`(表现是**漏判**)。表象相反,根因相同 ——
+写"行首/行尾"这类断言时,先问一句"多行输入下它还成立吗"。
 
 ## 8. 现场取到的四个真实判定(维护动作上的命中,全部来自本项目自己的工作)
 

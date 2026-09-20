@@ -27,13 +27,45 @@ YOLO 模式下没人拦的那一下。
 
 ## D2 · L0 硬规则用"命令位置"锚定,引号里的命令交给 Jev
 
-**决策:** 21 条容易与散文冲突的规则只在**命令位置**(行首 / `;` `&` `|` `(` `$(` 之后)匹配。
+**决策:** 除两个结构性例外外,**所有** L0 规则都只在**命令位置**匹配。
+命令位置 = 行首(`m` 标志下即**每一行**行首)/ `;` `&` `|` `(` `$(` 之后 /
+`bash -c "` 这类"把字符串当脚本执行"的引号之后,并允许一串包装器
+(`sudo` / `timeout 30` / `xargs -0` / `nice -n 5` / `find … -exec` …)。
+两个例外显式标为 `where: 'anywhere'`:`redirect-to-device`(模式以 `>` 开头)
+与 `fork-bomb`(纯语法 `:(){…};:`)—— 它们锚不到"命令位置"这个概念上。
+`RULE_STATS.anywhere` 恒为 2,`tools/selftest-rules.mjs` 会打印它。
 
 **依据:** L0 全文匹配曾**三次**拦住操作者自己的正当操作(在参数里写命令原文、在 heredoc 里
 写含测试用例的自检代码)。而实测 Jev 对这类"散文式提及"只给 **p=0.02–0.08**,对真实调用给
 **0.8–1.0** —— 所以把引号里的散文交给它兜底,覆盖率没有实质损失。
-真正写给盘、格式化那类"永不允许"的规则(`dd of=/dev/sd*`、`mkfs`、`vssadmin delete shadows`…)
-仍然全文匹配,不受影响。
+
+**2026-09-20 第二次修正(发现了第一次没做全,且两个方向都偏):**
+
+第一次只改了 7 条 deny + 全部 16 条 ask,`mkfs` / `dd` / `shred` / `chmod -R` / `vssadmin` /
+`wbadmin` / `cipher` / `diskpart` / `wsl --unregister` / `kubectl delete ns` / `Clear-Disk` /
+`Remove-Item … -Recurse` 这 **12 条仍是全文匹配**,于是引号里的数据、注释、变量赋值、
+**代码里的字符串**(实测:`c.startswith('mkfs.ext4 /dev/sdb1')`)都会命中 deny
+—— 而 L0 的 `deny` **没有一次性令牌通道**,被误拦时人只能自己去终端执行。
+
+更严重的是**反方向**:锚定用的 `^` 没有 `m` 标志,所以"命令位置"实际只等于**整串开头**
+(外加分隔符之后)。后果是凡被锚定的规则,多行脚本(heredoc)与多行 `-c` 里的真命令**全部漏判**:
+
+| 形态 | 修正前 | 修正后 |
+|---|---|---|
+| `git push --force origin main`(单行) | HIT | HIT |
+| `cd /tmp && git push --force …`(分隔符后) | HIT | HIT |
+| `echo x \| xargs git push --force …` | **MISS** | HIT |
+| `bash - <<'SH'` + `git push --force …`(多行) | **MISS** | HIT |
+| `bash -c "` + 多行 + `git push --force …` | **MISS** | HIT |
+| heredoc 里的 `rm -rf /` / `DROP DATABASE` | **MISS** | HIT |
+| 引号/注释/赋值/代码字符串里的原文 | **HIT(假阳)** | —(交给 Jev) |
+
+**为什么这个漏判要紧:** L0 存在的全部理由就是在**没有网络、没有额度**(`degradePolicy: 'l0-only'`)
+时兜住 `mkfs` / `dd of=/dev/*` / `git push --force` 这一类(见 D9)。平时漏判被 Jev 补上,所以一直没人发现;
+降级时它就是真空。讽刺的是:修正前 heredoc 里的 `mkfs` **反而是命中的** —— 只因为它没锚定。
+
+边界矩阵(18 种形态)与性能用例(4KB 包装器前缀,防灾难性回溯)在
+[`../tools/selftest-rules.mjs`](../tools/selftest-rules.mjs),第 7 项验收照着跑。
 
 ---
 

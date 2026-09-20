@@ -40,7 +40,22 @@ echo "git push --force origin main" > /tmp/jev-anchor-test.txt
 node bin/guard.mjs judge 'ls -la /var/log 2>/dev/null'
 ```
 
-**判定:** 探针不被拦(散文归 Jev 判,实测 p≈0.02–0.08);L0 规则只锚定**命令位置**。
+**判定:** 探针不被拦(散文归 Jev 判,实测 p≈0.02–0.08)。
+
+**2026-09-20 扩充 —— 锚定必须**两个方向**都测**(48 例:25 旧 + 22 矩阵 + 1 性能):
+
+| 方向 | 要钉住的形态 | 期望 |
+|---|---|---|
+| 防假阳 | 引号里的参数、注释、变量赋值、python `-c`/heredoc 里的字符串、grep 参数、`c.startswith('mkfs.ext4 …')` 这类**代码字符串** | 不命中(交给 Jev) |
+| 防漏判 | 多行 heredoc / 多行 `bash -c "` 里的真命令;`\| xargs`、`timeout 30`、`nice -n 5`、`find … -exec`、多级包装 | **命中对应规则** |
+| 防误伤散文 | `xargs 删除 mkfs.ext4 …`(包装器后面是中文) | 不命中 |
+| 防灾难性回溯 | 4KB 纯包装器前缀(最坏输入) | < 50ms(实测 0.6ms) |
+
+> **只看假阳会漏掉一半问题。** 第一轮修正只测了"散文不该命中",于是谁也没发现
+> 锚定缺 `m` 标志导致**多行脚本里的真命令全部漏判**(见 [`MEASUREMENTS.md`](./MEASUREMENTS.md) §7.5
+> 与 [`DECISIONS.md`](./DECISIONS.md) D2)。改规则时**两个方向都要跑**。
+> 另外一个总是不变的量:`staticRule` 打印的 `RULE_STATS.anywhere` 必须**恒为 2**
+> (`redirect-to-device`、`fork-bomb`);它变大就意味着又有一条规则退回了全文匹配。
 
 ### 8 · 审计日志(离线)+ 8-fix(运行实例)
 
