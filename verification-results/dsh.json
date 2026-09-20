@@ -1,6 +1,6 @@
 {
   "host": "dsh",
-  "updatedAt": "2026-09-20T07:32:36.623Z",
+  "updatedAt": "2026-09-20T07:52:34.747Z",
   "items": {
     "6": {
       "status": "pass",
@@ -113,6 +113,13 @@
       "notes": "",
       "question": "",
       "at": "2026-09-20T07:32:36.623Z"
+    },
+    "22": {
+      "status": "partial",
+      "evidence": "重启(15:50)后真机验收,ask 侧三项全过、never 侧仅单测覆盖所以标 partial。① ask + 高分 block 转人工:p=0.85 的记录里 action=block 而 decision=ask(旧代码此处必为 deny);会话日志 approval/asked 的理由原文是「Jev 安全阀门[需要人工确认] Jev 判定风险概率 85.0%。这条命令需要人工确认,宿主已向用户发起审批请求 —— 请等用户在弹窗里决定,不要换写法重试。」—— 抬头已改、无 ALLOW- 令牌行(人就在弹窗前面,两条通道不打架)、也无 never 模式那句自动判定尾巴;approval/decided 的 outcome=allowed-once,且命令**真的执行**(靶子 notes.txt 确实被删) ⇒ 转人工不是\"拒绝换了个说法\"。② ask + L0 硬规则必须直接拒:mkfs.ext4 探测设备在 ask 模式下连续三次全部 decision=deny、理由抬头 [拦截] + \"这条命令在本机被禁止自动执行\",**一次都没弹窗**。③ 预算洞已堵:那三次的 attempts=1/2/3 —— 第 3 次正是 retryLimit+1(旧代码在此把它升级成 escalate,ask 下就会弹窗、点允许即越过硬地板),现在仍是 deny。④ 离线:selftest-reason 56 例、smoke-dsh-adapter 10 组(含\"L0 连试 4 次始终 deny\")全过。未做:never 侧真机(需把会话策略切回 never 再交同一条命令,期望 deny + 令牌行);该分支按设计未被本次改动影响,单测已断言。另记录一处新发现的假阳:把 mkfs 的命令原文写进 python 源码的字符串里(形如 c.startswith(mkfs.ext4",
+      "notes": "",
+      "question": "",
+      "at": "2026-09-20T07:52:34.747Z"
     },
     "6-pre": {
       "status": "pass",
