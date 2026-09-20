@@ -241,6 +241,7 @@ docs/                      机制、取舍、实测、验收清单
 | [docs/VERIFICATION.md](docs/VERIFICATION.md) | 验收清单与逐项判据 |
 | [DEPLOY.md](DEPLOY.md) | 部署手册(含 Windows 变体与回滚) |
 | [START-HERE.md](START-HERE.md) | 交给另一台机器上的 AI 的装箱/配置说明 |
+| [包外交接文档](包外交接文档) | 本机部署环境的交接说明(哪些文件是部署副本、怎么继续维护;非插件规范) |
 
 ## License
 
