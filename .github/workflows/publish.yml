@@ -73,7 +73,15 @@ jobs:
             // A literal command through the shell, not execFileSync: npm is npm.cmd on
             // Windows, which execFileSync cannot resolve — and a gate that only runs on
             // the runner is a gate nobody can check locally.
-            const [packed] = JSON.parse(execSync("npm pack --dry-run --json", { encoding: "utf8" }));
+            const raw = JSON.parse(execSync("npm pack --dry-run --json", { encoding: "utf8" }));
+            // npm 11 returns an array of results; npm 12 returns an object keyed by
+            // package name. Take either, and report the shape rather than dying on a
+            // destructuring error when a future npm invents a third one.
+            const packed = Array.isArray(raw) ? raw[0] : Object.values(raw)[0];
+            if (packed === undefined || !Array.isArray(packed.files)) {
+              console.error(`::error::unexpected npm pack --json shape: ${JSON.stringify(raw).slice(0, 200)}`);
+              process.exit(1);
+            }
             const paths = packed.files.map(f => f.path);
             const forbidden = /^(config\.json|secrets\.json|HANDOVER\.md|guard\.log.*|allow\.txt|degraded\.json)$|^verification-results\/|^\.zcode\//u;
             const leaked = paths.filter(p => forbidden.test(p));
