@@ -5,6 +5,24 @@
 本项目遵循「按日期记录事实」的写法:每条都写清**改了什么、为什么、以及怎么验证的**。
 完整的设计取舍见 [`docs/DECISIONS.md`](./docs/DECISIONS.md),实测数据见 [`docs/MEASUREMENTS.md`](./docs/MEASUREMENTS.md)。
 
+## [0.5.1] — 2026-09-22
+
+**发布到 npm,并撤销宿主版本声明。** 这次改的是**安装方式与声明内容**,不是行为 —— `bin/`、`lib/`、`adapters/`、`cordis.patch.yml` 与默认配置相对 0.5.0 一字未变。
+
+**从 registry 安装。** 包已发布为 `dsh-jev-guard`,也就是插件市场优先采用的安装源(先取仓库校验过的 npm 包,其次作者预编译的 GitHub Release tarball,最后才回落到全仓源码下载)。对到 GitHub 链路慢或不可靠的用户,这是「几秒」与「克隆一次」的区别:
+
+```bash
+dsh plugin --profile web add dsh-jev-guard
+```
+
+`private` 已移除,并新增 `publishConfig` 把 registry 钉在 `https://registry.npmjs.org/`,避免 `.npmrc` 里的镜像把发布悄悄重定向走。
+
+**不再声明 DSH 版本。** `engines` 现在只剩 `node`。0.5.0 之后曾短暂加过一条下界(`engines.dsh: "0.1.6-alpha.2"`),但它从未进过任何 tag,这里予以撤销。原因是插件市场会从 npm manifest 读这个字段:写成精确版本会让市场判「确认不兼容」,从而在其他所有 DSH 版本上拦住安装与更新 —— 也包括你自己以后升级到的那一版。字段缺席时市场显示「未声明宿主要求」,永不阻拦。
+
+**已验证的版本仍是文档里写的那一个。** DSH 0.1.6-alpha.2 依然是本插件唯一跑过的版本;别的版本是没验过、而不是被禁止,用了请重跑自检。
+
+**验收**:`node bin/guard.mjs selftest`(12/12)与七套离线自检(`tools/selftest-*.mjs`)全过;`npm publish --dry-run` 确认 52 个文件,包内不含配置、密钥、审计日志与交接材料。
+
 ## [0.5.0] — 2026-09-20
 
 **首次部署现在有真正的密钥录入入口,而"没有密钥"不再静默:它像额度耗尽那样降级 —— 大声、粘性,并且不停止免费层。**

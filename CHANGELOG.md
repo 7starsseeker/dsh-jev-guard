@@ -5,6 +5,24 @@
 This project follows a "record the facts by date" approach: every entry states clearly **what changed, why, and how it was verified**.
 The complete design trade-offs are in [`docs/DECISIONS.md`](./docs/DECISIONS.md), the measured data in [`docs/MEASUREMENTS.md`](./docs/MEASUREMENTS.md).
 
+## [0.5.1] — 2026-09-22
+
+**Published to npm, and the host-version declaration is withdrawn.** What changes here is how the plugin is installed and what it declares — not what it does. `bin/`, `lib/`, `adapters/`, `cordis.patch.yml` and the default config are unchanged from 0.5.0.
+
+**Install from the registry.** The package is published as `dsh-jev-guard`, which is the source the plugin market installs from by preference (a repo-verified npm package, then an author-supplied prebuilt GitHub Release tarball, then a full-repo source download). For anyone on a slow or unreliable route to GitHub that is the difference between seconds and a clone:
+
+```bash
+dsh plugin --profile web add dsh-jev-guard
+```
+
+`private` is removed, and `publishConfig` pins the registry to `https://registry.npmjs.org/` so a mirror configured in `.npmrc` cannot silently redirect a publish.
+
+**No DSH version is declared.** `engines` now carries only `node`. A floor was briefly added after 0.5.0 (`engines.dsh: "0.1.6-alpha.2"`) but never shipped in a tagged release, and it is withdrawn here. The plugin market reads that field from the npm manifest, and an exact version in it makes the market report "confirmed incompatible" and block install and update on every other DSH release — including whatever later version you move to yourself. With the field absent the market reports "no host requirement declared" and never blocks.
+
+**The tested version is still the documented one.** DSH 0.1.6-alpha.2 remains the only release this plugin has been run against. Another version is untested, not forbidden — re-run the self-check suite if you use one.
+
+**Acceptance**: `node bin/guard.mjs selftest` (12/12) and the seven offline suites (`tools/selftest-*.mjs`) pass, and `npm publish --dry-run` reports 52 files with no configuration, key material, audit log or handover notes in the tarball.
+
 ## [0.5.0] — 2026-09-20
 
 **A first-time deployment now has a real place to put its key, and "no key" is no longer silent: it degrades like exhausted credit — loudly, stickily, and without stopping the free layer.**
