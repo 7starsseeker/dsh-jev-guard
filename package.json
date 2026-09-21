@@ -41,7 +41,8 @@
     "log": "node bin/guard.mjs log --stats"
   },
   "engines": {
-    "node": ">=20.0.0"
+    "node": ">=20.0.0",
+    "dsh": "0.1.6-alpha.2"
   },
   "dsh": {
     "bundle": {

@@ -32,6 +32,7 @@
 | 目录位置 | 建议 `T:\dsh-jev-guard`(WSL 里是 `/mnt/t/dsh-jev-guard`) | `ls /mnt/t/dsh-jev-guard` |
 | 网络 | 能访问 `https://api.typesafe.ai` | `node bin/guard.mjs judge 'pnpm test'` |
 | DSH | 能装本地插件(profile 的 `package.json` 有 `dsh.profile` / bundles) | `dsh --profile <名> --dump-config` |
+| DSH 版本 | **0.1.6-alpha.2** —— 本插件唯一验证过的版本;在 `package.json` 里声明为 `engines.dsh`,由插件市场读取,DSH 自身不强制 | `dsh --version` |
 
 ## 2. 安装与配置
 

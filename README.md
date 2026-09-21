@@ -68,6 +68,8 @@ Three layers, always in this order:
 
 Requires **Node ≥ 20** (it uses the global `fetch`). **Zero runtime dependencies** — no `npm install` needed.
 
+**Verified host version: DSH 0.1.6-alpha.2.** That is the only DSH release this plugin has been run against, and it is what `package.json` declares as its compatible host (`engines.dsh`) — the field the plugin market reads to decide whether to show a compatibility badge. DSH itself does not enforce it, so another version is **untested, not forbidden**; if you run one, re-run the self-checks below.
+
 ```bash
 # 1. Put this repository somewhere permanent, e.g. T:\dsh-jev-guard (/mnt/t/dsh-jev-guard in WSL)
 
@@ -94,11 +96,12 @@ node bin/guard.mjs key status     # which source resolves, and how long it is (n
 
 `guard key status` exits 3 when no key resolves, so it works as a health check. There is no cooldown to wait out: the moment a key resolves, the degraded state is cleared and judging resumes on the next command.
 
-The declaration in `package.json` is a standard DSH bundle:
+The declaration in `package.json` is a standard DSH bundle, plus the host-version claim from above:
 
 ```json
 {
   "name": "dsh-jev-guard",
+  "engines": { "dsh": "0.1.6-alpha.2" },
   "dsh": { "bundle": { "patch": "./cordis.patch.yml" } }
 }
 ```

@@ -68,6 +68,8 @@
 
 要求 **Node ≥ 20**(用到全局 `fetch`)。**零运行时依赖**,不需要 `npm install`。
 
+**已验证的宿主版本:DSH 0.1.6-alpha.2。** 这是本插件唯一跑过的 DSH 版本,也是 `package.json` 里声明的兼容宿主(`engines.dsh`)—— 插件市场读的就是这个字段,用来说明是否显示兼容性标记。DSH 自身并不强制它,所以别的版本是**没验过,而不是被禁止**;换版本后请重跑下面的自检。
+
 ```bash
 # 1. 把本仓库放到一个固定的位置,例如 T:\dsh-jev-guard(WSL 里是 /mnt/t/dsh-jev-guard)
 
@@ -94,11 +96,12 @@ node bin/guard.mjs key status     # 当前哪个来源在生效、密钥多长(�
 
 `guard key status` 在没有密钥时退出码 3,可以直接当健康检查。这里没有需要等的冷却:密钥一解析到,降级状态当场清除,下一条命令就恢复完整判定。
 
-`package.json` 里的声明就是一个标准 DSH bundle:
+`package.json` 里的声明是一个标准 DSH bundle,外加上面那条宿主版本声明:
 
 ```json
 {
   "name": "dsh-jev-guard",
+  "engines": { "dsh": "0.1.6-alpha.2" },
   "dsh": { "bundle": { "patch": "./cordis.patch.yml" } }
 }
 ```
