@@ -40,6 +40,7 @@ const FILES = [
   'CHANGELOG.md',
   'DEPLOY.md',
   'START-HERE.md',
+  'RELEASING.md',
   'adapters/README.md',
   'verification-results/README.md',
   'docs/ARCHITECTURE.md',

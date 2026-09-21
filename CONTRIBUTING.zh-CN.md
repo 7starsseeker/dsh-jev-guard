@@ -24,6 +24,8 @@ node tools/smoke-dsh-adapter.mjs
 
 CI 在 Linux 与 Windows 上跑的就是这些,所以红的那一条是真失败,不是本地环境怪癖。
 
+发版是一条单独的、写下来的流程 —— 它在推 tag 时无人值守地发布,所以顺序有讲究:见 [`RELEASING.md`](RELEASING.md)。
+
 ## 改判据层 = 一次重新校准事件
 
 `lowThreshold` / `highThreshold`、发给 Jev 的那句问话、以及 L0 规则集都是**标定出来的**,不是随手选的。要动它们就得:

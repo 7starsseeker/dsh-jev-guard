@@ -24,6 +24,8 @@ node tools/smoke-dsh-adapter.mjs
 
 CI runs exactly these on Linux and Windows, so a red one is a real failure rather than a local quirk.
 
+Cutting a release is a separate, written-down procedure — it publishes on a tag push with no one watching, so the order matters: see [`RELEASING.md`](RELEASING.md).
+
 ## Changing the judgement layer is a recalibration event
 
 `lowThreshold` / `highThreshold`, the question sent to Jev, and the L0 rule set are **calibrated**, not chosen. If you touch them:
