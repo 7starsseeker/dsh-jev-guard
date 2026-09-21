@@ -1,0 +1,90 @@
+name: publish
+
+# A version tag is the only thing that publishes. There is deliberately no
+# workflow_dispatch: `npm publish` ships whatever `package.json` says, so a
+# manual trigger would be a path to publishing a version nobody tagged — the
+# version check below closes that by construction rather than by remembering.
+#
+# Trusted publishing (OIDC) requires npm CLI >= 11.5.1 and Node >= 22.14.0, and
+# npm only accepts it from GitHub-hosted runners.
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: read
+  id-token: write # the OIDC token npm exchanges for a one-shot publish grant
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          registry-url: 'https://registry.npmjs.org'
+          package-manager-cache: false # never cache in a release build
+
+      # The runner's bundled npm may predate trusted publishing.
+      - name: Ensure npm supports trusted publishing
+        run: npm install --global npm@latest
+
+      # The tag and the manifest must agree before anything is uploaded, because
+      # the publish itself takes the version from package.json and ignores the tag.
+      - name: Tag must match package.json version
+        run: |
+          set -euo pipefail
+          tag="${GITHUB_REF_NAME#v}"
+          pkg="$(node -p "require('./package.json').version")"
+          echo "tag = ${GITHUB_REF_NAME}, package.json = ${pkg}"
+          if [ "${tag}" != "${pkg}" ]; then
+            echo "::error::tag ${GITHUB_REF_NAME} does not match package.json version ${pkg}"
+            exit 1
+          fi
+
+      # The same gates the selftest workflow runs on main, so only something those
+      # gates already pass can ship. There is no `npm ci`/`npm test`: the package
+      # has zero dependencies and no lockfile.
+      - name: Offline self-checks
+        shell: bash
+        run: |
+          set -eo pipefail
+          for t in selftest-entry selftest-i18n selftest-quota selftest-reason selftest-token selftest-rules selftest-audit; do
+            printf '%-18s ' "$t"
+            node "tools/$t.mjs" | tail -1
+          done
+
+      - name: guard selftest
+        run: node bin/guard.mjs selftest
+
+      - name: DSH adapter smoke test
+        run: node tools/smoke-dsh-adapter.mjs
+
+      # Local state must never ride along. This repository has published real
+      # credentials by accident before, and the `files` allowlist is a control
+      # only for as long as nobody widens it — so the tarball is checked, not
+      # trusted.
+      - name: Tarball carries no local state
+        run: |
+          node -e '
+            const { execSync } = require("node:child_process");
+            // A literal command through the shell, not execFileSync: npm is npm.cmd on
+            // Windows, which execFileSync cannot resolve — and a gate that only runs on
+            // the runner is a gate nobody can check locally.
+            const [packed] = JSON.parse(execSync("npm pack --dry-run --json", { encoding: "utf8" }));
+            const paths = packed.files.map(f => f.path);
+            const forbidden = /^(config\.json|secrets\.json|HANDOVER\.md|guard\.log.*|allow\.txt|degraded\.json)$|^verification-results\/|^\.zcode\//u;
+            const leaked = paths.filter(p => forbidden.test(p));
+            console.log(`${packed.name}@${packed.version}: ${paths.length} files in the tarball`);
+            if (leaked.length > 0) {
+              console.error(`::error::tarball carries local state: ${leaked.join(", ")}`);
+              process.exit(1);
+            }
+          '
+
+      # No token, no --provenance: npm takes the OIDC identity for the publish
+      # grant and attaches provenance automatically for a public repo/package.
+      - name: Publish to npm
+        run: npm publish
