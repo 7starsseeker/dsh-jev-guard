@@ -31,7 +31,7 @@
     "./package.json": "./package.json"
   },
   "bin": {
-    "jev-guard": "./bin/guard.mjs"
+    "jev-guard": "bin/guard.mjs"
   },
   "scripts": {
     "selftest": "node bin/guard.mjs selftest",
