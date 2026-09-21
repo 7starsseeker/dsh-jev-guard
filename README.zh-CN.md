@@ -68,7 +68,7 @@
 
 要求 **Node ≥ 20**(用到全局 `fetch`)。**零运行时依赖**,不需要 `npm install`。
 
-**已验证的宿主版本:DSH 0.1.6-alpha.2。** 这是本插件唯一跑过的 DSH 版本,也是 `package.json` 里声明的兼容宿主(`engines.dsh`)—— 插件市场读的就是这个字段,用来说明是否显示兼容性标记。DSH 自身并不强制它,所以别的版本是**没验过,而不是被禁止**;换版本后请重跑下面的自检。
+**已验证的宿主版本:DSH 0.1.6-alpha.2。** 这是本插件唯一跑过的 DSH 版本,且**刻意不在 `package.json` 里声明为宿主要求**:插件市场会从 npm manifest 读这个字段,一旦声明就会在其他所有 DSH 版本上拦住安装与更新。所以别的版本是**没验过,而不是被禁止**;换版本后请重跑下面的自检。
 
 ```bash
 # 1. 把本仓库放到一个固定的位置,例如 T:\dsh-jev-guard(WSL 里是 /mnt/t/dsh-jev-guard)
@@ -79,13 +79,15 @@ dsh plugin --profile web add /mnt/t/dsh-jev-guard      # Windows 侧: T:\dsh-jev
 # 3. 重启 DSH(插件没有热加载)
 ```
 
-本地路径是**链接**装法,插件始终跑在你自己那份 checkout 上 —— 改文件、重启,就生效。`dsh plugin` 的 `add` 走 pnpm 解析,所以 spec 接受 pnpm 接受的一切(本地路径、`github:owner/repo`、registry 包名)。想直接从 GitHub 装发出来的那一份 —— 也就是插件市场列出的形式 —— 跳过第一步:
+`dsh plugin` 的 `add` 走 pnpm 解析,所以 spec 接受 pnpm 接受的一切。发布的包已上 npm —— 也就是插件市场优先采用的安装源:
 
 ```bash
-dsh plugin --profile web add github:7starsseeker/dsh-jev-guard
+dsh plugin --profile web add dsh-jev-guard
 ```
 
-两种都没有东西要构建(零依赖、无安装脚本),所以都不会触发构建授权。
+本地路径是**链接**装法,插件始终跑在你自己那份 checkout 上 —— 改文件、重启,就生效。想直接从 GitHub 源码装,用 `github:7starsseeker/dsh-jev-guard`。
+
+以上几种都没有东西要构建(零依赖、无安装脚本),所以都不会触发构建授权。
 
 **新装的时候没有密钥 —— 它会自己说出来,而不是装死。** 第一个会话会在对话里直接告诉你"没有配置密钥";在录入之前,阀门处于**降级**:免费的 L0 硬规则与预筛照常工作,付费的语义层不工作。录入只要一条命令,而且只从标准输入读 —— 绝不接受参数,那会进 shell 历史与 `ps`:
 
@@ -96,12 +98,11 @@ node bin/guard.mjs key status     # 当前哪个来源在生效、密钥多长(�
 
 `guard key status` 在没有密钥时退出码 3,可以直接当健康检查。这里没有需要等的冷却:密钥一解析到,降级状态当场清除,下一条命令就恢复完整判定。
 
-`package.json` 里的声明是一个标准 DSH bundle,外加上面那条宿主版本声明:
+`package.json` 里的声明是一个标准 DSH bundle:
 
 ```json
 {
   "name": "dsh-jev-guard",
-  "engines": { "dsh": "0.1.6-alpha.2" },
   "dsh": { "bundle": { "patch": "./cordis.patch.yml" } }
 }
 ```

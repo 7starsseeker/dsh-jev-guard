@@ -32,7 +32,7 @@ and **have acceptable evidence for every step**. **Both WSL and Windows are supp
 | Directory location | `T:\dsh-jev-guard` recommended (in WSL that is `/mnt/t/dsh-jev-guard`) | `ls /mnt/t/dsh-jev-guard` |
 | Network | able to reach `https://api.typesafe.ai` | `node bin/guard.mjs judge 'pnpm test'` |
 | DSH | able to install local plugins (the profile's `package.json` has `dsh.profile` / bundles) | `dsh --profile <name> --dump-config` |
-| DSH version | **0.1.6-alpha.2** — the only release this plugin is verified on; declared in `package.json` as `engines.dsh`, read by the plugin market and not enforced by DSH | `dsh --version` |
+| DSH version | **0.1.6-alpha.2** — the only release this plugin is verified on; no host requirement is declared in `package.json`, so the plugin market never blocks install on a different version | `dsh --version` |
 
 ## 2. Install and configure
 

@@ -41,8 +41,7 @@
     "log": "node bin/guard.mjs log --stats"
   },
   "engines": {
-    "node": ">=20.0.0",
-    "dsh": "0.1.6-alpha.2"
+    "node": ">=20.0.0"
   },
   "dsh": {
     "bundle": {
@@ -76,5 +75,8 @@
   "bugs": {
     "url": "https://github.com/7starsseeker/dsh-jev-guard/issues"
   },
-  "private": true
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  }
 }

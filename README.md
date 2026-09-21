@@ -68,7 +68,7 @@ Three layers, always in this order:
 
 Requires **Node ≥ 20** (it uses the global `fetch`). **Zero runtime dependencies** — no `npm install` needed.
 
-**Verified host version: DSH 0.1.6-alpha.2.** That is the only DSH release this plugin has been run against, and it is what `package.json` declares as its compatible host (`engines.dsh`) — the field the plugin market reads to decide whether to show a compatibility badge. DSH itself does not enforce it, so another version is **untested, not forbidden**; if you run one, re-run the self-checks below.
+**Verified host version: DSH 0.1.6-alpha.2.** That is the only DSH release this plugin has been run against, and it is deliberately **not** declared as a host requirement in `package.json`: the plugin market reads that field from the npm manifest and would then block install and update on every other DSH release. Another version is therefore **untested, not forbidden**; if you run one, re-run the self-checks below.
 
 ```bash
 # 1. Put this repository somewhere permanent, e.g. T:\dsh-jev-guard (/mnt/t/dsh-jev-guard in WSL)
@@ -79,13 +79,15 @@ dsh plugin --profile web add /mnt/t/dsh-jev-guard      # on Windows: T:\dsh-jev-
 # 3. Restart DSH (plugins are not hot-reloaded)
 ```
 
-A local path is **linked**, so the plugin keeps running from your own checkout — edit a file, restart, done. `dsh plugin` resolves `add` through pnpm, so the spec takes anything pnpm accepts (a local path, `github:owner/repo`, or a registry name). To install the released bundle straight from GitHub instead — the form the plugin market lists — skip the first step:
+`dsh plugin` resolves `add` through pnpm, so the spec takes anything pnpm accepts. The published package is on npm — the source the plugin market installs from by preference:
 
 ```bash
-dsh plugin --profile web add github:7starsseeker/dsh-jev-guard
+dsh plugin --profile web add dsh-jev-guard
 ```
 
-Neither form has anything to build (zero dependencies, no install scripts), so neither raises a build-approval prompt.
+A local path is **linked**, so the plugin keeps running from your own checkout — edit a file, restart, done. To install straight from GitHub source instead, use `github:7starsseeker/dsh-jev-guard`.
+
+None of these has anything to build (zero dependencies, no install scripts), so none raises a build-approval prompt.
 
 **A fresh install has no key, and it says so instead of going quiet.** The first session tells you in the conversation itself that no key is configured, and until you record one the valve runs **degraded**: the free L0 hard rules and the pre-screen still work, the paid semantic layer does not. Recording a key is one command, and it is read from stdin — never from an argument, which would land in your shell history and in `ps`:
 
@@ -96,12 +98,11 @@ node bin/guard.mjs key status     # which source resolves, and how long it is (n
 
 `guard key status` exits 3 when no key resolves, so it works as a health check. There is no cooldown to wait out: the moment a key resolves, the degraded state is cleared and judging resumes on the next command.
 
-The declaration in `package.json` is a standard DSH bundle, plus the host-version claim from above:
+The declaration in `package.json` is a standard DSH bundle:
 
 ```json
 {
   "name": "dsh-jev-guard",
-  "engines": { "dsh": "0.1.6-alpha.2" },
   "dsh": { "bundle": { "patch": "./cordis.patch.yml" } }
 }
 ```
