@@ -6,6 +6,9 @@
 [![DSH plugin](https://img.shields.io/badge/DeepSeek%20Harness-plugin-4B6BFB.svg)](https://github.com/deepseek-ai/deepseek-harness)
 [![topic: dsh-plugin](https://img.shields.io/badge/topic-dsh--plugin-4B6BFB.svg)](https://github.com/topics/dsh-plugin)
 [![platform](https://img.shields.io/badge/platform-WSL%20%7C%20Windows-2f2f2f.svg)](#platform-support)
+[![version](https://img.shields.io/github/v/tag/7starsseeker/dsh-jev-guard?label=version)](https://github.com/7starsseeker/dsh-jev-guard/tags)
+[![last commit](https://img.shields.io/github/last-commit/7starsseeker/dsh-jev-guard)](https://github.com/7starsseeker/dsh-jev-guard/commits/main)
+[![stars](https://img.shields.io/github/stars/7starsseeker/dsh-jev-guard?style=flat)](https://github.com/7starsseeker/dsh-jev-guard/stargazers)
 
 > **English** | [简体中文](README.zh-CN.md) | [Changelog](CHANGELOG.md) | [Design decisions](docs/DECISIONS.md) | [Measurements](docs/MEASUREMENTS.md)
 
