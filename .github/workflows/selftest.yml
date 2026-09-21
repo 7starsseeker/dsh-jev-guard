@@ -1,0 +1,39 @@
+name: selftest
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  selftest:
+    name: ${{ matrix.os }} · node ${{ matrix.node }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      # A red run on one platform must not hide the other platform's result:
+      # the cross-platform entry guard is only "verified" when both ran.
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        node: ['20', '22']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+
+      - name: Offline self-checks
+        shell: bash
+        run: |
+          set -eo pipefail
+          for t in selftest-entry selftest-i18n selftest-quota selftest-reason selftest-token selftest-rules selftest-audit; do
+            printf '%-18s ' "$t"
+            node "tools/$t.mjs" | tail -1
+          done
+
+      - name: guard selftest
+        run: node bin/guard.mjs selftest
+
+      - name: DSH adapter smoke test
+        run: node tools/smoke-dsh-adapter.mjs

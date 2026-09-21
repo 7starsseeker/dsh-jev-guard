@@ -1,0 +1,50 @@
+name: Bug report
+description: A command was judged wrongly, the CLI misbehaved, or a self-check fails.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Before filing: this valve is an **accident net, not a security boundary**. The bypasses that are accepted on purpose are listed in [D1](https://github.com/7starsseeker/dsh-jev-guard/blob/main/docs/DECISIONS.md), and security-relevant findings go through the private channel in [SECURITY.md](https://github.com/7starsseeker/dsh-jev-guard/blob/main/SECURITY.md) instead of a public issue.
+  - type: dropdown
+    id: where
+    attributes:
+      label: What went wrong
+      options:
+        - A verdict was wrong (allowed something it should have blocked, or blocked something it should have allowed)
+        - The CLI misbehaved
+        - A self-check fails
+        - Installation or DSH integration
+        - Documentation
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: How to reproduce
+      description: The command text exactly as it was judged, or the exact command you ran plus its full output. Redact anything private — what is needed is a reproduction, not real data.
+      render: shell
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected vs. actual
+      description: The verdict you expected (allow / revise / block / escalate), the verdict you got, and the probability value if you have it.
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      description: Plugin version (from package.json), OS, Node version, and the session approval policy (ask or never).
+    validations:
+      required: true
+  - type: textarea
+    id: audit
+    attributes:
+      label: Audit line (optional)
+      description: The line for that call from `node bin/guard.mjs log --tail 5`. The command text is masked, but read it over before pasting.
+      render: shell
+    validations:
+      required: false

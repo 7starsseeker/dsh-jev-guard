@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Design decisions — read this before reporting a bypass
+    url: https://github.com/7starsseeker/dsh-jev-guard/blob/main/docs/DECISIONS.md
+    about: Every trade-off that was made on purpose, with the measurement evidence of the time.
+  - name: Security policy
+    url: https://github.com/7starsseeker/dsh-jev-guard/blob/main/SECURITY.md
+    about: The private reporting channel, and the bypasses accepted on purpose.
+  - name: Deployment manual
+    url: https://github.com/7starsseeker/dsh-jev-guard/blob/main/DEPLOY.md
+    about: Install, configure, roll back.
