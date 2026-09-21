@@ -70,9 +70,21 @@ const read = (p) => readFileSync(join(ROOT, p), 'utf8')
 /**
  * @param base - git 基线。
  * @param p - 仓库内相对路径。
- * @returns 该文件在基线里的内容。
+ * @returns 该文件在基线里的内容;基线里没有这份文件(刚加的新文档)时返回 null 而不是抛错。
  */
-const atBase = (base, p) => execFileSync('git', ['show', `${base}:${p}`], { cwd: ROOT, encoding: 'utf8', maxBuffer: 1 << 26 })
+function atBase(base, p) {
+  try {
+    return execFileSync('git', ['show', `${base}:${p}`], { cwd: ROOT, encoding: 'utf8', maxBuffer: 1 << 26 })
+  } catch {
+    // 新加的文档在基线里当然不存在 —— 那只有"结构同构"可查,保真检查对它不适用。
+    return null
+  }
+}
+
+/** 已配对的文档名(不含 `.md`),由 FILES 推导 —— 加新文档时不必再改下面的剔除规则。 */
+const PAIR_NAMES = [...new Set(FILES.map(p => p.split('/').pop().replace(/\.md$/, '')))]
+/** 语言切换行互相指向的那两个文件名,注定不同,比对链接时剔除。 */
+const SWITCHER_TARGET = new RegExp(`(${PAIR_NAMES.join('|')})(\\.zh-CN)?\\.md$`)
 
 const headings = (s) => [...s.matchAll(/^(#{1,6})\s/gm)].map(m => m[1].length).join(',')
 const fences = (s) => (s.match(/^```/gm) ?? []).length
@@ -80,7 +92,7 @@ const tableRows = (s) => s.split('\n').filter(l => /^\s*\|/.test(l)).length
 const links = (s) => [...s.matchAll(/\]\(([^)\s]+)\)/g)].map(m => m[1])
   // 剔两类注定不同的目标:同文件锚点、以及语言切换行互相指向的那份文件名。
   .filter(l => !l.startsWith('#'))
-  .filter(l => !/(README|CHANGELOG|DEPLOY|START-HERE|ARCHITECTURE|DECISIONS|DSH-INTEGRATION|MEASUREMENTS|USER-INTERVENTION|VERIFICATION|AGENT-TASK-dsh)(\.zh-CN)?\.md$/.test(l))
+  .filter(l => !SWITCHER_TARGET.test(l))
   .sort()
 const numbers = (s) => [...s.matchAll(/\d+(?:\.\d+)?/g)].map(m => m[0]).sort()
 
@@ -101,20 +113,24 @@ for (const en of FILES) {
   const enText = read(en)
   const original = atBase(base, en)
 
-  // A) 保真
+  // A) 保真(基线里没有这份文件时,只有"两部都带切换行"这一条可查)
   const switcher = `> [English](${en.split('/').pop()}) | **简体中文**`
-  const lines = original.split('\n')
-  const h1 = lines.findIndex(l => l.startsWith('# '))
-  const candidates = []
-  for (const before of [0, 1]) {
-    for (const after of [0, 1]) {
-      const copy = [...lines]
-      copy.splice(h1 + 1, 0, ...Array(before).fill(''), switcher, ...Array(after).fill(''))
-      candidates.push(copy.join('\n'))
-    }
-  }
   const hasSwitchers = zhText.includes('> [English](') && enText.includes('> **English** | [简体中文](')
-  const faithful = editedBoth.has(en) ? hasSwitchers : candidates.includes(zhText)
+  const newFile = original === null
+  let faithful = hasSwitchers
+  if (!newFile && !editedBoth.has(en)) {
+    const lines = original.split('\n')
+    const h1 = lines.findIndex(l => l.startsWith('# '))
+    const candidates = []
+    for (const before of [0, 1]) {
+      for (const after of [0, 1]) {
+        const copy = [...lines]
+        copy.splice(h1 + 1, 0, ...Array(before).fill(''), switcher, ...Array(after).fill(''))
+        candidates.push(copy.join('\n'))
+      }
+    }
+    faithful = candidates.includes(zhText)
+  }
   if (!faithful) failed += 1
 
   // B) 两部同构
@@ -134,6 +150,7 @@ for (const en of FILES) {
   const leftovers = enText.split('\n').filter(l => /[\u4e00-\u9fff]/.test(l) && !l.startsWith('> **English**'))
   console.log(`${faithful && (diff.length === 0 || onlyNumbers) ? 'ok  ' : 'FAIL'} ${en}`)
   if (!faithful) console.log(`     中文版不等于"基线 + 仅一行切换行"的任一种形态${editedBoth.has(en) ? '(该文件声明了两边一起改,只查切换行是否都在)' : ''}`)
+  if (newFile && faithful && (diff.length === 0 || onlyNumbers)) console.log('     (基线里没有这份文件:新文档只查结构同构与切换行,保真检查要等它进了基线才算数)')
   if (diff.length) console.log(`     ${onlyNumbers ? '仅数字多重集差异(标题序号 一→1. 会造成这个)' : '两部未对齐'}: ${diff.join(', ')}`)
   if (leftovers.length) console.log(`     英文版残留中文 ${leftovers.length} 行(应只有实测引用): ${leftovers.map(l => l.trim().slice(0, 60)).join(' || ')}`)
 }
