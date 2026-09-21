@@ -5,6 +5,22 @@
 本项目遵循「按日期记录事实」的写法:每条都写清**改了什么、为什么、以及怎么验证的**。
 完整的设计取舍见 [`docs/DECISIONS.md`](./docs/DECISIONS.md),实测数据见 [`docs/MEASUREMENTS.md`](./docs/MEASUREMENTS.md)。
 
+## [0.5.2] — 2026-09-22
+
+**发布这件事现在由 tag 自己完成。** 插件行为未变:`bin/`、`lib/`、`adapters/`、`cordis.patch.yml` 与默认配置相对 0.5.1 完全一致。变的只是"一个版本怎么到达 registry"。
+
+推一个 `v*` tag 会触发 `.github/workflows/publish.yml`,它走 npm 的 [trusted publishing](https://docs.npmjs.com/trusted-publishers) 发布 —— 用 OIDC 身份换取一次性的发布授权。**这个流程里不存在任何发布 token**,所以没有东西需要保存、轮换,也不会在最不该出错的时候发现它过期了;公开仓库 + 公开包还会由 npm 自动附上 provenance 证明。
+
+上传之前先过三道闸,任何一道不过就不发:
+
+1. **tag 必须与 `package.json` 里的 version 一致。** `npm publish` 发的是 manifest 里的版本号、根本不看 tag,所以忘了升版会变成"试图重发一个旧版本",报出来的错还指向错误的原因。
+2. **跑 `selftest` 工作流在 `main` 上跑的同一套自检** —— 七套离线自检、`guard selftest`、DSH 适配器冒烟。
+3. **tarball 不得夹带本机状态** —— `config.json`、`secrets.json`、`HANDOVER.md`、`guard.log*`、`allow.txt`、`degraded.json`、`verification-results/`、`.zcode/` 按名字拦下。`files` 白名单只在没人放宽它的前提下才算控件,所以这里检查的是打好的 tarball,而不是相信白名单。
+
+最后这道闸也是为什么值得为它单独发一个版本:这个项目**有过真的把凭据发出去的历史**,而发布正是这类失误会抵达 registry 的时刻。
+
+**验收**:`node bin/guard.mjs selftest`(12/12)与七套离线自检全过,DSH 适配器冒烟也通过;版本闸两个方向都实测过(`v0.5.1` 对匹配的 manifest 通过,`v0.5.2` 对 `0.5.1` 的 manifest 被拒);tarball 闸在本仓库上实跑过(52 个文件、无一命中),其正则也逐条对着"必须拒绝"与"必须放行"的名字验过。这条流水线的首次真实运行就是 `v0.5.2` 这个 tag 本身。
+
 ## [0.5.1] — 2026-09-22
 
 **发布到 npm,并撤销宿主版本声明。** 这次改的是**安装方式与声明内容**,不是行为 —— `bin/`、`lib/`、`adapters/`、`cordis.patch.yml` 与默认配置相对 0.5.0 一字未变。

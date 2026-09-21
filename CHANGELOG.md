@@ -5,6 +5,22 @@
 This project follows a "record the facts by date" approach: every entry states clearly **what changed, why, and how it was verified**.
 The complete design trade-offs are in [`docs/DECISIONS.md`](./docs/DECISIONS.md), the measured data in [`docs/MEASUREMENTS.md`](./docs/MEASUREMENTS.md).
 
+## [0.5.2] — 2026-09-22
+
+**Releases now publish themselves from a tag.** The plugin's behaviour is unchanged: `bin/`, `lib/`, `adapters/`, `cordis.patch.yml` and the default config are identical to 0.5.1. Only the way a release reaches the registry changed.
+
+Pushing a `v*` tag runs `.github/workflows/publish.yml`, which publishes through npm [trusted publishing](https://docs.npmjs.com/trusted-publishers) — an OIDC identity exchanged for a one-shot publish grant. No publish token exists anywhere, so there is nothing to store, rotate, or to find expired at the worst possible moment; for a public repository and package npm also attaches a provenance attestation automatically.
+
+Three gates run first, and any one of them fails the release:
+
+1. **The tag must match the version in `package.json`.** `npm publish` ships the manifest's version and ignores the tag, so a forgotten bump would try to republish an old version and fail with a message naming the wrong cause.
+2. **The same self-checks the `selftest` workflow runs on `main`** — the seven offline suites, `guard selftest`, and the DSH adapter smoke test.
+3. **The tarball must carry no local state** — `config.json`, `secrets.json`, `HANDOVER.md`, `guard.log*`, `allow.txt`, `degraded.json`, `verification-results/` and `.zcode/` are rejected by name. A `files` allowlist is a control only for as long as nobody widens it, so the packed tarball is inspected rather than trusted.
+
+That last gate is why this is a release of its own: this project has shipped real credentials by accident before, and a release is precisely the moment such a mistake would reach a registry.
+
+**Acceptance**: `node bin/guard.mjs selftest` (12/12) and the seven offline suites pass, as does the DSH adapter smoke test; the version gate was exercised in both directions (`v0.5.1` accepted against a matching manifest, `v0.5.2` rejected against a `0.5.1` one); the tarball gate was executed against this repository (52 files, none flagged) and its pattern checked against names it must reject and names it must not. The pipeline's first real run is the `v0.5.2` tag itself.
+
 ## [0.5.1] — 2026-09-22
 
 **Published to npm, and the host-version declaration is withdrawn.** What changes here is how the plugin is installed and what it declares — not what it does. `bin/`, `lib/`, `adapters/`, `cordis.patch.yml` and the default config are unchanged from 0.5.0.
