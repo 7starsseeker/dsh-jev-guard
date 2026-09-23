@@ -219,7 +219,7 @@ node bin/guard.mjs allow --revoke ALLOW-…    # 撤销
 |---|---|---|
 | 额度耗尽 / 密钥失效(`402` / `401`) | **降级**:写 `~/.jev-guard/degraded.json`,冷却窗口内不再发请求(省钱),默认只跑**免费的 L0 + 预筛** | `guard status`(退出码 3)· 拒绝理由里的一句 `⚠️` · 审计里的 `source: degraded` 与 `level: warn` · CLI 的 stderr |
 | 冷却到期 | 自动放**一次**探测请求:成功即恢复(你不用做任何事),失败继续降级 | `guard status` 会显示还剩多久 |
-| 超时 / 网络抖 / 5xx / 429 限流 / 无密钥 | **不降级**,只逐次放行(fail-open),但会被分类记录 | `guard log --stats` 的"失败分类"一行 |
+| 超时 / 网络抖 / 5xx / 429 限流 / 无密钥 / **被边缘拦下**(CDN/WAF 用 `403` 回了一个 HTML 页:请求根本没到判定服务,密钥也没被检查过) | **不降级**,只逐次放行(fail-open),但会被分类记录 | `guard log --stats` 的"失败分类"一行 |
 
 ```bash
 node bin/guard.mjs status --clear    # 不想等冷却:立刻重试一次(失败会再次进入降级)

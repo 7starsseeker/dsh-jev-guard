@@ -67,7 +67,8 @@ Details, measured evidence, and the nature of each of the three channels are in 
 
 | Failure category | Valve behaviour | `source` in the audit |
 |---|---|---|
-| `quota` (402 / quota wording) / `auth` (401/403) | **Degrades**: writes `~/.jev-guard/degraded.json`, sends no more requests within the cooldown window, by default only the free L0 + pre-screen runs | First time: `error` + `degraded`; afterwards: `degraded` |
+| `quota` (402 / quota wording) / `auth` (401/403 with a JSON body) | **Degrades**: writes `~/.jev-guard/degraded.json`, sends no more requests within the cooldown window, by default only the free L0 + pre-screen runs | First time: `error` + `degraded`; afterwards: `degraded` |
+| `edge` (401/403 carrying an HTML/WAF error page) | **Does not degrade**: that response did not come from the judging service — a CDN/WAF blocked the request at the edge, so the key was never checked. Each call fails open and is recorded as `edge` | `error` |
 | `no-key` (no key could be resolved) | **Degrades, stickily and scoped**: no HTTP is sent at all, the state never expires with time (there is nothing to probe) and is cleared the moment a key resolves; it records the identity of the entry that reported it, so it suppresses only that entry | First time: `error` + `degraded`; afterwards: `degraded` |
 | `timeout` / `network` / `server` / `rate-limit` | **Does not degrade**, fail-open each time, recorded classified by `errorKind` | `error` |
 
@@ -75,6 +76,11 @@ Details, measured evidence, and the nature of each of the three channels are in 
 `degraded.json` is globally shared — one path being unable to read a secret should not stop the other paths too.
 **D15 keeps that objection and answers it with scope instead of silence**: a local state records *who wrote it*, and an entry
 obeys only its own (`'cli'` / `'dsh-adapter'`). Service-side states stay `global`.
+
+`edge` is the same lesson one layer further out (D16, 2026-09-23): a `403` **whose body is not JSON** is not the judging
+service talking, it is a CDN/WAF error page — filing it under `auth` turned one edge hiccup into half an hour of global
+silence plus a label pointing at the wrong cause. The split is decided by the response shape (content-type / HTML body /
+WAF fingerprints), and anything that does look like JSON stays `auth`.
 
 ### 4b. The in-session notice: the only way a host-only plugin can speak to the user
 

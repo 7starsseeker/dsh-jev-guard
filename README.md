@@ -219,7 +219,7 @@ The judging service is **pay-per-use**, so running out of credit is a certainty.
 |---|---|---|
 | Credit exhausted / key invalid (`402` / `401`) | **Degrades**: writes `~/.jev-guard/degraded.json` and stops sending requests for the cooldown window (to save money), running only the **free L0 + pre-screen** by default | `guard status` (exit code 3) · one `⚠️` line in the refusal reason · `source: degraded` and `level: warn` in the audit · stderr of the CLI |
 | Cooldown expires | Automatically sends **one** probe request: success restores normal operation (you do nothing), failure keeps it degraded | `guard status` shows how long is left |
-| Timeout / network hiccup / 5xx / 429 rate limit / no key | **No degradation** — each call is simply allowed (fail-open), but it is categorized and recorded | the "failure breakdown" line of `guard log --stats` |
+| Timeout / network hiccup / 5xx / 429 rate limit / no key / **an edge block** (a CDN/WAF answering `403` with an HTML page: the request never reached the judging service, so the key was never checked) | **No degradation** — each call is simply allowed (fail-open), but it is categorized and recorded | the "failure breakdown" line of `guard log --stats` |
 
 ```bash
 node bin/guard.mjs status --clear    # don't want to wait out the cooldown: retry once now (a failure re-enters degradation)

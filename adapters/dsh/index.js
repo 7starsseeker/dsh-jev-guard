@@ -338,6 +338,8 @@ export function apply(ctx, config = {}) {
   const stats = { allowed: 0, revised: 0, blocked: 0, escalated: 0, prefilters: 0, cacheHits: 0, ruleHits: 0, errors: 0, degraded: 0 }
   /** 已吼过的降级窗口(= kind + until),避免每个命令刷一遍屏。 */
   let lastDegradedKey = ''
+  /** 已吼过的"清不掉的状态文件"(= 路径 + errno),同上。 */
+  let lastStuckClearKey = ''
 
   ctx.logger?.info?.(
     'jev-guard: gating %s (low=%s high=%s timeout=%sms key=%s lang=%s promptLang=%s)',
@@ -381,6 +383,20 @@ export function apply(ctx, config = {}) {
           level: 'warn', tool: exec.name, source: verdict.source, errorKind: verdict.errorKind,
           degraded: verdict.degraded, warning: verdict.warning, cwd, command,
           session: exec.agent?.session?.id,
+        }, cfg)
+      }
+
+      // 探测成功后状态文件却删不掉(只读文件系统 / 权限不足):服务确实回来了,但那份文件会
+      // 被每一次读取继续显示成"已降级"。它是人的环境问题,不是阀门的问题,所以走同一条
+      // "有人能发现"的路:host 日志一条 warn + 审计一条 level:'warn'(带上 errno 与路径)。
+      // 同一个(路径, errno)只吼一次 —— 否则每条命令都会重报同一件陈年旧事。
+      const stuckKey = verdict.clearFailed ? `${verdict.clearFailed.path}:${verdict.clearFailed.code ?? ''}` : ''
+      if (stuckKey && stuckKey !== lastStuckClearKey) {
+        lastStuckClearKey = stuckKey
+        ctx.logger?.warn?.('jev-guard: %s', verdict.warning)
+        void record({
+          level: 'warn', tool: exec.name, source: verdict.source, clearFailed: verdict.clearFailed,
+          warning: verdict.warning, cwd, command, session: exec.agent?.session?.id,
         }, cfg)
       }
 

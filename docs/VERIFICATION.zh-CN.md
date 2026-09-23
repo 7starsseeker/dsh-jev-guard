@@ -28,10 +28,10 @@ node tools/report-result.mjs --host dsh --item <编号> --status <pass|fail|part
 
 ```bash
 node tools/smoke-dsh-adapter.mjs          # 假 ctx:接线/断言/审批策略/审计字段
-node tools/smoke-dsh-pipeline.mjs         # 真 ToolRuntime 五阶段管线(需在 DSH 检出目录内跑)
+node tools/smoke-dsh-pipeline.mjs         # 真 ToolRuntime 五阶段管线(需按文件头那套临时目录配方;直接 `node <路径>` 解析不到 @deepseek-ai/*)
 ```
 
-**判定:** 冒烟全过(含"审计里记下了 `policy` 与 `preset`");管线测试给出预期的 `ToolExecutionResult`。
+**判定:** 冒烟全过(含"审计里记下了 `policy` 与 `preset`");管线测试给出预期的 `ToolExecutionResult` —— 2026-09-23 在本部署实测:离线 6/6,带 `TYPESAFE_API_KEY` 7/7,其中 notice 形状是拿 DSH 自己的 `snapshotJsonValue` 校验的。
 
 ### 7 · 误报防线(改规则时必跑)
 
@@ -73,10 +73,11 @@ node bin/guard.mjs log --stats
 ### 13 · 额度降级(离线)
 
 ```bash
-node tools/selftest-quota.mjs             # 替身 fetch:402/401/403/429两种/5xx/超时/网络/坏状态文件
+node tools/selftest-quota.mjs             # 替身 fetch:402/401/403(JSON)与 403(边缘 HTML)/429两种/5xx/超时/网络/坏状态文件
 ```
 
-**判定:** 全过。重点确认三件事:持久性失败**降级**、瞬态失败**不降级**、
+**判定:** 全过。重点确认四件事:持久性失败**降级**、瞬态失败**不降级**、
+同一个 `403` **按正文分流**(HTML/WAF 页 → `edge`,不降级;JSON → `auth`,降级)、
 降级期间 L0 仍然拦且**零 HTTP 请求**。
 
 ---

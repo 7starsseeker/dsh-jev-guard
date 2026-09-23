@@ -140,7 +140,7 @@ dsh plugin --profile <profile> add /mnt/t/dsh-jev-guard      # Windows 侧换成
 | 6 | 令牌闭环 | 授权 → 重试同一条 → 放行一次 → 令牌消失,记录里 `source: token` |
 | 7 | 授权入口只在交互终端 | 非 TTY 被拒并打印可复制的整行命令 |
 | 8 | 审批弹窗(策略 `ask`) | 弹窗出现且带阀门理由原文;点允许后命令执行 |
-| 9 | 额度降级 | 402/401 → 降级、零请求、`guard status` 退出码 3、L0 仍拦 |
+| 9 | 额度降级 | 402/401 → 降级、零请求、`guard status` 退出码 3、L0 仍拦;`403` 带 HTML 页 → `edge`,**不**降级 |
 | 10 | 人工手动执行 ≠ 给 AI 授权 | 审计零新增,且 AI 重试**仍然被拦** |
 
 ## 4. 运行期
@@ -179,8 +179,10 @@ node bin/guard.mjs status            # 健康状态(降级时退出码 3)
 | 装了插件但什么都不拦 | 插件没挂上,或包路径不对 | 跑 `selftest-entry` + 看 `guard.log` 有没有记录;读 `DSH-INTEGRATION.md` §5 |
 | `source: error`,理由是 `HTTP 401` | 密钥无效或被撤销 | 换密钥;**同时阀门已自动降级 30 分钟**(不再发请求),修好后等冷却到期自动恢复,或 `guard status --clear` |
 | `source: error`,理由是 `HTTP 402` | 额度用尽 | 同上一行(这条会**降级**而不是逐次重试,省钱) |
+| `source: error`,理由是 `HTTP 403` 且正文是 HTML | CDN/WAF 在边缘把请求挡了,它没到判定服务 | 你这边不用做什么:这被分类为 `edge`,**不降级**。若持续出现,说明出口被拦了 —— 看 `guard log --stats` 的 `edge` 计数 |
 | `source: degraded` | 处在降级窗口内 | `guard status` 会说明是哪一类 + 还剩多久;免费的 L0 + 预筛仍在工作 |
 | `source: error`,理由是 `fetch failed` | 网络/代理不通 | 检查 `https://api.typesafe.ai` 可达性。**不会降级**(瞬态),但会累计在"失败分类"里 |
+| `guard status` 一直显示已降级,或告警说状态文件删不掉 | 状态文件所在目录只读,冷却与恢复都写不进去 | 手工删除 `~/.jev-guard/degraded.json`,或修好该目录权限。除此之外阀门是健康的、照常联网判定;那个文件消失之前,每个新进程会重复一次探测 |
 | 危险命令没被拦 | 不在 L0 且 `p < lowThreshold` | 看 `judge` 输出的 `p`;必要时调低 `lowThreshold` 或给该类命令加 L0 规则 |
 | 全被拦,干不了活 | 阈值过低或 L0 太激进 | 先看 `judge` 的 `rule.id`;编辑 `lib/rules.js` 或调高 `lowThreshold` |
 | 授权行粘到 cmd.exe 里报语法错 | cmd 不认 POSIX/PowerShell 的引号 | 改用 `guard allow --command-file cmd.txt` |

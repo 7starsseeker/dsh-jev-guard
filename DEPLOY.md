@@ -142,7 +142,7 @@ Summary:
 | 6 | The token closed loop | authorise → retry the same one → allowed once → the token disappears, with `source: token` in the record |
 | 7 | The authorisation entry point is only on an interactive terminal | a non-TTY is refused and prints the whole copyable command line |
 | 8 | The approval prompt (policy `ask`) | the prompt appears and carries the valve's reason text as it stands; after clicking allow the command runs |
-| 9 | Quota degradation | 402/401 → degradation, zero requests, `guard status` exit code 3, L0 still blocks |
+| 9 | Quota degradation | 402/401 → degradation, zero requests, `guard status` exit code 3, L0 still blocks; a `403` carrying an HTML page → `edge`, **no** degradation |
 | 10 | A human running it by hand ≠ granting the AI permission | zero new audit entries, and an AI retry is **still blocked** |
 
 ## 4. Runtime
@@ -181,8 +181,10 @@ node bin/guard.mjs status            # health status (exit code 3 while degraded
 | The plugin is installed but nothing is blocked | the plugin is not mounted, or the package path is wrong | run `selftest-entry` + see whether `guard.log` has records; read `DSH-INTEGRATION.md` §5 |
 | `source: error`, with the reason `HTTP 401` | the key is invalid or revoked | change the key; **in the meantime the valve has already degraded automatically for 30 minutes** (it sends no more requests), so once it is fixed either wait for the cooldown to expire and it recovers by itself, or `guard status --clear` |
 | `source: error`, with the reason `HTTP 402` | the credit is used up | same as the line above (this one **degrades** rather than retrying every time, which saves money) |
+| `source: error`, with the reason `HTTP 403` and an HTML body | a CDN/WAF blocked the request at the edge; it never reached the judging service | nothing to fix on your side: this is classified `edge` and does **not** degrade. If it keeps happening, your egress is being blocked — read the `edge` count in `guard log --stats` |
 | `source: degraded` | inside a degradation window | `guard status` will say which class it is + how much is left; the free L0 + pre-screen still work |
 | `source: error`, with the reason `fetch failed` | the network/proxy is unreachable | check that `https://api.typesafe.ai` is reachable. It does **not degrade** (transient), but it accumulates in the "failure breakdown" |
+| `guard status` keeps saying degraded, or a warning says the state file could not be removed | the state file sits in a read-only directory, so neither the cooldown nor the recovery can ever be written down | delete `~/.jev-guard/degraded.json` by hand, or fix that directory's permissions. The valve is otherwise healthy and judging online; until that file is gone, each new process repeats one probe |
 | A dangerous command was not blocked | not in L0 and `p < lowThreshold` | look at the `p` in the `judge` output; if necessary lower `lowThreshold` or add an L0 rule for that class of command |
 | Everything is blocked and no work can be done | the threshold is too low or L0 is too aggressive | look at the `rule.id` from `judge` first; edit `lib/rules.js` or raise `lowThreshold` |
 | The authorisation line pasted into cmd.exe reports a syntax error | cmd does not accept POSIX/PowerShell quoting | switch to `guard allow --command-file cmd.txt` |

@@ -1,6 +1,6 @@
 {
   "name": "dsh-jev-guard",
-  "version": "0.5.2",
+  "version": "0.5.3",
   "description": "Pre-execution safety valve for DeepSeek Harness: a TypeSafe Jev question decides whether a shell command/script would irreversibly delete or overwrite real data. Four states (allow/revise/block/escalate), mounted on tools/pre-execute. Zero dependencies; WSL/Linux (bash) and Windows (pwsh); one-shot tokens, credit-exhaustion degradation, shared audit log; bilingual (zh-CN / en) messages.",
   "keywords": [
     "deepseek-harness",

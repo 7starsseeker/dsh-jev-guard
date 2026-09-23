@@ -20,16 +20,9 @@ interception point, and the behaviour has already been confirmed from the source
 | Credential | `refs.TYPESAFE_API_KEY` in `~/.dsh/.credentials.yaml` | written and validated as legal YAML (backup `.bak-before-typesafe-*`) |
 | Rollback point | manual snapshot `20260920-124708-6f5f` | the clean state before the install |
 
-How to run the real-pipeline integration test (you must be inside the deepseek-harness directory tree, otherwise `@deepseek-ai/*` will not resolve):
+How to run the real-pipeline integration test: it needs two things at once, and no single directory of a pnpm workspace checkout has both. Bare `@deepseek-ai/*` resolve **from the file's own location** (so the file must sit in a package directory such as `apps/cli`), while the notice check (item 6) reads `./packages/util/values/lib/index.js` **relative to the cwd** (so the cwd must be the checkout root). Build a throwaway directory that satisfies both — the verified recipe is in the header of `tools/smoke-dsh-pipeline.mjs`, and copying the file into that directory is part of it: `node <absolute path>` resolves the bare specifiers against `/mnt/t/jev-guard/tools/` and dies with `ERR_MODULE_NOT_FOUND`.
 
-```bash
-cp /mnt/t/dsh-jev-guard/tools/smoke-dsh-pipeline.mjs <DSH checkout>/packages/core/agent-loop/.tmp-guard-pipeline.mjs
-cd <DSH checkout>/packages/core/agent-loop
-JEV_GUARD_ROOT=/mnt/t/dsh-jev-guard TYPESAFE_API_KEY=... node .tmp-guard-pipeline.mjs
-rm .tmp-guard-pipeline.mjs
-```
-
-**Only one thing is left: run the item 6 probe after the restart.**
+**Measured 2026-09-23: 6/6 offline, 7/7 with a key.** The recipe in this document's earlier revision is superseded — from the checkout root the import itself fails, and from `packages/core/agent-loop` item 6 reports a **false FAIL**.
 
 ## Known behaviour (confirmed at the source level, no need to re-verify)
 

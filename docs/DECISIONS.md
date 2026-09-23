@@ -186,7 +186,7 @@ Per D1, this is not a security-boundary problem (it never defended against delib
 
 **Evidence:** on 2026-09-20 a real API was hit with an invalid key: `HTTP 401` → classified `auth` → degraded for 30 minutes,
 the state file wrote out the real error body, the second call was `source: degraded` with **zero requests**, and `guard status` exited 3.
-There are also 54 offline assertions (`tools/selftest-quota.mjs`, with a stand-in fetch covering 402/401/429/5xx/timeout/network/bad state file).
+There are also 109 offline assertions (`tools/selftest-quota.mjs`, with a stand-in fetch covering 402/401/403 (JSON auth vs edge HTML)/two kinds of 429/5xx/timeout/network/no key/a corrupt state file/a state file that cannot be removed).
 
 ---
 
@@ -446,8 +446,9 @@ installable at all (zero dependencies, no build step, source install with no bui
    `ctx.credentials` → environment → `apiKeyFile`, sharing the CLI's path rule (a relative path resolves
    against the package root, independent of cwd).
 
-**Evidence.** `tools/selftest-quota.mjs` (78 cases) covers the sticky state, the never-probe rule, scope
-isolation in both directions, and the clear-on-key. `tools/smoke-dsh-adapter.mjs` (21 assertions, now
+**Evidence.** `tools/selftest-quota.mjs` (109 cases) covers the sticky state, the never-probe rule, scope
+isolation in both directions, the clear-on-key, and (since 2026-09-23) a state file that cannot be removed.
+`tools/smoke-dsh-adapter.mjs` (23 assertions, now
 hermetic — it no longer writes into the real `~/.jev-guard/`) covers the notice being **appended** rather
 than replacing, the empty-batch guard, the four-key `source` shape and the summary bound, and the file
 fallback. `tools/selftest-entry.mjs` runs `guard key set` for real (including the interactive path through a
@@ -467,3 +468,33 @@ it fires per state transition, never per step.
 **Rule of thumb:** when a plugin "must tell the user something" and ships no UI, first ask what the host
 already renders — a conversation notice is durable, attributed and model-visible; inventing a UI surface is
 a different project with a different dependency budget.
+
+---
+
+## D16 · A `403` is split by its **body**: an HTML/WAF page is an **edge** block and does not degrade; JSON stays `auth` (2026-09-23)
+
+**Decision:** `401`/`403` no longer map to `auth` wholesale. A response that does not look like it came from the JSON API —
+a `text/html` content-type, an HTML body (`<!doctype html`), or a WAF fingerprint (Cloudflare's `cf-ray` /
+`Attention Required` / `Error code: 10xx`, and Sucuri, Akamai, Imperva) — is classified into a new, **non-degrading** class
+`edge`: no state file, no cooldown, per-call fail-open, recorded as `errorKind: edge`. A 401/403 whose body **is** JSON stays
+`auth` and degrades for 30 minutes, because that is what a rejected key actually looks like.
+
+**Why:** 2026-09-23 02:43:19Z, on a live deployment: one judgment came back `403` carrying Cloudflare's generic HTML error
+page (183 ms — a quick edge rejection, not a timeout). The old single line filed it as `auth`, wrote a **global** 30-minute
+cooldown and told the user "the judging service rejected or revoked the key". All three of those statements were wrong: the
+request never reached the application, the key was never read, and the same key answered `200` 0.2 seconds earlier and
+6 minutes later. The shape of a genuinely rejected key was measured against the live API with a deliberately invalid key:
+`401` with `application/json` and `error_type: authentication_error` — and that shape still degrades.
+
+**Why no cooldown at all, rather than a short one:** an edge block is not a statement about the service's attitude toward us;
+it may last a second or an hour and we cannot tell which. A cooldown would switch the semantic layer off for every command in
+the meantime on the strength of a guess, while per-call fail-open costs one edge round-trip and keeps the class visible in
+`guard log --stats`. That is the rule D9 already applies to timeouts and 5xx.
+
+**When the state file cannot be deleted** (a read-only filesystem — the sandbox case that produced this report) the probe
+itself still succeeds, so the valve keeps judging online; what must not happen is the bookkeeping turning every command into
+a "probe". That verdict therefore carries `clearFailed` with the errno, the stale window stops driving decisions inside that
+process, and the adapter records one `level: 'warn'` audit entry so the cause stays findable; `clearDegraded()` returns the
+errno instead of swallowing it, and `guard status --clear` prints it and exits 1 rather than claiming "nothing to clear".
+What cannot be fixed from inside is a **new process**: it reads the same old file, and since nobody can delete it, one more
+probe happens. That is the honest limit of a filesystem that refuses to forget.

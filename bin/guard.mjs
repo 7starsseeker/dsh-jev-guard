@@ -369,18 +369,24 @@ async function cmdLog() {
 async function cmdStatus() {
   const cfg = await loadConfig()
   cfg.apiKey = await resolveKey(cfg)
+  // `--file` 必须一路走到底:读、清、以及**显示**的那行都用同一个路径。原来显示那行漏了它,
+  // 于是 `guard status --file X` 读的是 X、却把默认路径打印出来 —— 状态明明来自别处,
+  // 人却去查了另一个文件(2026-09-23)。
+  const file = arg('--file', cfg.degradedPath)
 
   if (flag('--clear')) {
-    const removed = await clearDegraded({ degradedPath: arg('--file', cfg.degradedPath) })
-    process.stdout.write(`${t(removed ? 'cli.status.cleared' : 'cli.status.nothingToClear')}\n`)
-    return 0
+    const res = await clearDegraded({ degradedPath: file })
+    // 三种结果分开说:清掉了 / 本来就没有 / **清不掉**。最后一种原来会被并进"本来就没有",
+    // 于是只读文件系统、权限不足这类真实原因被"无需清除"这句给盖住了(2026-09-23)。
+    process.stdout.write(`${t(!res.ok ? 'cli.status.clearFailed' : res.removed ? 'cli.status.cleared' : 'cli.status.nothingToClear', { code: res.code ?? '' })}\n`)
+    return res.ok ? 0 : 1
   }
 
-  const state = await readDegraded({ degradedPath: arg('--file', cfg.degradedPath) })
+  const state = await readDegraded({ degradedPath: file })
   const now = Date.now()
   process.stdout.write(`${statusText(state, now, { apiKeyPresent: Boolean(cfg.apiKey) })}\n`)
   process.stdout.write(`${t('cli.status.stateFile', {
-    path: resolveDegradedPath({ degradedPath: cfg.degradedPath }),
+    path: resolveDegradedPath({ degradedPath: file }),
     missing: state ? '' : t('cli.status.stateFileMissing'),
   })}\n`)
   process.stdout.write(`${t('cli.status.explainer', { policy: cfg.degradePolicy ?? 'l0-only' })}\n`)

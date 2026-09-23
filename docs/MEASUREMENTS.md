@@ -244,8 +244,8 @@ The judging service is paid, so "out of quota" has to be designed for as a **cer
 | `degradePolicy: 'off'` | even L0 allows it through (an explicit choice; this is not the default) |
 | Automatic recovery | when the cooldown expires it fires **one** probe; measured with a stub fetch: on success → clears the state and records `probe+recovered`, on failure → extends it (failures+1, probes+1) and does not try again |
 
-**52 offline assertions** (`tools/selftest-quota.mjs`, with a stub `fetch` covering 402/401/403/two kinds of 429/5xx/timeout/network/no key/
-a corrupt state file), two of which are **real bugs it caught itself**, recorded here as well:
+**109 offline assertions** (`tools/selftest-quota.mjs`, with a stub `fetch` covering 402/401/403 (JSON auth vs edge HTML)/two kinds of 429/5xx/timeout/network/no key/
+a corrupt state file/a state file that cannot be removed), two of which are **real bugs it caught itself**, recorded here as well:
 
 1. `readDegraded` validated the ISO string with `Number(until)` → always NaN → **written into the file yet never readable**,
    the whole degradation mechanism failed silently (without throwing).
@@ -253,6 +253,27 @@ a corrupt state file), two of which are **real bugs it caught itself**, recorded
    so "the probe after expiry" never counts as a probe, and **both recovery and extension failed**.
 
 Both are "silent failure" bugs, caught only because "an assertion was written for every branch" — the same lesson as §7.
+
+**Update (2026-09-23): a `403` splits by body — an edge block is not a rejected key.**
+A live deployment failed one judgment at `02:43:19Z` with `HTTP 403` carrying Cloudflare's generic HTML error page
+(183 ms — a quick edge rejection, not a timeout), 0.2 seconds after a judgment that had succeeded; the same key then
+answered `200` both through the proxy and directly. The classifier of the day mapped `401 || 403` to `auth` in a single line,
+so that page wrote a **global** 30-minute cooldown plus a label saying the key was invalid or revoked — none of which was
+true, since the request never reached the application. Re-probing the live API with a deliberately invalid key confirms what
+a rejected key really looks like: `401` + `application/json` + `error_type: authentication_error`, which still degrades. The
+fork is now decided by the response shape, and the offline suite pins both directions (`403` + HTML → `edge`, no state file,
+the next command judged online again; `403` + JSON → `auth`, degraded).
+
+**Also measured (2026-09-23): a state file that cannot be deleted.** The read-only-filesystem case is reproduced without a
+read-only filesystem, by swapping the state file for a directory while the probe request is in flight — the `unlink` that
+follows fails with `EISDIR`/`EPERM`, exactly as `EROFS` would. Measured: that verdict carries `clearFailed` with the errno,
+the next command is judged online and is **not** recorded as a probe again (before the fix it was `probe: true` +
+`recovered: true` every time), and a freshly written state file still degrades as usual.
+
+**And the cache holds a judgment, not a call log (2026-09-23).** Same method: one command judged twice inside one process —
+one real call plus one cache hit — was counted by `guard log --stats` as two priced calls carrying 1400 input tokens, for a
+call that spent 700. The cached verdict was replaying its `usage` together with its `probe`/`recovered` markers, so a
+`source: cache` line could claim to be a probe at the same time. The cache now stores the judgment only.
 
 ## 10. The cross-platform entry guard: the same pitfall stepped on twice (2026-09-20)
 

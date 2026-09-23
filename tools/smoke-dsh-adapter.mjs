@@ -21,7 +21,7 @@
  * @module jev-guard/tools/smoke-dsh-adapter
  */
 
-import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
+import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { flush } from '../lib/audit.js'
@@ -191,6 +191,47 @@ async function main() {
     JSON.stringify({ sticky: nkState?.sticky, scope: nkState?.scope }))
   if (apiKey) process.env.TYPESAFE_API_KEY = apiKey
   await rm(degradedPath, { force: true })
+
+  // ---- 探测成功、但状态文件清不掉(只读文件系统):原因必须有人能发现(2026-09-23)----
+  //
+  // 现场是只读沙箱:服务已经用一次成功判定证明自己活着,可 `unlink` 删不掉 degraded.json。
+  // gate 把那次判定标成 clearFailed + 一句告警;适配器的责任是让它**落地**:host 日志一条
+  // warn + 审计一条 level:'warn' 记录(带 errno 与路径)。否则这个原因就只剩 `guard status`
+  // 里一句"已降级",没人知道该去删那个文件。
+  // 用替身 fetch + 一个假密钥就能离线跑:不需要真网络,也不需要真密钥。
+  const stuckPath = join(dir, 'degraded-as-dir.json')
+  await writeFile(stuckPath, `${JSON.stringify({
+    kind: 'quota', label: '判定服务额度已用尽', since: new Date(Date.now() - 20 * 60 * 1000).toISOString(),
+    until: new Date(Date.now() - 60 * 1000).toISOString(), cooldownMs: 900000, failures: 1, probes: 0, policy: 'l0-only',
+  })}\n`)
+  const stuckCtx = mockContext('smoke-fake-key')
+  applySmoke(stuckCtx.ctx, { degradedPath: stuckPath })
+  const handlerStuck = stuckCtx.handlers.get('tools/pre-execute')
+  const realFetch = globalThis.fetch
+  globalThis.fetch = async () => {
+    // 请求"进行中"把状态文件换成同路径的目录 —— 于是随后的 unlink 必定失败(EISDIR/EPERM),
+    // 而"读"已经发生过了。这正是只读文件系统下的处境,两个平台都能造出来。
+    await rm(stuckPath, { force: true })
+    await mkdir(stuckPath, { recursive: true })
+    return {
+      ok: true, status: 200, headers: { get: () => 'application/json' },
+      text: async () => '', json: async () => ({ model: 'jev-1.13.0', answers: { destroys_data: { noul: 0.1 } } }),
+    }
+  }
+  try {
+    expect('探测成功+状态文件清不掉 → 判定仍是 allow(服务确实答了这次探测)',
+      await handlerStuck(fakeExec('rm -rf /home/user/jev-guard-stuck-demo'), nextAllow), 'allow')
+  } finally {
+    globalThis.fetch = realFetch
+  }
+  await flush()
+  const stuckRecords = (await readFile(auditPath, 'utf8')).split('\n').filter(Boolean)
+    .map(l => JSON.parse(l)).filter(r => r.clearFailed)
+  expectTrue('清不掉 → 审计里留下一条带 errno 的 warn 记录(不是静默)',
+    stuckRecords.length === 1 && stuckRecords[0].level === 'warn' && typeof stuckRecords[0].clearFailed.code === 'string'
+      && String(stuckRecords[0].warning ?? '').includes('删不掉'),
+    JSON.stringify(stuckRecords.map(r => r.clearFailed)))
+  await rm(stuckPath, { recursive: true, force: true })
 
   // ---- 会话内 notice:纯 host 插件唯一能让用户真看到的渠道(D15)----
   //

@@ -28,10 +28,10 @@ node tools/report-result.mjs --host dsh --item <item number> --status <pass|fail
 
 ```bash
 node tools/smoke-dsh-adapter.mjs          # fake ctx: wiring/assertions/approval policy/audit fields
-node tools/smoke-dsh-pipeline.mjs         # the real ToolRuntime five-stage pipeline (must be run from inside a DSH checkout)
+node tools/smoke-dsh-pipeline.mjs         # the real ToolRuntime five-stage pipeline (needs the throwaway-directory recipe in the file header; a plain `node <path>` cannot resolve @deepseek-ai/*)
 ```
 
-**Judging:** the smoke tests all pass (including "`policy` and `preset` are recorded in the audit"); the pipeline test gives the expected `ToolExecutionResult`.
+**Judging:** the smoke tests all pass (including "`policy` and `preset` are recorded in the audit"); the pipeline test gives the expected `ToolExecutionResult` — measured 2026-09-23 in this deployment as 6/6 offline and 7/7 with `TYPESAFE_API_KEY` set, including the notice shape checked against DSH's own `snapshotJsonValue`.
 
 ### 7 · The false-positive defence line (must be run whenever a rule changes)
 
@@ -74,10 +74,11 @@ node bin/guard.mjs log --stats
 ### 13 · Quota degradation (offline)
 
 ```bash
-node tools/selftest-quota.mjs             # stand-in fetch: 402/401/403/two kinds of 429/5xx/timeout/network/bad state file
+node tools/selftest-quota.mjs             # stand-in fetch: 402/401/403 (JSON) vs 403 (edge HTML)/two kinds of 429/5xx/timeout/network/bad state file
 ```
 
-**Judging:** all pass. Three things to confirm specifically: a persistent failure **degrades**, a transient failure **does not degrade**,
+**Judging:** all pass. Four things to confirm specifically: a persistent failure **degrades**, a transient failure **does not degrade**,
+a `403` **splits on its body** (an HTML/WAF page → `edge`, no degradation; JSON → `auth`, degrades),
 and while degraded L0 still blocks and there are **zero HTTP requests**.
 
 ---

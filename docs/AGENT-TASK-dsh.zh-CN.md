@@ -20,16 +20,9 @@ DSH 是**唯一**被支持的宿主,而且它不需要赌:有原生的 `tools/pr
 | 凭据 | `~/.dsh/.credentials.yaml` 的 `refs.TYPESAFE_API_KEY` | 已写入并校验 YAML 合法(备份 `.bak-before-typesafe-*`) |
 | 回退点 | 手动快照 `20260920-124708-6f5f` | 安装前的干净状态 |
 
-跑真实管线集成测试的方法(必须在 deepseek-harness 目录树内,否则解析不到 `@deepseek-ai/*`):
+跑真实管线集成测试的方法:它同时需要两件事,而 pnpm 工作区检出里没有任何一个目录同时满足。裸 `@deepseek-ai/*` 是**按文件自身所在目录**解析的(所以本文件必须待在 `apps/cli` 这类包目录里),而第 6 项 notice 检定读的是**相对 cwd** 的 `./packages/util/values/lib/index.js`(所以 cwd 必须是检出根)。做法是搭一个临时目录同时满足两者 —— 已验证的配方在 `tools/smoke-dsh-pipeline.mjs` 文件头,其中"把文件复制进那个目录"是配方的一部分:用 `node <绝对路径>` 跑,裸说明符会按 `/mnt/t/jev-guard/tools/` 解析,直接以 `ERR_MODULE_NOT_FOUND` 崩掉。
 
-```bash
-cp /mnt/t/dsh-jev-guard/tools/smoke-dsh-pipeline.mjs <DSH 检出>/packages/core/agent-loop/.tmp-guard-pipeline.mjs
-cd <DSH 检出>/packages/core/agent-loop
-JEV_GUARD_ROOT=/mnt/t/dsh-jev-guard TYPESAFE_API_KEY=... node .tmp-guard-pipeline.mjs
-rm .tmp-guard-pipeline.mjs
-```
-
-**剩下只有一件事:重启后跑第 6 项 probe。**
+**2026-09-23 实测:离线 6/6,带密钥 7/7。** 本文档早先那版配方已作废 —— 从检出根跑连 import 都过不去,从 `packages/core/agent-loop` 跑则第 6 项**假报 FAIL**。
 
 ## 已知行为(源码级确认,不必重新验证)
 

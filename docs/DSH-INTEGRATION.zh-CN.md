@@ -65,13 +65,18 @@
 
 | 失败类别 | 阀门行为 | 审计里的 `source` |
 |---|---|---|
-| `quota`(402 / 额度字样)/ `auth`(401/403) | **降级**:写 `~/.jev-guard/degraded.json`,冷却窗口内不再发请求,默认只跑免费的 L0 + 预筛 | 第一次:`error` + `degraded`;之后:`degraded` |
+| `quota`(402 / 额度字样)/ `auth`(401/403,正文是 JSON) | **降级**:写 `~/.jev-guard/degraded.json`,冷却窗口内不再发请求,默认只跑免费的 L0 + 预筛 | 第一次:`error` + `degraded`;之后:`degraded` |
+| `edge`(401/403,带 HTML/WAF 错误页) | **不降级**:这份响应不是判定服务发的 —— CDN/WAF 在边缘就把请求拦了,密钥根本没被检查。逐次 fail-open,分类记为 `edge` | `error` |
 | `no-key`(解析不到密钥) | **降级,且粘性 + 带作用域**:一次 HTTP 都不发,状态不随时间到期(没有可探测对象),密钥一出现即清除;写入时记下"是哪条入口报告的",所以只压制那一条入口 | 第一次:`error` + `degraded`;之后:`degraded` |
 | `timeout` / `network` / `server` / `rate-limit` | **不降级**,逐次 fail-open,以 `errorKind` 分类记录 | `error` |
 
 `no-key` 原先刻意**不**降级(D10.2):它是本地配置状况、零 HTTP 成本,而 `degraded.json` 是全局共享的 ——
 一条路径读不到密钥,不该把别的路径也按停。**D15 保留这条反对意见,但用作用域而不是沉默来回答**:本地状态
 记下*是谁写的*,而一条入口只遵守属于它自己的那份(`'cli'` / `'dsh-adapter'`)。服务侧状态仍是 `global`。
+
+`edge` 是同一教训再往外一层的对应物(D16,2026-09-23):**正文不是 JSON** 的 `403` 不是判定服务在说话,而是
+CDN/WAF 的错误页 —— 把它归进 `auth`,一次边缘抖动就换来半小时全局失能,外加一个指向错误原因的标签。
+两者的分界由响应形状决定(content-type / HTML 正文 / WAF 指纹),而像 JSON 的一律仍是 `auth`。
 
 ### 4b. 会话内 notice:纯 host 插件唯一能对用户说话的渠道
 
