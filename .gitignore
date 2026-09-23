@@ -14,6 +14,8 @@ node_modules/
 guard.log*
 allow.txt
 degraded.json
+# 例外:实测件里的运行日志是证据,要入库
+!measurements/**/*.log
 
 # ── 编辑器 / 系统
 .vscode/

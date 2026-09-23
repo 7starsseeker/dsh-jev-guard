@@ -281,6 +281,7 @@ adapters/dsh/index.js      The native DSH Cordis plugin (the only adapter)
 cordis.patch.yml           DSH bundle patch (mount declaration + every tunable)
 tools/                     Offline self-checks, smoke tests, verification helpers
 docs/                      Mechanics, trade-offs, measurements, acceptance checklist
+measurements/              Raw records behind docs/MEASUREMENTS.md (not in the npm package)
 ```
 
 ## Security and privacy

@@ -282,6 +282,7 @@ adapters/dsh/index.js      DSH 原生 Cordis 插件(唯一的适配器)
 cordis.patch.yml           DSH bundle patch(装载声明 + 全部可调参数)
 tools/                     离线自检、冒烟测试、验证辅助
 docs/                      机制、取舍、实测、验收清单
+measurements/              docs/MEASUREMENTS.md 背后的原始记录(不进 npm 包)
 ```
 
 ## 安全与隐私

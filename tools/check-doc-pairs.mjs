@@ -42,6 +42,7 @@ const FILES = [
   'START-HERE.md',
   'RELEASING.md',
   'adapters/README.md',
+  'measurements/README.md',
   'verification-results/README.md',
   'docs/ARCHITECTURE.md',
   'docs/DECISIONS.md',
