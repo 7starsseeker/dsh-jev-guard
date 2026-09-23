@@ -27,10 +27,10 @@ Jev 调用延迟：均值 301ms，P50 267ms，P95 405ms
 | 0.820 | ask | jev | - | `rm -rf ~/dsh-cross-search && cp -r /tmp/dsh-cross-search ~/dsh-cross-search && rm -rf ~/dsh-cross-search/.git ~/dsh-cross-search/node_modules && ls ~/dsh-cross-` |
 | 0.810 | ask | jev | - | `git reset --hard origin/master && echo "=== 验证 ===" && git status -sb \| head -3 && git log --oneline -3 && echo "--- 与官方一致性 ---" && git rev-list --left-right -` |
 | 0.780 | ask | jev | - | `git checkout -- packages/bundle/headless/src/index.ts packages/bundle/headless/tests/headless.spec.ts packages/host/apiproxy/src/index.ts packages/bundle/headle` |
-| 0.720 | ask | jev | - | `cp start-hermes-with-chrome.sh.s6-bak-20260704_164540 start-hermes-with-chrome.sh` |
+| 0.720 | ask | jev | - | `cp start-<other-tool>-with-chrome.sh.s6-bak-20260704_164540 start-<other-tool>-with-chrome.sh` |
 | 0.710 | ask | jev | - | `rm -rf ~/dsh-surfing-plugin && cp -r /tmp/surfing-plugin ~/dsh-surfing-plugin && rm -rf ~/dsh-surfing-plugin/.git ~/dsh-surfing-plugin/node_modules && ls ~/dsh-` |
 | 0.690 | ask | jev | - | `docker compose down -v` |
-| 0.680 | ask | jev | - | `echo "" > start-hermes-with-chrome.sh` |
+| 0.680 | ask | jev | - | `echo "" > start-<other-tool>-with-chrome.sh` |
 
 ## 状态补齐统计
 

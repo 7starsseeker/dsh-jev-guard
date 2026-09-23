@@ -25,7 +25,7 @@ Both batches were produced on **2026-09-20** on the maintainer's machine, by the
 
 `~/dsh-workspace/backups/jev-leftovers-workspace-20260923.tar.gz` (864,371 bytes, 368 entries).
 
-The byte count and sha256 below are of the artefact **as first written** — for nine of the thirteen files that is also the committed copy (see §3):
+The byte count and sha256 below are of the artefact **as first written** — for seven of the thirteen files that is also the committed copy (see §3):
 
 | Path here | Bytes | sha256 of the raw artefact |
 |---|---|---|
@@ -55,12 +55,15 @@ The 737 corpus is **real shell history**: `tool/call` entries from the session l
 | The Windows user name | `<WINUSER>` | 6 | identity |
 | Two masked key literals (`sk-…`, `tvl…` — head and tail visible) | `<REDACTED-KEY>` | 6 | credential |
 | A third-party commit name and its noreply address | `<REDACTED-IDENTITY>`, `<REDACTED-EMAIL>` | 2 + 2 | third party |
+| Names of other AI tools and vendors in the command text | `<other-tool>` | 850 | third-party tooling |
 
-The four identity rules are reversible (the inverse substitution restores the original text exactly); the two redactions are one-way. Only `offline-report-737.json`, `offline-report-737-inline.json`, `probe-scripts.json` and `probe-scripts.md` matched anything at all; the other nine files are byte-identical to the raw artefact above.
+The four identity rules are reversible (the inverse substitution restores the original text exactly); the other three are one-way, and the tool-name rule deliberately collapses several distinct names into one placeholder. Six of the thirteen files changed at all — `offline-report-737.json`, `offline-report-737-inline.json`, the two summaries beside them, `probe-scripts.json` and `probe-scripts.md`; the other seven are byte-identical to the raw artefact above.
 
-**What was deliberately left in.** The corpus names other tools, other projects, containers and RFC1918 addresses, because that is what the commands were about — a judgment record whose subject matter has been filtered out is no longer a record. `measurements/` is outside the `files` allowlist in `package.json`, so none of it reaches the npm package; D11 ("the package describes DSH and nothing else") is about the package, and this directory is not a support claim for anything named inside it.
+**What was deliberately left in.** Projects, containers, DSH-ecosystem keywords, libraries and RFC1918 addresses are still named, because that is what the commands were about — a judgment record whose subject matter has been filtered out is no longer a record. The tokens that became `<other-tool>` are visible in a diff against the raw artefact and are not repeated here, for the same reason they were replaced. `measurements/` is outside the `files` allowlist in `package.json`, so none of it reaches the npm package; D11 ("the package describes DSH and nothing else") is about the package, and this directory is not a support claim for anything named inside it.
 
-**Integrity of the transformation** (each asserted, not assumed): both JSON files parse; `results` is still 737 records; `cfg`, `stats`, `byAction` and `bySource` are unchanged; every record's `p` / `action` / `ms` / `source` is unchanged; the calibration files are deep-equal to the raw ones; and reversing the identity rules on each committed file reproduces the raw artefact with only the two redactions applied.
+**Integrity of the transformation** (each asserted, not assumed): both JSON files parse; `results` is still 737 records; `cfg`, `stats`, `byAction` and `bySource` are unchanged; every record's `p` / `action` / `ms` / `source` / `threshold` / `model` is unchanged; the calibration files are deep-equal to the raw ones; and reversing the identity rules on each committed file reproduces the raw artefact with only the one-way redactions applied.
+
+The rewritten command text is therefore **not** the text the judge was shown: each `p` and `action` beside a record was produced from the original wording.
 
 A residual `sk-` search still hits `ui-skin`, `task-board` and `disk-usage` — substrings of ordinary words, not keys.
 
@@ -74,8 +77,8 @@ node -e "const d=require('./measurements/offline-report-737.json');console.log(d
 node -e "const s=require('./measurements/calibration-114/results.json').scored;for(const a of ['A','B','C']){const x=s.filter(v=>v.arm===a);console.log(a,x.filter(v=>v.correct).length+'/'+x.length,(x.reduce((t,v)=>t+v.confidence,0)/x.length).toFixed(3))}"
 
 # Nothing identity-shaped is left, and the counts match §3
-# expect: <HOME> 570 / <USER> 78 / <DRIVE_ 42 / <WINUSER> 6 / <REDACTED- 10
-node -e "const fs=require('fs'),p=require('path');const w=d=>fs.readdirSync(d,{withFileTypes:true}).flatMap(e=>e.isDirectory()?w(p.join(d,e.name)):[p.join(d,e.name)]);const t=w('measurements').filter(f=>!/README/.test(f)).map(f=>fs.readFileSync(f,'utf8')).join('');for(const x of ['<HOME>','<USER>','<DRIVE_','<WINUSER>','<REDACTED-'])console.log(x,(t.split(x).length-1))"
+# expect: <HOME> 570 / <USER> 78 / <DRIVE_ 42 / <WINUSER> 6 / <REDACTED- 10 / <other-tool> 850
+node -e "const fs=require('fs'),p=require('path');const w=d=>fs.readdirSync(d,{withFileTypes:true}).flatMap(e=>e.isDirectory()?w(p.join(d,e.name)):[p.join(d,e.name)]);const t=w('measurements').filter(f=>!/README/.test(f)).map(f=>fs.readFileSync(f,'utf8')).join('');for(const x of ['<HOME>','<USER>','<DRIVE_','<WINUSER>','<REDACTED-','<other-tool>'])console.log(x,(t.split(x).length-1))"
 ```
 
 ## 5. What the numbers in the docs reconcile to

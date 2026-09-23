@@ -25,7 +25,7 @@
 
 `~/dsh-workspace/backups/jev-leftovers-workspace-20260923.tar.gz`(864,371 字节,368 条)。
 
-下面每个字节数与 sha256 都是**最初写下时**那份原始件的值 —— 十三份里有九份,入库的副本与它逐字节相同(见 §3):
+下面每个字节数与 sha256 都是**最初写下时**那份原始件的值 —— 十三份里有七份,入库的副本与它逐字节相同(见 §3):
 
 | 这里的路径 | 字节 | 原始件 sha256 |
 |---|---|---|
@@ -55,12 +55,15 @@
 | Windows 用户名 | `<WINUSER>` | 6 | 身份 |
 | 两个字面量掩码密钥(`sk-…`、`tvl…`,头尾可见) | `<REDACTED-KEY>` | 6 | 凭据 |
 | 一个第三方提交名与它的 noreply 地址 | `<REDACTED-IDENTITY>`、`<REDACTED-EMAIL>` | 2 + 2 | 第三方 |
+| 命令语料里其它 AI 工具与厂商的名字 | `<other-tool>` | 850 | 第三方工具 |
 
-四条身份规则是可逆的(按逆规则替换即可逐字节还原原文);两条遮蔽是单向的。命中的只有 `offline-report-737.json`、`offline-report-737-inline.json`、`probe-scripts.json`、`probe-scripts.md` 四份;其余九份与上面的原始件逐字节相同。
+四条身份规则是可逆的(按逆规则替换即可逐字节还原原文);另外三条是单向的,其中工具名那条会把几个不同的名字合并成同一个占位符。十三份里有六份变了 —— `offline-report-737.json`、`offline-report-737-inline.json`、它们各自那份摘要、`probe-scripts.json` 与 `probe-scripts.md`;其余七份与上面的原始件逐字节相同。
 
-**刻意保留的东西。** 语料里会出现别的工具名、别的项目名、容器名与 RFC1918 地址,因为命令讲的就是这些 —— 一份把主题过滤掉的判定记录不再是记录。`measurements/` 不在 `package.json` 的 `files` 白名单里,所以这里的一切都进不了 npm 包;D11(「包内只说 DSH」)说的是包,而这个目录不构成对其中任何名字的支持声明。
+**刻意保留的东西。** 项目名、容器名、DSH 生态的关键词、库名与 RFC1918 地址仍然出现,因为命令讲的就是这些 —— 一份把主题过滤掉的判定记录不再是记录。被换成 `<other-tool>` 的那些词,拿原始件一 diff 就能看见,这里不重复写出来,理由与替换它们相同。`measurements/` 不在 `package.json` 的 `files` 白名单里,所以这里的一切都进不了 npm 包;D11(「包内只说 DSH」)说的是包,而这个目录不构成对其中任何名字的支持声明。
 
-**替换的正确性**(每条都是断言出来的):两份 JSON 仍能解析;`results` 仍是 737 条;`cfg`、`stats`、`byAction`、`bySource` 一字未变;每条记录的 `p` / `action` / `ms` / `source` 未变;校准那几份与原始件深度相等;把入库文件按逆规则还原,得到的正是「原始件 + 那两处遮蔽」。
+**替换的正确性**(每条都是断言出来的):两份 JSON 仍能解析;`results` 仍是 737 条;`cfg`、`stats`、`byAction`、`bySource` 一字未变;每条记录的 `p` / `action` / `ms` / `source` / `threshold` / `model` 未变;校准那几份与原始件深度相等;把入库文件按逆规则还原,得到的正是「原始件 + 那几处单向遮蔽」。
+
+因此被改写的命令原文**不再等于**判定时给模型看的那份文本:每条记录旁边的 `p` 与 `action` 是按原文本产出的。
 
 还残留的 `sk-` 搜索会命中 `ui-skin`、`task-board`、`disk-usage` —— 普通词的子串,不是密钥。
 
@@ -74,8 +77,8 @@ node -e "const d=require('./measurements/offline-report-737.json');console.log(d
 node -e "const s=require('./measurements/calibration-114/results.json').scored;for(const a of ['A','B','C']){const x=s.filter(v=>v.arm===a);console.log(a,x.filter(v=>v.correct).length+'/'+x.length,(x.reduce((t,v)=>t+v.confidence,0)/x.length).toFixed(3))}"
 
 # 不该再有身份形状的东西,且处数与 §3 一致
-# 期望:<HOME> 570 / <USER> 78 / <DRIVE_ 42 / <WINUSER> 6 / <REDACTED- 10
-node -e "const fs=require('fs'),p=require('path');const w=d=>fs.readdirSync(d,{withFileTypes:true}).flatMap(e=>e.isDirectory()?w(p.join(d,e.name)):[p.join(d,e.name)]);const t=w('measurements').filter(f=>!/README/.test(f)).map(f=>fs.readFileSync(f,'utf8')).join('');for(const x of ['<HOME>','<USER>','<DRIVE_','<WINUSER>','<REDACTED-'])console.log(x,(t.split(x).length-1))"
+# 期望:<HOME> 570 / <USER> 78 / <DRIVE_ 42 / <WINUSER> 6 / <REDACTED- 10 / <other-tool> 850
+node -e "const fs=require('fs'),p=require('path');const w=d=>fs.readdirSync(d,{withFileTypes:true}).flatMap(e=>e.isDirectory()?w(p.join(d,e.name)):[p.join(d,e.name)]);const t=w('measurements').filter(f=>!/README/.test(f)).map(f=>fs.readFileSync(f,'utf8')).join('');for(const x of ['<HOME>','<USER>','<DRIVE_','<WINUSER>','<REDACTED-','<other-tool>'])console.log(x,(t.split(x).length-1))"
 ```
 
 ## 5. 文档里的数字对到哪

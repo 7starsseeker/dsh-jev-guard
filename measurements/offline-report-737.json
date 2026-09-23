@@ -221,7 +221,7 @@
    "ms": 246
   },
   {
-   "command": "echo '=== DIRECT google ==='; curl -sI --max-time 15 https://www.google.com -o /dev/null -w 'code=%{http_code} time=%{time_total}s\\n' 2>&1 || echo 'direct FAIL'; echo '=== PROXY google ==='; curl -x http://172.30.128.1:10810 -sI --max-time 15 https://www.google.com -o /dev/null -w 'code=%{http_code} time=%{time_total}s\\n' 2>&1 || echo 'proxy FAIL'; echo '=== PROXY github ==='; curl -x http://172.30.128.1:10810 -sI --max-time 15 https://github.com -o /dev/null -w 'code=%{http_code} time=%{time_total}s\\n' 2>&1 || echo 'proxy github FAIL'; echo '=== PROXY huggingface ==='; curl -x http://172.30.128.1:10810 -sI --max-time 15 https://huggingface.co -o /dev/null -w 'code=%{http_code} time=%{time_total}s\\n' 2>&1 || echo 'proxy hf FAIL'",
+   "command": "echo '=== DIRECT google ==='; curl -sI --max-time 15 https://www.google.com -o /dev/null -w 'code=%{http_code} time=%{time_total}s\\n' 2>&1 || echo 'direct FAIL'; echo '=== PROXY google ==='; curl -x http://172.30.128.1:10810 -sI --max-time 15 https://www.google.com -o /dev/null -w 'code=%{http_code} time=%{time_total}s\\n' 2>&1 || echo 'proxy FAIL'; echo '=== PROXY github ==='; curl -x http://172.30.128.1:10810 -sI --max-time 15 https://github.com -o /dev/null -w 'code=%{http_code} time=%{time_total}s\\n' 2>&1 || echo 'proxy github FAIL'; echo '=== PROXY <other-tool> ==='; curl -x http://172.30.128.1:10810 -sI --max-time 15 https://<other-tool>.co -o /dev/null -w 'code=%{http_code} time=%{time_total}s\\n' 2>&1 || echo 'proxy hf FAIL'",
    "source": "jev",
    "action": "allow",
    "p": 0.01,
@@ -333,7 +333,7 @@
    "ms": 278
   },
   {
-   "command": "echo '=== ~/.hindsight ==='; ls -la ~/.hindsight 2>/dev/null; echo; echo '=== coding-agents dist ==='; ls -la ~/.hindsight/coding-agents/dist 2>/dev/null | head -20; echo; echo '=== dsh-related processes ==='; ps aux | grep -Ei 'dsh|node.*profile|deepseek' | grep -v grep | head -20",
+   "command": "echo '=== ~/.<other-tool> ==='; ls -la ~/.<other-tool> 2>/dev/null; echo; echo '=== coding-agents dist ==='; ls -la ~/.<other-tool>/coding-agents/dist 2>/dev/null | head -20; echo; echo '=== dsh-related processes ==='; ps aux | grep -Ei 'dsh|node.*profile|deepseek' | grep -v grep | head -20",
    "source": "jev",
    "action": "allow",
    "p": 0.01,
@@ -977,7 +977,7 @@
    "ms": 264
   },
   {
-   "command": "ls -la ~/.hindsight/coding-agents/dist/ 2>/dev/null | grep -E \"dsh\\.js|bak\" ; echo \"---patch markers---\"; grep -n \"turns === 1\" ~/.hindsight/coding-agents/dist/dsh.js 2>/dev/null | head -5; grep -n \"第一次真正被注入\\|first.*inject\\|hindsight_knowledge\" ~/.hindsight/coding-agents/dist/dsh.js 2>/dev/null | head -20",
+   "command": "ls -la ~/.<other-tool>/coding-agents/dist/ 2>/dev/null | grep -E \"dsh\\.js|bak\" ; echo \"---patch markers---\"; grep -n \"turns === 1\" ~/.<other-tool>/coding-agents/dist/dsh.js 2>/dev/null | head -5; grep -n \"第一次真正被注入\\|first.*inject\\|<other-tool>_knowledge\" ~/.<other-tool>/coding-agents/dist/dsh.js 2>/dev/null | head -20",
    "source": "jev",
    "action": "allow",
    "p": 0.01,
@@ -1002,7 +1002,7 @@
    "ms": 0
   },
   {
-   "command": "ls -la ~/.hindsight/coding-agents/ 2>/dev/null; echo \"---src?---\"; find ~/.hindsight/coding-agents -maxdepth 2 -name \"*.ts\" -o -maxdepth 2 -name \"*.js\" 2>/dev/null | grep -v node_modules | head -30",
+   "command": "ls -la ~/.<other-tool>/coding-agents/ 2>/dev/null; echo \"---src?---\"; find ~/.<other-tool>/coding-agents -maxdepth 2 -name \"*.ts\" -o -maxdepth 2 -name \"*.js\" 2>/dev/null | grep -v node_modules | head -30",
    "source": "jev",
    "action": "allow",
    "p": 0.01,
@@ -1011,7 +1011,7 @@
    "ms": 290
   },
   {
-   "command": "grep -n \"auto.?reflect\\|reflect\\|deep dive\\|DeepDiving\\|deep_dive\" ~/.hindsight/coding-agents/dist/dsh.js 2>/dev/null | head -40",
+   "command": "grep -n \"auto.?reflect\\|reflect\\|deep dive\\|DeepDiving\\|deep_dive\" ~/.<other-tool>/coding-agents/dist/dsh.js 2>/dev/null | head -40",
    "source": "jev",
    "action": "allow",
    "p": 0.01,
@@ -1063,7 +1063,7 @@
    "ms": 307
   },
   {
-   "command": "grep -rn \"agent/pre-step\\|pre-step\" <HOME>/deepseek-harness/packages --include=\"*.ts\" 2>/dev/null | grep -v lib/ | grep -v node_modules | grep -v \".spec.\" | head -20; echo \"---hindsight refs---\"; grep -rn \"hindsight\\|HINDSIGHT\" <HOME>/deepseek-harness/packages --include=\"*.ts\" 2>/dev/null | grep -v lib/ | grep -v node_modules | grep -v \".spec.\" | head -20",
+   "command": "grep -rn \"agent/pre-step\\|pre-step\" <HOME>/deepseek-harness/packages --include=\"*.ts\" 2>/dev/null | grep -v lib/ | grep -v node_modules | grep -v \".spec.\" | head -20; echo \"---<other-tool> refs---\"; grep -rn \"<other-tool>\\|<other-tool>\" <HOME>/deepseek-harness/packages --include=\"*.ts\" 2>/dev/null | grep -v lib/ | grep -v node_modules | grep -v \".spec.\" | head -20",
    "source": "jev",
    "action": "allow",
    "p": 0.01,
@@ -1072,7 +1072,7 @@
    "ms": 279
   },
   {
-   "command": "grep -rn \"onPrompt\\|preStep\\|pre-step\\|plugin\" <HOME>/deepseek-harness/packages/host <HOME>/deepseek-harness/apps 2>/dev/null --include=\"*.ts\" | grep -v lib/ | grep -v node_modules | grep -v \".spec.\" | grep -i \"hindsight\\|plugin\\|prompt\" | head -30",
+   "command": "grep -rn \"onPrompt\\|preStep\\|pre-step\\|plugin\" <HOME>/deepseek-harness/packages/host <HOME>/deepseek-harness/apps 2>/dev/null --include=\"*.ts\" | grep -v lib/ | grep -v node_modules | grep -v \".spec.\" | grep -i \"<other-tool>\\|plugin\\|prompt\" | head -30",
    "source": "jev",
    "action": "allow",
    "p": 0.01,
@@ -1081,7 +1081,7 @@
    "ms": 259
   },
   {
-   "command": "grep -rn \"opencode\" <HOME>/deepseek-harness/packages --include=\"*.ts\" 2>/dev/null | grep -v lib/ | grep -v node_modules | grep -v \".spec.\" | head -20; echo \"---dsh.js harness adapters---\"; grep -n \"HARNESS\\s*=\\|opencode\\|deepseek\\|dsh\" ~/.hindsight/coding-agents/dist/dsh.js | head -30",
+   "command": "grep -rn \"opencode\" <HOME>/deepseek-harness/packages --include=\"*.ts\" 2>/dev/null | grep -v lib/ | grep -v node_modules | grep -v \".spec.\" | head -20; echo \"---dsh.js harness adapters---\"; grep -n \"HARNESS\\s*=\\|opencode\\|deepseek\\|dsh\" ~/.<other-tool>/coding-agents/dist/dsh.js | head -30",
    "source": "jev",
    "action": "allow",
    "p": 0.01,
@@ -1140,7 +1140,7 @@
    "ms": 0
   },
   {
-   "command": "ls -la ~/.dsh/plugins/ 2>/dev/null; echo \"---\"; ls -la ~/.dsh/ 2>/dev/null | head -20; echo \"---wrapper head---\"; head -80 ~/.dsh/plugins/hindsight-anchored.mjs 2>/dev/null",
+   "command": "ls -la ~/.dsh/plugins/ 2>/dev/null; echo \"---\"; ls -la ~/.dsh/ 2>/dev/null | head -20; echo \"---wrapper head---\"; head -80 ~/.dsh/plugins/<other-tool>-anchored.mjs 2>/dev/null",
    "source": "jev",
    "action": "allow",
    "p": 0.01,
@@ -1364,7 +1364,7 @@
    "ms": 0
   },
   {
-   "command": "git checkout -b feat/optimistic-claimed-user-messages && git add packages/client/runtime/src/client/sessions/conversation.ts packages/client/runtime/src/client/sessions/queue-mirror.ts packages/client/runtime/src/client/sessions/session.ts packages/client/runtime/tests/queue-store.client.spec.ts packages/client/ui-conversation/src/client/chat/ChatView.tsx packages/client/ui-conversation/src/client/chat/MessageItem.tsx packages/client/ui-conversation/tests/chat-view.client.spec.tsx && git commit -m \"$(cat <<'EOF'\nfix(web): keep claimed user messages visible during slow pre-steps\n\nA user's own message disappeared from the chat flow while a slow\nagent/pre-step hook (e.g. Hindsight auto-reflect) delayed the durable\nuser/message event: the host had already claimed the row out of the\nqueue snapshot, so the UI showed only the running \"Deep diving...\" status.\n\nThe queue mirror now keeps claimed user-origin rows in a short retiring\nwindow until their durable user/message lands, or until the next turn\nboundary prunes rows that never became durable. Accepted queue removals\nretire the occurrence immediately. ChatView renders retiring rows with\nthe same pending bubble as live steering rows.\nEOF\n)\" && git log --oneline -3 && git status --short",
+   "command": "git checkout -b feat/optimistic-claimed-user-messages && git add packages/client/runtime/src/client/sessions/conversation.ts packages/client/runtime/src/client/sessions/queue-mirror.ts packages/client/runtime/src/client/sessions/session.ts packages/client/runtime/tests/queue-store.client.spec.ts packages/client/ui-conversation/src/client/chat/ChatView.tsx packages/client/ui-conversation/src/client/chat/MessageItem.tsx packages/client/ui-conversation/tests/chat-view.client.spec.tsx && git commit -m \"$(cat <<'EOF'\nfix(web): keep claimed user messages visible during slow pre-steps\n\nA user's own message disappeared from the chat flow while a slow\nagent/pre-step hook (e.g. <other-tool> auto-reflect) delayed the durable\nuser/message event: the host had already claimed the row out of the\nqueue snapshot, so the UI showed only the running \"Deep diving...\" status.\n\nThe queue mirror now keeps claimed user-origin rows in a short retiring\nwindow until their durable user/message lands, or until the next turn\nboundary prunes rows that never became durable. Accepted queue removals\nretire the occurrence immediately. ChatView renders retiring rows with\nthe same pending bubble as live steering rows.\nEOF\n)\" && git log --oneline -3 && git status --short",
    "source": "jev",
    "action": "allow",
    "p": 0.03,
@@ -1380,7 +1380,7 @@
    "ms": 0
   },
   {
-   "command": "git config user.name \"<REDACTED-IDENTITY>\" && git config user.email \"<REDACTED-EMAIL>\" && git commit -m \"$(cat <<'EOF'\nfix(web): keep claimed user messages visible during slow pre-steps\n\nA user's own message disappeared from the chat flow while a slow\nagent/pre-step hook (e.g. Hindsight auto-reflect) delayed the durable\nuser/message event: the host had already claimed the row out of the\nqueue snapshot, so the UI showed only the running \"Deep diving...\" status.\n\nThe queue mirror now keeps claimed user-origin rows in a short retiring\nwindow until their durable user/message lands, or until the next turn\nboundary prunes rows that never became durable. Accepted queue removals\nretire the occurrence immediately. ChatView renders retiring rows with\nthe same pending bubble as live steering rows.\nEOF\n)\" && git log --oneline -3 && git status --short",
+   "command": "git config user.name \"<REDACTED-IDENTITY>\" && git config user.email \"<REDACTED-EMAIL>\" && git commit -m \"$(cat <<'EOF'\nfix(web): keep claimed user messages visible during slow pre-steps\n\nA user's own message disappeared from the chat flow while a slow\nagent/pre-step hook (e.g. <other-tool> auto-reflect) delayed the durable\nuser/message event: the host had already claimed the row out of the\nqueue snapshot, so the UI showed only the running \"Deep diving...\" status.\n\nThe queue mirror now keeps claimed user-origin rows in a short retiring\nwindow until their durable user/message lands, or until the next turn\nboundary prunes rows that never became durable. Accepted queue removals\nretire the occurrence immediately. ChatView renders retiring rows with\nthe same pending bubble as live steering rows.\nEOF\n)\" && git log --oneline -3 && git status --short",
    "source": "jev",
    "action": "allow",
    "p": 0.03,
@@ -1459,14 +1459,14 @@
    "ms": 328
   },
   {
-   "command": "grep -n \"onPrompt(\" ~/.hindsight/coding-agents/dist/dsh.js | head; echo \"---header.agentPreset usage---\"; grep -n \"agentPreset\" ~/.hindsight/coding-agents/dist/dsh.js | head",
+   "command": "grep -n \"onPrompt(\" ~/.<other-tool>/coding-agents/dist/dsh.js | head; echo \"---header.agentPreset usage---\"; grep -n \"agentPreset\" ~/.<other-tool>/coding-agents/dist/dsh.js | head",
    "source": "prefilter",
    "action": "allow",
    "reason": "compound of 5 harmless segments",
    "ms": 0
   },
   {
-   "command": "cp ~/.hindsight/coding-agents/dist/dsh.js ~/.hindsight/coding-agents/dist/dsh.js.bak-anchored-scoped-$(date +%Y%m%d-%H%M%S) && ls -la ~/.hindsight/coding-agents/dist/ | grep -E \"dsh\\.js\"",
+   "command": "cp ~/.<other-tool>/coding-agents/dist/dsh.js ~/.<other-tool>/coding-agents/dist/dsh.js.bak-anchored-scoped-$(date +%Y%m%d-%H%M%S) && ls -la ~/.<other-tool>/coding-agents/dist/ | grep -E \"dsh\\.js\"",
    "source": "jev",
    "action": "allow",
    "p": 0.04,
@@ -1475,7 +1475,7 @@
    "ms": 245
   },
   {
-   "command": "node --check ~/.hindsight/coding-agents/dist/dsh.js && echo \"SYNTAX OK\" && grep -n \"isAnchoredPreset\\|agentPreset\" ~/.hindsight/coding-agents/dist/dsh.js",
+   "command": "node --check ~/.<other-tool>/coding-agents/dist/dsh.js && echo \"SYNTAX OK\" && grep -n \"isAnchoredPreset\\|agentPreset\" ~/.<other-tool>/coding-agents/dist/dsh.js",
    "source": "jev",
    "action": "allow",
    "p": 0.01,
@@ -1484,14 +1484,14 @@
    "ms": 283
   },
   {
-   "command": "grep -n \"async onPrompt\" ~/.hindsight/coding-agents/dist/dsh.js.bak-anchored-20260815-193811; echo \"---context---\"; sed -n '/async onPrompt/,/^  }/p' ~/.hindsight/coding-agents/dist/dsh.js.bak-anchored-20260815-193811 | head -40",
+   "command": "grep -n \"async onPrompt\" ~/.<other-tool>/coding-agents/dist/dsh.js.bak-anchored-20260815-193811; echo \"---context---\"; sed -n '/async onPrompt/,/^  }/p' ~/.<other-tool>/coding-agents/dist/dsh.js.bak-anchored-20260815-193811 | head -40",
    "source": "prefilter",
    "action": "allow",
    "reason": "compound of 4 harmless segments",
    "ms": 0
   },
   {
-   "command": "node --check ~/.dsh/plugins/hindsight-anchored.mjs && echo \"WRAPPER SYNTAX OK\" && node -e \"\nconst fs = require('fs');\nconst path = require('path');\nconst home = process.env.HOME;\nconst src = fs.readFileSync(path.join(home, '.hindsight/coding-agents/dist/dsh.js'), 'utf8');\nconst pristine = fs.readFileSync(path.join(home, '.hindsight/coding-agents/dist/dsh.js.bak-anchored-20260815-193811'), 'utf8');\nconst wrapper = fs.readFileSync(path.join(home, '.dsh/plugins/hindsight-anchored.mjs'), 'utf8');\nfunction grab(name) {\n  const re = new RegExp('const ' + name + ' = \\`([\\\\\\\\s\\\\\\\\S]*?)\\`', 'm');\n  const m = wrapper.match(re);\n  if (!m) throw new Error('missing ' + name);\n  return m[1];\n}\nconst olds = ['PATCH_A_OLD','PATCH_B_OLD','PATCH_C_OLD','PATCH_D_OLD','PATCH_E_OLD'];\nconst news = ['PATCH_A_NEW','PATCH_B_NEW','PATCH_C_NEW','PATCH_D_NEW','PATCH_E_NEW'];\nfor (const o of olds) {\n  const snippet = grab(o);\n  if (!pristine.includes(snippet)) console.log('FAIL: ' + o + ' not in pristine');\n  else console.log('OK  : ' + o + ' matches pristine');\n}\nfor (const n of news) {\n  const snippet = grab(n);\n  if (!src.includes(snippet)) console.log('FAIL: ' + n + ' not in current dist');\n  else console.log('OK  : ' + n + ' present in current dist');\n}\n// simulate fresh patch on pristine\nlet patched = pristine;\nfor (const o of olds) patched = patched.replace(grab(o), grab(n ' + 'ews[olds.indexOf(o)])); // placeholder corrected below\n\"",
+   "command": "node --check ~/.dsh/plugins/<other-tool>-anchored.mjs && echo \"WRAPPER SYNTAX OK\" && node -e \"\nconst fs = require('fs');\nconst path = require('path');\nconst home = process.env.HOME;\nconst src = fs.readFileSync(path.join(home, '.<other-tool>/coding-agents/dist/dsh.js'), 'utf8');\nconst pristine = fs.readFileSync(path.join(home, '.<other-tool>/coding-agents/dist/dsh.js.bak-anchored-20260815-193811'), 'utf8');\nconst wrapper = fs.readFileSync(path.join(home, '.dsh/plugins/<other-tool>-anchored.mjs'), 'utf8');\nfunction grab(name) {\n  const re = new RegExp('const ' + name + ' = \\`([\\\\\\\\s\\\\\\\\S]*?)\\`', 'm');\n  const m = wrapper.match(re);\n  if (!m) throw new Error('missing ' + name);\n  return m[1];\n}\nconst olds = ['PATCH_A_OLD','PATCH_B_OLD','PATCH_C_OLD','PATCH_D_OLD','PATCH_E_OLD'];\nconst news = ['PATCH_A_NEW','PATCH_B_NEW','PATCH_C_NEW','PATCH_D_NEW','PATCH_E_NEW'];\nfor (const o of olds) {\n  const snippet = grab(o);\n  if (!pristine.includes(snippet)) console.log('FAIL: ' + o + ' not in pristine');\n  else console.log('OK  : ' + o + ' matches pristine');\n}\nfor (const n of news) {\n  const snippet = grab(n);\n  if (!src.includes(snippet)) console.log('FAIL: ' + n + ' not in current dist');\n  else console.log('OK  : ' + n + ' present in current dist');\n}\n// simulate fresh patch on pristine\nlet patched = pristine;\nfor (const o of olds) patched = patched.replace(grab(o), grab(n ' + 'ews[olds.indexOf(o)])); // placeholder corrected below\n\"",
    "source": "jev",
    "action": "allow",
    "p": 0.02,
@@ -1500,7 +1500,7 @@
    "ms": 277
   },
   {
-   "command": "node -e \"\nconst fs = require('fs');\nconst path = require('path');\nconst home = process.env.HOME;\nconst src = fs.readFileSync(path.join(home, '.hindsight/coding-agents/dist/dsh.js'), 'utf8');\nconst pristine = fs.readFileSync(path.join(home, '.hindsight/coding-agents/dist/dsh.js.bak-anchored-20260815-193811'), 'utf8');\nconst wrapper = fs.readFileSync(path.join(home, '.dsh/plugins/hindsight-anchored.mjs'), 'utf8');\nfunction grab(name) {\n  const re = new RegExp('const ' + name + ' = \\`([\\\\\\\\s\\\\\\\\S]*?)\\`', 'm');\n  const m = wrapper.match(re);\n  if (!m) throw new Error('missing ' + name);\n  return m[1];\n}\nconst pairs = [\n  ['PATCH_A_OLD','PATCH_A_NEW'],\n  ['PATCH_B_OLD','PATCH_B_NEW'],\n  ['PATCH_C_OLD','PATCH_C_NEW'],\n  ['PATCH_D_OLD','PATCH_D_NEW'],\n  ['PATCH_E_OLD','PATCH_E_NEW'],\n];\nlet patched = pristine;\nfor (const [o,n] of pairs) {\n  const oldSnippet = grab(o), newSnippet = grab(n);\n  if (!pristine.includes(oldSnippet)) console.log('FAIL: ' + o + ' not in pristine');\n  else console.log('OK  : ' + o + ' matches pristine');\n  if (!src.includes(newSnippet)) console.log('FAIL: ' + n + ' not in current dist');\n  else console.log('OK  : ' + n + ' present in current dist');\n  patched = patched.replace(oldSnippet, newSnippet);\n}\nconst patchedMarker = patched.includes('// [dsh-anchored-first-turn]');\nconst counts = (s) => (s.match(/\\[dsh-anchored-first-turn\\]/g) || []).length;\nconsole.log('patched marker present:', patchedMarker, 'count:', counts(patched));\nconsole.log('current dist marker count:', counts(src));\n\"",
+   "command": "node -e \"\nconst fs = require('fs');\nconst path = require('path');\nconst home = process.env.HOME;\nconst src = fs.readFileSync(path.join(home, '.<other-tool>/coding-agents/dist/dsh.js'), 'utf8');\nconst pristine = fs.readFileSync(path.join(home, '.<other-tool>/coding-agents/dist/dsh.js.bak-anchored-20260815-193811'), 'utf8');\nconst wrapper = fs.readFileSync(path.join(home, '.dsh/plugins/<other-tool>-anchored.mjs'), 'utf8');\nfunction grab(name) {\n  const re = new RegExp('const ' + name + ' = \\`([\\\\\\\\s\\\\\\\\S]*?)\\`', 'm');\n  const m = wrapper.match(re);\n  if (!m) throw new Error('missing ' + name);\n  return m[1];\n}\nconst pairs = [\n  ['PATCH_A_OLD','PATCH_A_NEW'],\n  ['PATCH_B_OLD','PATCH_B_NEW'],\n  ['PATCH_C_OLD','PATCH_C_NEW'],\n  ['PATCH_D_OLD','PATCH_D_NEW'],\n  ['PATCH_E_OLD','PATCH_E_NEW'],\n];\nlet patched = pristine;\nfor (const [o,n] of pairs) {\n  const oldSnippet = grab(o), newSnippet = grab(n);\n  if (!pristine.includes(oldSnippet)) console.log('FAIL: ' + o + ' not in pristine');\n  else console.log('OK  : ' + o + ' matches pristine');\n  if (!src.includes(newSnippet)) console.log('FAIL: ' + n + ' not in current dist');\n  else console.log('OK  : ' + n + ' present in current dist');\n  patched = patched.replace(oldSnippet, newSnippet);\n}\nconst patchedMarker = patched.includes('// [dsh-anchored-first-turn]');\nconst counts = (s) => (s.match(/\\[dsh-anchored-first-turn\\]/g) || []).length;\nconsole.log('patched marker present:', patchedMarker, 'count:', counts(patched));\nconsole.log('current dist marker count:', counts(src));\n\"",
    "source": "jev",
    "action": "allow",
    "p": 0.03,
@@ -1509,21 +1509,21 @@
    "ms": 280
   },
   {
-   "command": "grep -n \"dsh-anchored-first-turn\" ~/.hindsight/coding-agents/dist/dsh.js; echo \"---E region in dist---\"; sed -n '16580,16600p' ~/.hindsight/coding-agents/dist/dsh.js",
+   "command": "grep -n \"dsh-anchored-first-turn\" ~/.<other-tool>/coding-agents/dist/dsh.js; echo \"---E region in dist---\"; sed -n '16580,16600p' ~/.<other-tool>/coding-agents/dist/dsh.js",
    "source": "prefilter",
    "action": "allow",
    "reason": "compound of 3 harmless segments",
    "ms": 0
   },
   {
-   "command": "sed -n '16705,16725p' ~/.hindsight/coding-agents/dist/dsh.js",
+   "command": "sed -n '16705,16725p' ~/.<other-tool>/coding-agents/dist/dsh.js",
    "source": "prefilter",
    "action": "allow",
    "reason": "read-only shape (sed)",
    "ms": 0
   },
   {
-   "command": "node --check ~/.hindsight/coding-agents/dist/dsh.js && echo \"DIST SYNTAX OK\" && node -e \"\nconst fs = require('fs');\nconst path = require('path');\nconst home = process.env.HOME;\nconst src = fs.readFileSync(path.join(home, '.hindsight/coding-agents/dist/dsh.js'), 'utf8');\nconst pristine = fs.readFileSync(path.join(home, '.hindsight/coding-agents/dist/dsh.js.bak-anchored-20260815-193811'), 'utf8');\nconst wrapper = fs.readFileSync(path.join(home, '.dsh/plugins/hindsight-anchored.mjs'), 'utf8');\nfunction grab(name) {\n  const re = new RegExp('const ' + name + ' = \\`([\\\\\\\\s\\\\\\\\S]*?)\\`', 'm');\n  const m = wrapper.match(re);\n  if (!m) throw new Error('missing ' + name);\n  return m[1];\n}\nconst pairs = [\n  ['PATCH_A_OLD','PATCH_A_NEW'],\n  ['PATCH_B_OLD','PATCH_B_NEW'],\n  ['PATCH_C_OLD','PATCH_C_NEW'],\n  ['PATCH_D_OLD','PATCH_D_NEW'],\n  ['PATCH_E_OLD','PATCH_E_NEW'],\n];\nlet patched = pristine;\nfor (const [o,n] of pairs) {\n  const oldSnippet = grab(o), newSnippet = grab(n);\n  if (!pristine.includes(oldSnippet)) console.log('FAIL: ' + o + ' not in pristine');\n  else if (!src.includes(newSnippet)) console.log('FAIL: ' + n + ' not in current dist');\n  else console.log('OK  : ' + o + ' -> ' + n);\n  patched = patched.replace(oldSnippet, newSnippet);\n}\nconst marker = '// [dsh-anchored-first-turn]';\nconsole.log('simulated patch == current dist:', patched === src);\nconsole.log('marker count (current dist):', (src.match(/\\[dsh-anchored-first-turn\\]/g) || []).length);\n\"",
+   "command": "node --check ~/.<other-tool>/coding-agents/dist/dsh.js && echo \"DIST SYNTAX OK\" && node -e \"\nconst fs = require('fs');\nconst path = require('path');\nconst home = process.env.HOME;\nconst src = fs.readFileSync(path.join(home, '.<other-tool>/coding-agents/dist/dsh.js'), 'utf8');\nconst pristine = fs.readFileSync(path.join(home, '.<other-tool>/coding-agents/dist/dsh.js.bak-anchored-20260815-193811'), 'utf8');\nconst wrapper = fs.readFileSync(path.join(home, '.dsh/plugins/<other-tool>-anchored.mjs'), 'utf8');\nfunction grab(name) {\n  const re = new RegExp('const ' + name + ' = \\`([\\\\\\\\s\\\\\\\\S]*?)\\`', 'm');\n  const m = wrapper.match(re);\n  if (!m) throw new Error('missing ' + name);\n  return m[1];\n}\nconst pairs = [\n  ['PATCH_A_OLD','PATCH_A_NEW'],\n  ['PATCH_B_OLD','PATCH_B_NEW'],\n  ['PATCH_C_OLD','PATCH_C_NEW'],\n  ['PATCH_D_OLD','PATCH_D_NEW'],\n  ['PATCH_E_OLD','PATCH_E_NEW'],\n];\nlet patched = pristine;\nfor (const [o,n] of pairs) {\n  const oldSnippet = grab(o), newSnippet = grab(n);\n  if (!pristine.includes(oldSnippet)) console.log('FAIL: ' + o + ' not in pristine');\n  else if (!src.includes(newSnippet)) console.log('FAIL: ' + n + ' not in current dist');\n  else console.log('OK  : ' + o + ' -> ' + n);\n  patched = patched.replace(oldSnippet, newSnippet);\n}\nconst marker = '// [dsh-anchored-first-turn]';\nconsole.log('simulated patch == current dist:', patched === src);\nconsole.log('marker count (current dist):', (src.match(/\\[dsh-anchored-first-turn\\]/g) || []).length);\n\"",
    "source": "jev",
    "action": "allow",
    "p": 0.03,
@@ -1532,7 +1532,7 @@
    "ms": 239
   },
   {
-   "command": "node -e \"\nconst fs = require('fs');\nconst path = require('path');\nconst home = process.env.HOME;\nconst src = fs.readFileSync(path.join(home, '.hindsight/coding-agents/dist/dsh.js'), 'utf8');\nconst pristine = fs.readFileSync(path.join(home, '.hindsight/coding-agents/dist/dsh.js.bak-anchored-20260815-193811'), 'utf8');\nconst wrapper = fs.readFileSync(path.join(home, '.dsh/plugins/hindsight-anchored.mjs'), 'utf8');\nfunction grab(name) {\n  const re = new RegExp('const ' + name + ' = \\`([\\\\\\\\s\\\\\\\\S]*?)\\`', 'm');\n  const m = wrapper.match(re);\n  if (!m) throw new Error('missing ' + name);\n  return m[1];\n}\nconst pairs = [\n  ['PATCH_A_OLD','PATCH_A_NEW'],\n  ['PATCH_B_OLD','PATCH_B_NEW'],\n  ['PATCH_C_OLD','PATCH_C_NEW'],\n  ['PATCH_D_OLD','PATCH_D_NEW'],\n  ['PATCH_E_OLD','PATCH_E_NEW'],\n];\nlet patched = pristine;\nfor (const [o,n] of pairs) patched = patched.replace(grab(o), grab(n));\nfs.writeFileSync('/tmp/patched-sim.js', patched);\nfs.writeFileSync('/tmp/current-dist.js', src);\nconsole.log('written');\n\" && diff /tmp/current-dist.js /tmp/patched-sim.js | head -40",
+   "command": "node -e \"\nconst fs = require('fs');\nconst path = require('path');\nconst home = process.env.HOME;\nconst src = fs.readFileSync(path.join(home, '.<other-tool>/coding-agents/dist/dsh.js'), 'utf8');\nconst pristine = fs.readFileSync(path.join(home, '.<other-tool>/coding-agents/dist/dsh.js.bak-anchored-20260815-193811'), 'utf8');\nconst wrapper = fs.readFileSync(path.join(home, '.dsh/plugins/<other-tool>-anchored.mjs'), 'utf8');\nfunction grab(name) {\n  const re = new RegExp('const ' + name + ' = \\`([\\\\\\\\s\\\\\\\\S]*?)\\`', 'm');\n  const m = wrapper.match(re);\n  if (!m) throw new Error('missing ' + name);\n  return m[1];\n}\nconst pairs = [\n  ['PATCH_A_OLD','PATCH_A_NEW'],\n  ['PATCH_B_OLD','PATCH_B_NEW'],\n  ['PATCH_C_OLD','PATCH_C_NEW'],\n  ['PATCH_D_OLD','PATCH_D_NEW'],\n  ['PATCH_E_OLD','PATCH_E_NEW'],\n];\nlet patched = pristine;\nfor (const [o,n] of pairs) patched = patched.replace(grab(o), grab(n));\nfs.writeFileSync('/tmp/patched-sim.js', patched);\nfs.writeFileSync('/tmp/current-dist.js', src);\nconsole.log('written');\n\" && diff /tmp/current-dist.js /tmp/patched-sim.js | head -40",
    "source": "jev",
    "action": "allow",
    "p": 0.04,
@@ -1541,14 +1541,14 @@
    "ms": 294
   },
   {
-   "command": "echo \"=== current dist ===\"; sed -n '16725,16745p' ~/.hindsight/coding-agents/dist/dsh.js; echo \"=== pristine backup ===\"; sed -n '16725,16745p' ~/.hindsight/coding-agents/dist/dsh.js.bak-anchored-20260815-193811",
+   "command": "echo \"=== current dist ===\"; sed -n '16725,16745p' ~/.<other-tool>/coding-agents/dist/dsh.js; echo \"=== pristine backup ===\"; sed -n '16725,16745p' ~/.<other-tool>/coding-agents/dist/dsh.js.bak-anchored-20260815-193811",
    "source": "prefilter",
    "action": "allow",
    "reason": "compound of 4 harmless segments",
    "ms": 0
   },
   {
-   "command": "echo \"=== pristine backup getInjection ===\"; awk '/getInjection\\(sessionId\\)/,/^  \\}/' ~/.hindsight/coding-agents/dist/dsh.js.bak-anchored-20260815-193811 | head -20; echo \"=== scoped backup getInjection ===\"; awk '/getInjection\\(sessionId\\)/,/^  \\}/' ~/.hindsight/coding-agents/dist/dsh.js.bak-anchored-scoped-20260815-200152 | head -20",
+   "command": "echo \"=== pristine backup getInjection ===\"; awk '/getInjection\\(sessionId\\)/,/^  \\}/' ~/.<other-tool>/coding-agents/dist/dsh.js.bak-anchored-20260815-193811 | head -20; echo \"=== scoped backup getInjection ===\"; awk '/getInjection\\(sessionId\\)/,/^  \\}/' ~/.<other-tool>/coding-agents/dist/dsh.js.bak-anchored-scoped-20260815-200152 | head -20",
    "source": "jev",
    "action": "allow",
    "p": 0.01,
@@ -1557,7 +1557,7 @@
    "ms": 259
   },
   {
-   "command": "node --check ~/.dsh/plugins/hindsight-anchored.mjs && echo \"WRAPPER SYNTAX OK\" && node -e \"\nconst fs = require('fs');\nconst path = require('path');\nconst home = process.env.HOME;\nconst src = fs.readFileSync(path.join(home, '.hindsight/coding-agents/dist/dsh.js'), 'utf8');\nconst pristine = fs.readFileSync(path.join(home, '.hindsight/coding-agents/dist/dsh.js.bak-anchored-20260815-193811'), 'utf8');\nconst wrapper = fs.readFileSync(path.join(home, '.dsh/plugins/hindsight-anchored.mjs'), 'utf8');\nfunction grab(name) {\n  const re = new RegExp('const ' + name + ' = \\`([\\\\\\\\s\\\\\\\\S]*?)\\`', 'm');\n  const m = wrapper.match(re);\n  if (!m) throw new Error('missing ' + name);\n  return m[1];\n}\nconst pairs = [\n  ['PATCH_A_OLD','PATCH_A_NEW'],\n  ['PATCH_B_OLD','PATCH_B_NEW'],\n  ['PATCH_C_OLD','PATCH_C_NEW'],\n  ['PATCH_D_OLD','PATCH_D_NEW'],\n  ['PATCH_E_OLD','PATCH_E_NEW'],\n  ['PATCH_F_OLD','PATCH_F_NEW'],\n];\nlet patched = pristine;\nfor (const [o,n] of pairs) {\n  const oldSnippet = grab(o), newSnippet = grab(n);\n  if (!pristine.includes(oldSnippet)) console.log('FAIL: ' + o + ' not in pristine');\n  else if (!src.includes(newSnippet)) console.log('FAIL: ' + n + ' not in current dist');\n  else console.log('OK  : ' + o + ' -> ' + n);\n  patched = patched.replace(oldSnippet, newSnippet);\n}\nconsole.log('simulated patch == current dist:', patched === src);\n\"",
+   "command": "node --check ~/.dsh/plugins/<other-tool>-anchored.mjs && echo \"WRAPPER SYNTAX OK\" && node -e \"\nconst fs = require('fs');\nconst path = require('path');\nconst home = process.env.HOME;\nconst src = fs.readFileSync(path.join(home, '.<other-tool>/coding-agents/dist/dsh.js'), 'utf8');\nconst pristine = fs.readFileSync(path.join(home, '.<other-tool>/coding-agents/dist/dsh.js.bak-anchored-20260815-193811'), 'utf8');\nconst wrapper = fs.readFileSync(path.join(home, '.dsh/plugins/<other-tool>-anchored.mjs'), 'utf8');\nfunction grab(name) {\n  const re = new RegExp('const ' + name + ' = \\`([\\\\\\\\s\\\\\\\\S]*?)\\`', 'm');\n  const m = wrapper.match(re);\n  if (!m) throw new Error('missing ' + name);\n  return m[1];\n}\nconst pairs = [\n  ['PATCH_A_OLD','PATCH_A_NEW'],\n  ['PATCH_B_OLD','PATCH_B_NEW'],\n  ['PATCH_C_OLD','PATCH_C_NEW'],\n  ['PATCH_D_OLD','PATCH_D_NEW'],\n  ['PATCH_E_OLD','PATCH_E_NEW'],\n  ['PATCH_F_OLD','PATCH_F_NEW'],\n];\nlet patched = pristine;\nfor (const [o,n] of pairs) {\n  const oldSnippet = grab(o), newSnippet = grab(n);\n  if (!pristine.includes(oldSnippet)) console.log('FAIL: ' + o + ' not in pristine');\n  else if (!src.includes(newSnippet)) console.log('FAIL: ' + n + ' not in current dist');\n  else console.log('OK  : ' + o + ' -> ' + n);\n  patched = patched.replace(oldSnippet, newSnippet);\n}\nconsole.log('simulated patch == current dist:', patched === src);\n\"",
    "source": "jev",
    "action": "allow",
    "p": 0.03,
@@ -1566,7 +1566,7 @@
    "ms": 254
   },
   {
-   "command": "node -e \"\nimport('<HOME>/.dsh/plugins/hindsight-anchored.mjs').then(m => {\n  console.log('wrapper loaded:', m.name, '| inject:', JSON.stringify(m.inject), '| apply:', typeof m.apply, '| default:', typeof m.default);\n}).catch(e => { console.error('LOAD FAILED:', e.message); process.exit(1); })\n\"",
+   "command": "node -e \"\nimport('<HOME>/.dsh/plugins/<other-tool>-anchored.mjs').then(m => {\n  console.log('wrapper loaded:', m.name, '| inject:', JSON.stringify(m.inject), '| apply:', typeof m.apply, '| default:', typeof m.default);\n}).catch(e => { console.error('LOAD FAILED:', e.message); process.exit(1); })\n\"",
    "source": "jev",
    "action": "allow",
    "p": 0.02,
@@ -1634,7 +1634,7 @@
    "ms": 252
   },
   {
-   "command": "echo \"=== 仓库内未跟踪文件 ===\"; git status --porcelain; echo \"=== 未跟踪但被忽略的本地生成物(示例) ===\"; git status --ignored --porcelain 2>/dev/null | grep '^!!' | head -20; echo \"=== Hindsight 补丁是否在仓库内? ===\"; git ls-files --error-unmatch ~/.hindsight/coding-agents/dist/dsh.js ~/.dsh/plugins/hindsight-anchored.mjs 2>&1 | head -5",
+   "command": "echo \"=== 仓库内未跟踪文件 ===\"; git status --porcelain; echo \"=== 未跟踪但被忽略的本地生成物(示例) ===\"; git status --ignored --porcelain 2>/dev/null | grep '^!!' | head -20; echo \"=== <other-tool> 补丁是否在仓库内? ===\"; git ls-files --error-unmatch ~/.<other-tool>/coding-agents/dist/dsh.js ~/.dsh/plugins/<other-tool>-anchored.mjs 2>&1 | head -5",
    "source": "jev",
    "action": "allow",
    "p": 0.01,
@@ -1643,7 +1643,7 @@
    "ms": 232
   },
   {
-   "command": "git reset --hard origin/master && echo \"=== 验证 ===\" && git status -sb | head -3 && git log --oneline -3 && echo \"--- 与官方一致性 ---\" && git rev-list --left-right --count origin/master...master && echo \"=== Hindsight 补丁完好性 ===\" && grep -c \"dsh-anchored-first-turn\" ~/.hindsight/coding-agents/dist/dsh.js && ls -la ~/.dsh/plugins/hindsight-anchored.mjs ~/dsh-patches/ 2>/dev/null | tail -6",
+   "command": "git reset --hard origin/master && echo \"=== 验证 ===\" && git status -sb | head -3 && git log --oneline -3 && echo \"--- 与官方一致性 ---\" && git rev-list --left-right --count origin/master...master && echo \"=== <other-tool> 补丁完好性 ===\" && grep -c \"dsh-anchored-first-turn\" ~/.<other-tool>/coding-agents/dist/dsh.js && ls -la ~/.dsh/plugins/<other-tool>-anchored.mjs ~/dsh-patches/ 2>/dev/null | tail -6",
    "source": "jev",
    "action": "ask",
    "p": 0.81,
@@ -1732,7 +1732,7 @@
    "ms": 213
   },
   {
-   "command": "echo \"=== AgentOptions definition ===\"; grep -rn \"interface AgentOptions\\|type AgentOptions\" packages --include=\"*.ts\" | grep -v \"\\.d\\.ts\" | head -5; echo; echo \"=== workflow tool provider/model ===\"; grep -rniE \"workflow|provider.*override|model.*override|flash|gemini\" --include=\"*.md\" .agents/skills/ README.md docs 2>/dev/null | grep -viE \"node_modules\" | head -30",
+   "command": "echo \"=== AgentOptions definition ===\"; grep -rn \"interface AgentOptions\\|type AgentOptions\" packages --include=\"*.ts\" | grep -v \"\\.d\\.ts\" | head -5; echo; echo \"=== workflow tool provider/model ===\"; grep -rniE \"workflow|provider.*override|model.*override|flash|<other-tool>\" --include=\"*.md\" .agents/skills/ README.md docs 2>/dev/null | grep -viE \"node_modules\" | head -30",
    "source": "jev",
    "action": "allow",
    "p": 0.01,
@@ -1755,7 +1755,7 @@
    "ms": 0
   },
   {
-   "command": "echo \"=== proxy env ===\"; env | grep -iE \"proxy\" | sort || echo \"(no proxy env)\"; echo; echo \"=== github.com ===\"; curl -sI -m 10 https://github.com -o /dev/null -w \"http=%{http_code} time=%{time_total}s\\n\" 2>&1 || echo \"FAILED\"; echo \"=== raw.githubusercontent.com ===\"; curl -sI -m 10 https://raw.githubusercontent.com/openai/codex/main/codex-rs/core/src/tools/handlers/multi_agents_v2/message_tool.rs -o /dev/null -w \"http=%{http_code} time=%{time_total}s\\n\" 2>&1 || echo \"FAILED\"; echo \"=== code.claude.com ===\"; curl -sI -m 10 https://code.claude.com/docs/en/agent-teams -o /dev/null -w \"http=%{http_code} time=%{time_total}s\\n\" 2>&1 || echo \"FAILED\"",
+   "command": "echo \"=== proxy env ===\"; env | grep -iE \"proxy\" | sort || echo \"(no proxy env)\"; echo; echo \"=== github.com ===\"; curl -sI -m 10 https://github.com -o /dev/null -w \"http=%{http_code} time=%{time_total}s\\n\" 2>&1 || echo \"FAILED\"; echo \"=== raw.githubusercontent.com ===\"; curl -sI -m 10 https://raw.githubusercontent.com/<other-tool>/<other-tool>/main/<other-tool>-rs/core/src/tools/handlers/multi_agents_v2/message_tool.rs -o /dev/null -w \"http=%{http_code} time=%{time_total}s\\n\" 2>&1 || echo \"FAILED\"; echo \"=== code.<other-tool>.com ===\"; curl -sI -m 10 https://code.<other-tool>.com/docs/en/agent-teams -o /dev/null -w \"http=%{http_code} time=%{time_total}s\\n\" 2>&1 || echo \"FAILED\"",
    "source": "jev",
    "action": "allow",
    "p": 0.02,
@@ -1764,7 +1764,7 @@
    "ms": 327
   },
   {
-   "command": "echo \"=== top-level packages ===\"; ls packages; echo; echo \"=== llm/provider packages ===\"; ls packages/llm 2>/dev/null; ls packages/llm-provider 2>/dev/null; find packages -maxdepth 2 -type d -iname \"*provider*\" | head -20; echo; echo \"=== provider adapter references ===\"; grep -rniE \"anthropic|claude|openai|codex|gemini\" packages --include=\"*.ts\" --include=\"*.json\" --include=\"*.md\" -l 2>/dev/null | grep -v node_modules | grep -v \"\\.d\\.ts\" | grep -v \"/test\" | grep -v \"\\.spec\\.\" | head -25",
+   "command": "echo \"=== top-level packages ===\"; ls packages; echo; echo \"=== llm/provider packages ===\"; ls packages/llm 2>/dev/null; ls packages/llm-provider 2>/dev/null; find packages -maxdepth 2 -type d -iname \"*provider*\" | head -20; echo; echo \"=== provider adapter references ===\"; grep -rniE \"<other-tool>|<other-tool>|<other-tool>|<other-tool>|<other-tool>\" packages --include=\"*.ts\" --include=\"*.json\" --include=\"*.md\" -l 2>/dev/null | grep -v node_modules | grep -v \"\\.d\\.ts\" | grep -v \"/test\" | grep -v \"\\.spec\\.\" | head -25",
    "source": "jev",
    "action": "allow",
    "p": 0.01,
@@ -1773,7 +1773,7 @@
    "ms": 242
   },
   {
-   "command": "echo \"=== subagent-claude-code README ===\"; sed -n '1,80p' packages/subagent/subagent-claude-code/README.md 2>/dev/null; echo; echo \"=== llm packages READMEs ===\"; for f in packages/llm/README.md packages/llm/llm-deepseek/README.md packages/llm/llm-pi-ai/README.md; do echo \"--- $f ---\"; sed -n '1,40p' \"$f\" 2>/dev/null; done",
+   "command": "echo \"=== subagent-<other-tool>-code README ===\"; sed -n '1,80p' packages/subagent/subagent-<other-tool>-code/README.md 2>/dev/null; echo; echo \"=== llm packages READMEs ===\"; for f in packages/llm/README.md packages/llm/llm-deepseek/README.md packages/llm/llm-pi-ai/README.md; do echo \"--- $f ---\"; sed -n '1,40p' \"$f\" 2>/dev/null; done",
    "source": "jev",
    "action": "allow",
    "p": 0.01,
@@ -1782,7 +1782,7 @@
    "ms": 274
   },
   {
-   "command": "echo \"=== acp package ===\"; ls packages/acp 2>/dev/null; sed -n '1,50p' packages/acp/README.md 2>/dev/null; echo; echo \"=== grep codex/openai in packages (non-test) ===\"; grep -rniE \"codex|openai\" packages --include=\"*.md\" --include=\"*.ts\" --include=\"*.json\" -l 2>/dev/null | grep -v node_modules | grep -v \"\\.d\\.ts\" | grep -viE \"spec|test\" | head -20; echo; echo \"=== registered providers search ===\"; grep -rniE \"registerProvider|provider:.*deepseek|llm-deepseek|llm-pi-ai\" packages/bundle packages/host packages/boot --include=\"*.ts\" 2>/dev/null | grep -v test | head -20",
+   "command": "echo \"=== acp package ===\"; ls packages/acp 2>/dev/null; sed -n '1,50p' packages/acp/README.md 2>/dev/null; echo; echo \"=== grep <other-tool>/<other-tool> in packages (non-test) ===\"; grep -rniE \"<other-tool>|<other-tool>\" packages --include=\"*.md\" --include=\"*.ts\" --include=\"*.json\" -l 2>/dev/null | grep -v node_modules | grep -v \"\\.d\\.ts\" | grep -viE \"spec|test\" | head -20; echo; echo \"=== registered providers search ===\"; grep -rniE \"registerProvider|provider:.*deepseek|llm-deepseek|llm-pi-ai\" packages/bundle packages/host packages/boot --include=\"*.ts\" 2>/dev/null | grep -v test | head -20",
    "source": "jev",
    "action": "allow",
    "p": 0.01,
@@ -1791,7 +1791,7 @@
    "ms": 296
   },
   {
-   "command": "echo \"=== subagent-codex README ===\"; sed -n '1,90p' packages/subagent/subagent-codex/README.md 2>/dev/null; echo; echo \"=== subagent family README ===\"; sed -n '1,70p' packages/subagent/README.md 2>/dev/null",
+   "command": "echo \"=== subagent-<other-tool> README ===\"; sed -n '1,90p' packages/subagent/subagent-<other-tool>/README.md 2>/dev/null; echo; echo \"=== subagent family README ===\"; sed -n '1,70p' packages/subagent/README.md 2>/dev/null",
    "source": "jev",
    "action": "allow",
    "p": 0.01,
@@ -1800,7 +1800,7 @@
    "ms": 273
   },
   {
-   "command": "echo \"=== find profile/preset configs referencing claude-code/codex ===\"; grep -rniE \"subagent-claude-code|subagent-codex|subagent_claude_code|subagent_codex\" --include=\"*.yaml\" --include=\"*.yml\" --include=\"*.json\" --include=\"*.ts\" . 2>/dev/null | grep -v node_modules | grep -v \"\\.d\\.ts\" | grep -v \"/lib/\" | head -30; echo; echo \"=== CLAUDE.md exists? ===\"; ls -la CLAUDE.md 2>/dev/null && head -30 CLAUDE.md",
+   "command": "echo \"=== find profile/preset configs referencing <other-tool>-code/<other-tool> ===\"; grep -rniE \"subagent-<other-tool>-code|subagent-<other-tool>|subagent_<other-tool>_code|subagent_<other-tool>\" --include=\"*.yaml\" --include=\"*.yml\" --include=\"*.json\" --include=\"*.ts\" . 2>/dev/null | grep -v node_modules | grep -v \"\\.d\\.ts\" | grep -v \"/lib/\" | head -30; echo; echo \"=== <other-tool>.md exists? ===\"; ls -la <other-tool>.md 2>/dev/null && head -30 <other-tool>.md",
    "source": "jev",
    "action": "allow",
    "p": 0.01,
@@ -1872,7 +1872,7 @@
    "ms": 227
   },
   {
-   "command": "echo \"=== docker containers (all) ===\"; docker ps -a 2>&1 | head -30; echo; echo \"=== docker images ===\"; docker images 2>&1 | grep -iE \"hindsight|memory\" | head -10; echo; echo \"=== hindsight files in home/workspace ===\"; find ~ -maxdepth 4 -iname \"*hindsight*\" 2>/dev/null | grep -vE \"\\.git/|node_modules\" | head -20; find . -maxdepth 3 -iname \"*hindsight*\" 2>/dev/null | head -10",
+   "command": "echo \"=== docker containers (all) ===\"; docker ps -a 2>&1 | head -30; echo; echo \"=== docker images ===\"; docker images 2>&1 | grep -iE \"<other-tool>|memory\" | head -10; echo; echo \"=== <other-tool> files in home/workspace ===\"; find ~ -maxdepth 4 -iname \"*<other-tool>*\" 2>/dev/null | grep -vE \"\\.git/|node_modules\" | head -20; find . -maxdepth 3 -iname \"*<other-tool>*\" 2>/dev/null | head -10",
    "source": "jev",
    "action": "allow",
    "p": 0.01,
@@ -1881,7 +1881,7 @@
    "ms": 286
   },
   {
-   "command": "echo \"=== <HOME>/hindsight tree ===\"; find <HOME>/hindsight -maxdepth 3 2>/dev/null | head -40; echo; echo \"=== docker inspect hindsight (ports/env/mounts) ===\"; docker inspect hindsight --format '{{json .Config.Env}}' 2>/dev/null | tr ',' '\\n' | head -30; echo \"--- Ports:\"; docker inspect hindsight --format '{{json .NetworkSettings.Ports}}' 2>/dev/null; echo \"--- Mounts:\"; docker inspect hindsight --format '{{json .Mounts}}' 2>/dev/null | tr ',' '\\n' | head -20; echo; echo \"=== compose files referencing hindsight ===\"; grep -rniE \"hindsight\" <HOME> --include=\"*.yml\" --include=\"*.yaml\" --include=\"*.md\" --include=\"*.env\" -l 2>/dev/null | grep -v \"hindsight-data\" | head -10",
+   "command": "echo \"=== <HOME>/<other-tool> tree ===\"; find <HOME>/<other-tool> -maxdepth 3 2>/dev/null | head -40; echo; echo \"=== docker inspect <other-tool> (ports/env/mounts) ===\"; docker inspect <other-tool> --format '{{json .Config.Env}}' 2>/dev/null | tr ',' '\\n' | head -30; echo \"--- Ports:\"; docker inspect <other-tool> --format '{{json .NetworkSettings.Ports}}' 2>/dev/null; echo \"--- Mounts:\"; docker inspect <other-tool> --format '{{json .Mounts}}' 2>/dev/null | tr ',' '\\n' | head -20; echo; echo \"=== compose files referencing <other-tool> ===\"; grep -rniE \"<other-tool>\" <HOME> --include=\"*.yml\" --include=\"*.yaml\" --include=\"*.md\" --include=\"*.env\" -l 2>/dev/null | grep -v \"<other-tool>-data\" | head -10",
    "source": "jev",
    "action": "allow",
    "p": 0.01,
@@ -1890,7 +1890,7 @@
    "ms": 223
   },
   {
-   "command": "echo \"=== docker-compose.yml ===\"; cat <HOME>/hindsight/docker-compose.yml 2>/dev/null; echo; echo \"=== .bak compose (ports diff?) ===\"; diff <HOME>/hindsight/docker-compose.yml <HOME>/hindsight/docker-compose.yml.bak-20260804 2>/dev/null | head -40",
+   "command": "echo \"=== docker-compose.yml ===\"; cat <HOME>/<other-tool>/docker-compose.yml 2>/dev/null; echo; echo \"=== .bak compose (ports diff?) ===\"; diff <HOME>/<other-tool>/docker-compose.yml <HOME>/<other-tool>/docker-compose.yml.bak-20260804 2>/dev/null | head -40",
    "source": "jev",
    "action": "allow",
    "p": 0.01,
@@ -1917,7 +1917,7 @@
    "ms": 289
   },
   {
-   "command": "echo \"=== start hindsight ===\"; docker start hindsight && echo \"started\"; sleep 8; echo; echo \"=== container status ===\"; docker ps --filter name=hindsight --format 'table {{.Names}}\\t{{.Status}}\\t{{.Ports}}'; echo; echo \"=== probe API ===\"; for ep in / /health /api/health /api/v1/health; do code=$(curl -s -o /dev/null -w \"%{http_code}\" -m 5 \"http://localhost:8888$ep\" 2>/dev/null); echo \"GET :8888$ep -> $code\"; done; echo; curl -s -m 5 http://localhost:8888/ 2>/dev/null | head -c 400; echo",
+   "command": "echo \"=== start <other-tool> ===\"; docker start <other-tool> && echo \"started\"; sleep 8; echo; echo \"=== container status ===\"; docker ps --filter name=<other-tool> --format 'table {{.Names}}\\t{{.Status}}\\t{{.Ports}}'; echo; echo \"=== probe API ===\"; for ep in / /health /api/health /api/v1/health; do code=$(curl -s -o /dev/null -w \"%{http_code}\" -m 5 \"http://localhost:8888$ep\" 2>/dev/null); echo \"GET :8888$ep -> $code\"; done; echo; curl -s -m 5 http://localhost:8888/ 2>/dev/null | head -c 400; echo",
    "source": "jev",
    "action": "allow",
    "p": 0.03,
@@ -1926,7 +1926,7 @@
    "ms": 232
   },
   {
-   "command": "echo \"=== dsh home ===\"; ls -la ~/.dsh/ 2>/dev/null | head -20; echo; echo \"=== cordis patch exists? ===\"; ls -la ~/.dsh/cordis.patch.yml 2>/dev/null || echo \"(none)\"; echo; echo \"=== ~/.hindsight ===\"; ls -la ~/.hindsight/ 2>/dev/null || echo \"(none)\"; echo; echo \"=== tools ===\"; which dsh npx node 2>/dev/null; node --version 2>/dev/null; echo; echo \"=== is hindsight-coding-agents installed? ===\"; npm ls -g @vectorize-io/hindsight-coding-agents 2>/dev/null | head -5 || echo \"(not installed globally)\"",
+   "command": "echo \"=== dsh home ===\"; ls -la ~/.dsh/ 2>/dev/null | head -20; echo; echo \"=== cordis patch exists? ===\"; ls -la ~/.dsh/cordis.patch.yml 2>/dev/null || echo \"(none)\"; echo; echo \"=== ~/.<other-tool> ===\"; ls -la ~/.<other-tool>/ 2>/dev/null || echo \"(none)\"; echo; echo \"=== tools ===\"; which dsh npx node 2>/dev/null; node --version 2>/dev/null; echo; echo \"=== is <other-tool>-coding-agents installed? ===\"; npm ls -g @vectorize-io/<other-tool>-coding-agents 2>/dev/null | head -5 || echo \"(not installed globally)\"",
    "source": "jev",
    "action": "allow",
    "p": 0.01,
@@ -1935,7 +1935,7 @@
    "ms": 296
   },
   {
-   "command": "echo \"=== hindsight logs (tail) ===\"; docker logs hindsight --tail 60 2>&1 | tail -60; echo; echo \"=== current cordis.patch.yml ===\"; cat ~/.dsh/cordis.patch.yml",
+   "command": "echo \"=== <other-tool> logs (tail) ===\"; docker logs <other-tool> --tail 60 2>&1 | tail -60; echo; echo \"=== current cordis.patch.yml ===\"; cat ~/.dsh/cordis.patch.yml",
    "source": "jev",
    "action": "allow",
    "p": 0.01,
@@ -1944,7 +1944,7 @@
    "ms": 245
   },
   {
-   "command": "sleep 10; echo \"=== probe ===\"; for ep in / /docs /metrics /api/v1/health /healthz; do code=$(curl -s -o /dev/null -w \"%{http_code}\" -m 5 \"http://localhost:8888$ep\" 2>/dev/null); echo \"GET :8888$ep -> $code\"; done; echo; echo \"=== root body ===\"; curl -s -m 5 http://localhost:8888/ 2>/dev/null | head -c 500; echo; echo \"=== recent logs tail ===\"; docker logs hindsight --tail 8 2>&1 | tail -8",
+   "command": "sleep 10; echo \"=== probe ===\"; for ep in / /docs /metrics /api/v1/health /healthz; do code=$(curl -s -o /dev/null -w \"%{http_code}\" -m 5 \"http://localhost:8888$ep\" 2>/dev/null); echo \"GET :8888$ep -> $code\"; done; echo; echo \"=== root body ===\"; curl -s -m 5 http://localhost:8888/ 2>/dev/null | head -c 500; echo; echo \"=== recent logs tail ===\"; docker logs <other-tool> --tail 8 2>&1 | tail -8",
    "source": "jev",
    "action": "allow",
    "p": 0.02,
@@ -1953,7 +1953,7 @@
    "ms": 278
   },
   {
-   "command": "echo \"=== npm registry reachable? ===\"; timeout 20 npm view @vectorize-io/hindsight-coding-agents version dist-tags 2>&1 | head -20; echo; echo \"=== npm view dsh plugin package? ===\"; timeout 15 npm view @vectorize-io/hindsight-coding-agents description 2>&1 | head -5",
+   "command": "echo \"=== npm registry reachable? ===\"; timeout 20 npm view @vectorize-io/<other-tool>-coding-agents version dist-tags 2>&1 | head -20; echo; echo \"=== npm view dsh plugin package? ===\"; timeout 15 npm view @vectorize-io/<other-tool>-coding-agents description 2>&1 | head -5",
    "source": "jev",
    "action": "allow",
    "p": 0.01,
@@ -1962,7 +1962,7 @@
    "ms": 232
   },
   {
-   "command": "echo \"=== fix npm cache & retest ===\"; mkdir -p /tmp/npm-cache 2>/dev/null; npm_config_cache=/tmp/npm-cache timeout 25 npm view @vectorize-io/hindsight-coding-agents version description 2>&1 | head -10; echo; echo \"=== npm registry config ===\"; npm config get registry 2>/dev/null; npm config get cache 2>/dev/null",
+   "command": "echo \"=== fix npm cache & retest ===\"; mkdir -p /tmp/npm-cache 2>/dev/null; npm_config_cache=/tmp/npm-cache timeout 25 npm view @vectorize-io/<other-tool>-coding-agents version description 2>&1 | head -10; echo; echo \"=== npm registry config ===\"; npm config get registry 2>/dev/null; npm config get cache 2>/dev/null",
    "source": "jev",
    "action": "allow",
    "p": 0.02,
@@ -1971,7 +1971,7 @@
    "ms": 268
   },
   {
-   "command": "echo \"=== dsh executable ===\"; ls -la ~/.local/bin/dsh 2>/dev/null; command -v dsh 2>/dev/null || echo \"(dsh not on PATH)\"; find ~/.dsh /usr/local/bin ~/.local/bin -maxdepth 2 -name \"dsh*\" 2>/dev/null | head -5; echo; echo \"=== root package scripts (dsh-related) ===\"; node -e \"const p=require('./package.json'); console.log(JSON.stringify(Object.fromEntries(Object.entries(p.scripts||{}).filter(([k])=>/dsh|web/.test(k))),null,1))\" 2>/dev/null; echo; echo \"=== probe hindsight dataplane endpoints ===\"; for ep in /api/v1/memory-banks /api/v1/banks /api/v1/health /api/v1/version; do echo \"--- $ep\"; curl -s -m 5 \"http://localhost:8888$ep\" 2>/dev/null | head -c 300; echo; done",
+   "command": "echo \"=== dsh executable ===\"; ls -la ~/.local/bin/dsh 2>/dev/null; command -v dsh 2>/dev/null || echo \"(dsh not on PATH)\"; find ~/.dsh /usr/local/bin ~/.local/bin -maxdepth 2 -name \"dsh*\" 2>/dev/null | head -5; echo; echo \"=== root package scripts (dsh-related) ===\"; node -e \"const p=require('./package.json'); console.log(JSON.stringify(Object.fromEntries(Object.entries(p.scripts||{}).filter(([k])=>/dsh|web/.test(k))),null,1))\" 2>/dev/null; echo; echo \"=== probe <other-tool> dataplane endpoints ===\"; for ep in /api/v1/memory-banks /api/v1/banks /api/v1/health /api/v1/version; do echo \"--- $ep\"; curl -s -m 5 \"http://localhost:8888$ep\" 2>/dev/null | head -c 300; echo; done",
    "source": "jev",
    "action": "allow",
    "p": 0.01,
@@ -1980,7 +1980,7 @@
    "ms": 221
   },
   {
-   "command": "echo \"=== hindsight OpenAPI paths ===\"; curl -s -m 10 http://localhost:8888/openapi.json 2>/dev/null | python3 -c \"import json,sys; d=json.load(sys.stdin); print('title:', d.get('info',{}).get('title')); print('version:', d.get('info',{}).get('version')); [print(m.upper(), p) for p,ms in sorted(d.get('paths',{}).items()) for m in ms if m in ('get','post','put','delete')]\" 2>/dev/null | head -60",
+   "command": "echo \"=== <other-tool> OpenAPI paths ===\"; curl -s -m 10 http://localhost:8888/openapi.json 2>/dev/null | python3 -c \"import json,sys; d=json.load(sys.stdin); print('title:', d.get('info',{}).get('title')); print('version:', d.get('info',{}).get('version')); [print(m.upper(), p) for p,ms in sorted(d.get('paths',{}).items()) for m in ms if m in ('get','post','put','delete')]\" 2>/dev/null | head -60",
    "source": "jev",
    "action": "allow",
    "p": 0.01,
@@ -1989,7 +1989,7 @@
    "ms": 282
   },
   {
-   "command": "echo \"=== versions ===\"; npm_config_cache=/tmp/npm-cache timeout 25 npm view @vectorize-io/hindsight-coding-agents versions --json 2>/dev/null | tail -15; echo; echo \"=== dist-tags ===\"; npm_config_cache=/tmp/npm-cache timeout 20 npm view @vectorize-io/hindsight-coding-agents dist-tags --json 2>/dev/null",
+   "command": "echo \"=== versions ===\"; npm_config_cache=/tmp/npm-cache timeout 25 npm view @vectorize-io/<other-tool>-coding-agents versions --json 2>/dev/null | tail -15; echo; echo \"=== dist-tags ===\"; npm_config_cache=/tmp/npm-cache timeout 20 npm view @vectorize-io/<other-tool>-coding-agents dist-tags --json 2>/dev/null",
    "source": "jev",
    "action": "allow",
    "p": 0.01,
@@ -2025,7 +2025,7 @@
    "ms": 282
   },
   {
-   "command": "cp ~/.dsh/cordis.patch.yml ~/.dsh/cordis.patch.yml.bak-hindsight-$(date +%Y%m%d-%H%M%S) && echo \"backup done: $(ls -t ~/.dsh/cordis.patch.yml.bak-* | head -1)\"; echo; export npm_config_cache=/tmp/npm-cache; timeout 180 npx -y @vectorize-io/hindsight-coding-agents install dsh --server self-hosted --api-url http://localhost:8888 2>&1 | tail -40",
+   "command": "cp ~/.dsh/cordis.patch.yml ~/.dsh/cordis.patch.yml.bak-<other-tool>-$(date +%Y%m%d-%H%M%S) && echo \"backup done: $(ls -t ~/.dsh/cordis.patch.yml.bak-* | head -1)\"; echo; export npm_config_cache=/tmp/npm-cache; timeout 180 npx -y @vectorize-io/<other-tool>-coding-agents install dsh --server self-hosted --api-url http://localhost:8888 2>&1 | tail -40",
    "source": "jev",
    "action": "allow",
    "p": 0.07,
@@ -2034,7 +2034,7 @@
    "ms": 283
   },
   {
-   "command": "set -e\nts=$(date +%Y%m%d-%H%M%S)\ncp ~/.dsh/cordis.patch.yml ~/.dsh/cordis.patch.yml.bak-hindsight-$ts\necho \"backup: ~/.dsh/cordis.patch.yml.bak-hindsight-$ts\"\necho\nexport npm_config_cache=/tmp/npm-cache\ntimeout 180 npx -y @vectorize-io/hindsight-coding-agents install dsh --server self-hosted --api-url http://localhost:8888 2>&1 | tail -50",
+   "command": "set -e\nts=$(date +%Y%m%d-%H%M%S)\ncp ~/.dsh/cordis.patch.yml ~/.dsh/cordis.patch.yml.bak-<other-tool>-$ts\necho \"backup: ~/.dsh/cordis.patch.yml.bak-<other-tool>-$ts\"\necho\nexport npm_config_cache=/tmp/npm-cache\ntimeout 180 npx -y @vectorize-io/<other-tool>-coding-agents install dsh --server self-hosted --api-url http://localhost:8888 2>&1 | tail -50",
    "source": "jev",
    "action": "allow",
    "p": 0.1,
@@ -2043,7 +2043,7 @@
    "ms": 285
   },
   {
-   "command": "echo \"=== ~/.dsh/cordis.patch.yml ===\"; cat ~/.dsh/cordis.patch.yml; echo; echo \"=== ~/.hindsight/coding-agent.json ===\"; cat ~/.hindsight/coding-agent.json 2>/dev/null; echo; echo \"=== ~/.hindsight/coding-agents ===\"; ls ~/.hindsight/coding-agents 2>/dev/null | head; echo; echo \"=== skill ===\"; ls ~/.agents/skills/hindsight-coding-agent 2>/dev/null && head -20 ~/.agents/skills/hindsight-coding-agent/SKILL.md 2>/dev/null",
+   "command": "echo \"=== ~/.dsh/cordis.patch.yml ===\"; cat ~/.dsh/cordis.patch.yml; echo; echo \"=== ~/.<other-tool>/coding-agent.json ===\"; cat ~/.<other-tool>/coding-agent.json 2>/dev/null; echo; echo \"=== ~/.<other-tool>/coding-agents ===\"; ls ~/.<other-tool>/coding-agents 2>/dev/null | head; echo; echo \"=== skill ===\"; ls ~/.agents/skills/<other-tool>-coding-agent 2>/dev/null && head -20 ~/.agents/skills/<other-tool>-coding-agent/SKILL.md 2>/dev/null",
    "source": "jev",
    "action": "allow",
    "p": 0.01,
@@ -2052,7 +2052,7 @@
    "ms": 434
   },
   {
-   "command": "echo \"=== plugin files ===\"; ls -la ~/.hindsight/coding-agents/dist/dsh.js ~/.hindsight/coding-agents/package.json 2>/dev/null; echo; echo \"=== package.json ===\"; node -e \"const p=require('<HOME>/.hindsight/coding-agents/package.json'); console.log('name:',p.name,'version:',p.version); console.log('bin:',JSON.stringify(p.bin))\" 2>&1 | head -5; echo; echo \"=== hindsight_* tools mentioned in skill ===\"; grep -oE \"hindsight_[a-z_]+\" ~/.agents/skills/hindsight-coding-agent/SKILL.md 2>/dev/null | sort -u | head -20; echo; echo \"=== rest of skill (tools section) ===\"; grep -nE \"hindsight_|## \" ~/.agents/skills/hindsight-coding-agent/SKILL.md 2>/dev/null | head -40",
+   "command": "echo \"=== plugin files ===\"; ls -la ~/.<other-tool>/coding-agents/dist/dsh.js ~/.<other-tool>/coding-agents/package.json 2>/dev/null; echo; echo \"=== package.json ===\"; node -e \"const p=require('<HOME>/.<other-tool>/coding-agents/package.json'); console.log('name:',p.name,'version:',p.version); console.log('bin:',JSON.stringify(p.bin))\" 2>&1 | head -5; echo; echo \"=== <other-tool>_* tools mentioned in skill ===\"; grep -oE \"<other-tool>_[a-z_]+\" ~/.agents/skills/<other-tool>-coding-agent/SKILL.md 2>/dev/null | sort -u | head -20; echo; echo \"=== rest of skill (tools section) ===\"; grep -nE \"<other-tool>_|## \" ~/.agents/skills/<other-tool>-coding-agent/SKILL.md 2>/dev/null | head -40",
    "source": "jev",
    "action": "allow",
    "p": 0.01,
@@ -2061,7 +2061,7 @@
    "ms": 327
   },
   {
-   "command": "echo \"=== listening sockets for 8888/9999 ===\"; ss -tlnp 2>/dev/null | grep -E \":8888|:9999\" || netstat -tlnp 2>/dev/null | grep -E \":8888|:9999\"; echo; echo \"=== docker port mapping ===\"; docker port hindsight 2>/dev/null; echo; echo \"=== quick external-interface probe (container eth0 vs host) ===\"; ip -4 addr show 2>/dev/null | grep -E \"inet \" | head -5",
+   "command": "echo \"=== listening sockets for 8888/9999 ===\"; ss -tlnp 2>/dev/null | grep -E \":8888|:9999\" || netstat -tlnp 2>/dev/null | grep -E \":8888|:9999\"; echo; echo \"=== docker port mapping ===\"; docker port <other-tool> 2>/dev/null; echo; echo \"=== quick external-interface probe (container eth0 vs host) ===\"; ip -4 addr show 2>/dev/null | grep -E \"inet \" | head -5",
    "source": "jev",
    "action": "allow",
    "p": 0.01,
@@ -2070,7 +2070,7 @@
    "ms": 294
   },
   {
-   "command": "echo \"=== openapi security schemes ===\"; curl -s -m 10 http://localhost:8888/openapi.json 2>/dev/null | python3 -c \"\nimport json,sys\nd=json.load(sys.stdin)\nprint('securitySchemes:', json.dumps(d.get('components',{}).get('securitySchemes',{}), indent=1)[:800])\nprint('global security:', json.dumps(d.get('security',{}))[:300])\n\" ; echo; echo \"=== env vars inside container mentioning auth/token ===\"; docker exec hindsight env 2>/dev/null | grep -iE \"token|auth|key\" | grep -v API_KEY | head -10; echo; echo \"=== any HINDSIGHT_API_TOKEN references in container code/docs ===\"; docker exec hindsight sh -c 'grep -rniE \"HINDSIGHT_API_(TOKEN|AUTH|API_KEY)\" /app 2>/dev/null | head -5' 2>/dev/null || echo \"(container grep not available)\"",
+   "command": "echo \"=== openapi security schemes ===\"; curl -s -m 10 http://localhost:8888/openapi.json 2>/dev/null | python3 -c \"\nimport json,sys\nd=json.load(sys.stdin)\nprint('securitySchemes:', json.dumps(d.get('components',{}).get('securitySchemes',{}), indent=1)[:800])\nprint('global security:', json.dumps(d.get('security',{}))[:300])\n\" ; echo; echo \"=== env vars inside container mentioning auth/token ===\"; docker exec <other-tool> env 2>/dev/null | grep -iE \"token|auth|key\" | grep -v API_KEY | head -10; echo; echo \"=== any <other-tool>_API_TOKEN references in container code/docs ===\"; docker exec <other-tool> sh -c 'grep -rniE \"<other-tool>_API_(TOKEN|AUTH|API_KEY)\" /app 2>/dev/null | head -5' 2>/dev/null || echo \"(container grep not available)\"",
    "source": "jev",
    "action": "allow",
    "p": 0.01,
@@ -2079,7 +2079,7 @@
    "ms": 302
   },
   {
-   "command": "echo \"=== find caddy config ===\"; docker inspect caddy --format '{{json .Mounts}}' 2>/dev/null | tr ',' '\\n' | grep -iE \"source|destination\" | head -10; echo; CMDIR=$(docker inspect caddy --format '{{range .Mounts}}{{.Source}} {{end}}' 2>/dev/null); echo \"caddy mounts: $CMDIR\"; for d in $CMDIR; do echo \"--- $d ---\"; grep -rniE \"hindsight|8888|9999\" \"$d\" 2>/dev/null | head -10; done; echo; echo \"=== host firewall? ===\"; which ufw iptables 2>/dev/null; sudo -n iptables -L INPUT -n 2>/dev/null | head -15 || echo \"(no sudo iptables access)\"",
+   "command": "echo \"=== find caddy config ===\"; docker inspect caddy --format '{{json .Mounts}}' 2>/dev/null | tr ',' '\\n' | grep -iE \"source|destination\" | head -10; echo; CMDIR=$(docker inspect caddy --format '{{range .Mounts}}{{.Source}} {{end}}' 2>/dev/null); echo \"caddy mounts: $CMDIR\"; for d in $CMDIR; do echo \"--- $d ---\"; grep -rniE \"<other-tool>|8888|9999\" \"$d\" 2>/dev/null | head -10; done; echo; echo \"=== host firewall? ===\"; which ufw iptables 2>/dev/null; sudo -n iptables -L INPUT -n 2>/dev/null | head -15 || echo \"(no sudo iptables access)\"",
    "source": "jev",
    "action": "allow",
    "p": 0.01,
@@ -2088,7 +2088,7 @@
    "ms": 526
   },
   {
-   "command": "echo \"=== find Api****sion in container ===\"; docker exec hindsight sh -c 'grep -rniE \"Api****sion|TENANT_EXTENSION|api_key\" /app/api 2>/dev/null | grep -viE \"\\.pyc|test\" | head -25' 2>/dev/null || echo \"(failed)\"; echo; echo \"=== config env var definitions ===\"; docker exec hindsight sh -c 'grep -rniE \"HINDSIGHT_API_|HINDSIGHT_CP_\" /app/api --include=\"*.py\" -l 2>/dev/null | head -10' 2>/dev/null",
+   "command": "echo \"=== find Api****sion in container ===\"; docker exec <other-tool> sh -c 'grep -rniE \"Api****sion|TENANT_EXTENSION|api_key\" /app/api 2>/dev/null | grep -viE \"\\.pyc|test\" | head -25' 2>/dev/null || echo \"(failed)\"; echo; echo \"=== config env var definitions ===\"; docker exec <other-tool> sh -c 'grep -rniE \"<other-tool>_API_|<other-tool>_CP_\" /app/api --include=\"*.py\" -l 2>/dev/null | head -10' 2>/dev/null",
    "source": "jev",
    "action": "allow",
    "p": 0.01,
@@ -2097,7 +2097,7 @@
    "ms": 305
   },
   {
-   "command": "echo \"=== Api****sion class ===\"; docker exec hindsight sh -c 'grep -rn \"class Api****sion\\|Api****sion\" /app --include=\"*.py\" 2>/dev/null | grep -v \"\\.pyc\" | head -10'; echo; echo \"=== tenant extension config code ===\"; docker exec hindsight sh -c 'find /app/api/hindsight_api -path \"*tenant*\" -name \"*.py\" 2>/dev/null | head; find /app -name \"*.py\" -path \"*extensions*\" 2>/dev/null | grep -v venv | head' 2>/dev/null; echo; echo \"=== README auth section ===\"; docker exec hindsight sh -c 'grep -niE \"tenant|api key|authorization|bearer|token\" /app/api/README.md 2>/dev/null | head -20' 2>/dev/null",
+   "command": "echo \"=== Api****sion class ===\"; docker exec <other-tool> sh -c 'grep -rn \"class Api****sion\\|Api****sion\" /app --include=\"*.py\" 2>/dev/null | grep -v \"\\.pyc\" | head -10'; echo; echo \"=== tenant extension config code ===\"; docker exec <other-tool> sh -c 'find /app/api/<other-tool>_api -path \"*tenant*\" -name \"*.py\" 2>/dev/null | head; find /app -name \"*.py\" -path \"*extensions*\" 2>/dev/null | grep -v venv | head' 2>/dev/null; echo; echo \"=== README auth section ===\"; docker exec <other-tool> sh -c 'grep -niE \"tenant|api key|authorization|bearer|token\" /app/api/README.md 2>/dev/null | head -20' 2>/dev/null",
    "source": "jev",
    "action": "allow",
    "p": 0.02,
@@ -2106,7 +2106,7 @@
    "ms": 236
   },
   {
-   "command": "echo \"=== tenant.py ===\"; docker exec hindsight sh -c 'cat /app/api/hindsight_api/extensions/builtin/tenant.py' 2>/dev/null; echo; echo \"=== CP token env vars ===\"; docker exec hindsight sh -c 'grep -rniE \"HINDSIGHT_CP_|DATAPLANE_API_TOKEN|CP_DATAPLANE\" /app/api/hindsight_api /app/cp 2>/dev/null --include=\"*.py\" --include=\"*.ts\" --include=\"*.js\" | grep -viE \"\\.map|node_modules\" | head -15' 2>/dev/null",
+   "command": "echo \"=== tenant.py ===\"; docker exec <other-tool> sh -c 'cat /app/api/<other-tool>_api/extensions/builtin/tenant.py' 2>/dev/null; echo; echo \"=== CP token env vars ===\"; docker exec <other-tool> sh -c 'grep -rniE \"<other-tool>_CP_|DATAPLANE_API_TOKEN|CP_DATAPLANE\" /app/api/<other-tool>_api /app/cp 2>/dev/null --include=\"*.py\" --include=\"*.ts\" --include=\"*.js\" | grep -viE \"\\.map|node_modules\" | head -15' 2>/dev/null",
    "source": "jev",
    "action": "allow",
    "p": 0.01,
@@ -2115,7 +2115,7 @@
    "ms": 259
   },
   {
-   "command": "echo \"=== how api_key is extracted (RequestContext/deps) ===\"; docker exec hindsight sh -c 'grep -rniE \"api_key|X-API-Key|x-api-key|authorization|bearer\" /app/api/hindsight_api/api/deps.py /app/api/hindsight_api/api/*.py /app/api/hindsight_api/models*.py 2>/dev/null | grep -viE \"llm|anthropic|openai\" | head -25' 2>/dev/null; echo; echo \"=== find where RequestContext built ===\"; docker exec hindsight sh -c 'grep -rniE \"RequestContext\\(|api_key=\" /app/api/hindsight_api --include=\"*.py\" 2>/dev/null | grep -v \"\\.pyc\" | head -15' 2>/dev/null",
+   "command": "echo \"=== how api_key is extracted (RequestContext/deps) ===\"; docker exec <other-tool> sh -c 'grep -rniE \"api_key|X-API-Key|x-api-key|authorization|bearer\" /app/api/<other-tool>_api/api/deps.py /app/api/<other-tool>_api/api/*.py /app/api/<other-tool>_api/models*.py 2>/dev/null | grep -viE \"llm|<other-tool>|<other-tool>\" | head -25' 2>/dev/null; echo; echo \"=== find where RequestContext built ===\"; docker exec <other-tool> sh -c 'grep -rniE \"RequestContext\\(|api_key=\" /app/api/<other-tool>_api --include=\"*.py\" 2>/dev/null | grep -v \"\\.pyc\" | head -15' 2>/dev/null",
    "source": "jev",
    "action": "allow",
    "p": 0.01,
@@ -2124,7 +2124,7 @@
    "ms": 247
   },
   {
-   "command": "echo \"=== CP auth / datapalane token search ===\"; docker exec hindsight sh -c 'grep -rniE \"DATAPLANE_API_TOKEN|CP_API_TOKEN|datapalane_token|bearer\" /app --include=\"*.py\" --include=\"*.ts\" --include=\"*.js\" --include=\"*.md\" 2>/dev/null | grep -viE \"node_modules|\\.map|\\.min\\.|cohere|openai|anthropic|llm\" | head -20' 2>/dev/null; echo; echo \"=== .env.example inside container? ===\"; docker exec hindsight sh -c 'find /app -maxdepth 2 -name \".env*\" 2>/dev/null; cat /app/.env.example 2>/dev/null | grep -niE \"TENANT|TOKEN|AUTH|BEARER\" | head -15' 2>/dev/null",
+   "command": "echo \"=== CP auth / datapalane token search ===\"; docker exec <other-tool> sh -c 'grep -rniE \"DATAPLANE_API_TOKEN|CP_API_TOKEN|datapalane_token|bearer\" /app --include=\"*.py\" --include=\"*.ts\" --include=\"*.js\" --include=\"*.md\" 2>/dev/null | grep -viE \"node_modules|\\.map|\\.min\\.|<other-tool>|<other-tool>|<other-tool>|llm\" | head -20' 2>/dev/null; echo; echo \"=== .env.example inside container? ===\"; docker exec <other-tool> sh -c 'find /app -maxdepth 2 -name \".env*\" 2>/dev/null; cat /app/.env.example 2>/dev/null | grep -niE \"TENANT|TOKEN|AUTH|BEARER\" | head -15' 2>/dev/null",
    "source": "jev",
    "action": "allow",
    "p": 0.02,
@@ -2133,7 +2133,7 @@
    "ms": 242
   },
   {
-   "command": "echo \"=== CP datapalane token var search ===\"; docker exec hindsight sh -c 'grep -rniE \"DATAPLANE_API_TOKEN|CP_DATAPLANE|DATAPLANE_TOKEN|dataplane.*token|token.*dataplane\" /app --include=\"*.ts\" --include=\"*.js\" --include=\"*.py\" --include=\"*.md\" 2>/dev/null | grep -viE \"node_modules|\\.map|cohere|openai|anthropic|botocore\" | head -20' 2>/dev/null; echo; echo \"=== CP env names in Next.js build ===\"; docker exec hindsight sh -c 'ls /app 2>/dev/null | head -30; grep -rniE \"NEXT_PUBLIC|DATAPLANE_API\" /app/cp 2>/dev/null --include=\"*.js\" --include=\"*.ts\" | grep -v \"\\.map\" | head -15' 2>/dev/null",
+   "command": "echo \"=== CP datapalane token var search ===\"; docker exec <other-tool> sh -c 'grep -rniE \"DATAPLANE_API_TOKEN|CP_DATAPLANE|DATAPLANE_TOKEN|dataplane.*token|token.*dataplane\" /app --include=\"*.ts\" --include=\"*.js\" --include=\"*.py\" --include=\"*.md\" 2>/dev/null | grep -viE \"node_modules|\\.map|<other-tool>|<other-tool>|<other-tool>|botocore\" | head -20' 2>/dev/null; echo; echo \"=== CP env names in Next.js build ===\"; docker exec <other-tool> sh -c 'ls /app 2>/dev/null | head -30; grep -rniE \"NEXT_PUBLIC|DATAPLANE_API\" /app/cp 2>/dev/null --include=\"*.js\" --include=\"*.ts\" | grep -v \"\\.map\" | head -15' 2>/dev/null",
    "source": "jev",
    "action": "allow",
    "p": 0.02,
@@ -2142,7 +2142,7 @@
    "ms": 255
   },
   {
-   "command": "set -e\nKEY=$(openssl rand -hex 32)\necho \"generated HINDSIGHT API key (hex-32)\"\necho \"--- backup compose ---\"\ncp <HOME>/hindsight/docker-compose.yml <HOME>/hindsight/docker-compose.yml.bak-hindsight-auth-$(date +%Y%m%d-%H%M%S)\necho \"backup done\"\necho \"--- patch compose ---\"\nKEY=\"$KEY\" python3 - <<'PYEOF'\nimport os\np='<HOME>/hindsight/docker-compose.yml'\nkey=os.environ['KEY']\ns=open(p).read()\nlines=s.split('\\n')\nadd=[\n  '      - HINDSIGHT_API_TENANT_EXTENSION=hindsight_api.extensions.builtin.tenant:Api****sion',\n  f'      - HINDSIGHT_API_TENANT_API_KEY={key}',\n  f'      - HINDSIGHT_CP_DATAPLANE_API_KEY={key}',\n]\nidx=max(i for i,l in enumerate(lines) if l.strip().startswith('- HINDSIGHT_API_'))\nlines[idx+1:idx+1]=add\nopen(p,'w').write('\\n'.join(lines))\nprint('patched, new env block:')\nfor l in lines:\n    if 'TENANT' in l or 'DATAPLANE_API_KEY' in l:\n        print(' ', l.strip()[:60] + ('...' if len(l.strip())>60 else ''))\nPYEOF\necho \"--- recreate container ---\"\ndocker compose -f <HOME>/hindsight/docker-compose.yml up -d --force-recreate 2>&1 | tail -5",
+   "command": "set -e\nKEY=$(openssl rand -hex 32)\necho \"generated <other-tool> API key (hex-32)\"\necho \"--- backup compose ---\"\ncp <HOME>/<other-tool>/docker-compose.yml <HOME>/<other-tool>/docker-compose.yml.bak-<other-tool>-auth-$(date +%Y%m%d-%H%M%S)\necho \"backup done\"\necho \"--- patch compose ---\"\nKEY=\"$KEY\" python3 - <<'PYEOF'\nimport os\np='<HOME>/<other-tool>/docker-compose.yml'\nkey=os.environ['KEY']\ns=open(p).read()\nlines=s.split('\\n')\nadd=[\n  '      - <other-tool>_API_TENANT_EXTENSION=<other-tool>_api.extensions.builtin.tenant:Api****sion',\n  f'      - <other-tool>_API_TENANT_API_KEY={key}',\n  f'      - <other-tool>_CP_DATAPLANE_API_KEY={key}',\n]\nidx=max(i for i,l in enumerate(lines) if l.strip().startswith('- <other-tool>_API_'))\nlines[idx+1:idx+1]=add\nopen(p,'w').write('\\n'.join(lines))\nprint('patched, new env block:')\nfor l in lines:\n    if 'TENANT' in l or 'DATAPLANE_API_KEY' in l:\n        print(' ', l.strip()[:60] + ('...' if len(l.strip())>60 else ''))\nPYEOF\necho \"--- recreate container ---\"\ndocker compose -f <HOME>/<other-tool>/docker-compose.yml up -d --force-recreate 2>&1 | tail -5",
    "source": "jev",
    "action": "allow",
    "p": 0.12,
@@ -2151,7 +2151,7 @@
    "ms": 356
   },
   {
-   "command": "set -e\nKEY=$(grep -oP 'HINDSIGHT_API_TENANT_API_KEY=\\K[0-9a-f]+' <HOME>/hindsight/docker-compose.yml | head -1)\necho \"key length: ${#KEY}\"\necho \"--- patch ~/.hindsight/coding-agent.json ---\"\npython3 - \"$KEY\" <<'PYEOF'\nimport json, os, sys\nkey=sys.argv[1]\np=os.path.expanduser('~/.hindsight/coding-agent.json')\nd=json.load(open(p))\nd['apiToken']=key\njson.dump(d, open(p,'w'), indent=2)\nprint(open(p).read())\nPYEOF\necho \"--- wait for API ready ---\"\nfor i in $(seq 1 24); do\n  code=$(curl -s -o /dev/null -w \"%{http_code}\" -m 3 -H \"Authorization: Bearer $KEY\" http://localhost:8888/health 2>/dev/null || true)\n  if [ \"$code\" = \"200\" ]; then echo \"API ready after ${i}0s\"; break; fi\n  sleep 10\ndone\necho \"--- auth verification ---\"\necho -n \"no key GET /health          -> \"; curl -s -o /dev/null -w \"%{http_code}\\n\" -m 5 http://localhost:8888/health 2>/dev/null || echo FAIL\necho -n \"wrong key GET /health       -> \"; curl -s -o /dev/null -w \"%{http_code}\\n\" -m 5 -H \"Authorization: Bearer wrong-key\" http://localhost:8888/health 2>/dev/null || echo FAIL\necho -n \"right key GET /health       -> \"; curl -s -o /dev/null -w \"%{http_code}\\n\" -m 5 -H \"Authorization: Bearer $KEY\" http://localhost:8888/health 2>/dev/null || echo FAIL\necho -n \"right key direct GET /health-> \"; curl -s -o /dev/null -w \"%{http_code}\\n\" -m 5 -H \"Authorization: $KEY\" http://localhost:8888/health 2>/dev/null || echo FAIL\necho -n \"no key GET /v1/default/banks -> \"; curl -s -o /dev/null -w \"%{http_code}\\n\" -m 5 http://localhost:8888/v1/default/banks 2>/dev/null || echo FAIL\necho -n \"right key GET /v1/default/banks -> \"; curl -s -o /dev/null -w \"%{http_code}\\n\" -m 5 -H \"Authorization: Bearer $KEY\" http://localhost:8888/v1/default/banks 2>/dev/null || echo FAIL",
+   "command": "set -e\nKEY=$(grep -oP '<other-tool>_API_TENANT_API_KEY=\\K[0-9a-f]+' <HOME>/<other-tool>/docker-compose.yml | head -1)\necho \"key length: ${#KEY}\"\necho \"--- patch ~/.<other-tool>/coding-agent.json ---\"\npython3 - \"$KEY\" <<'PYEOF'\nimport json, os, sys\nkey=sys.argv[1]\np=os.path.expanduser('~/.<other-tool>/coding-agent.json')\nd=json.load(open(p))\nd['apiToken']=key\njson.dump(d, open(p,'w'), indent=2)\nprint(open(p).read())\nPYEOF\necho \"--- wait for API ready ---\"\nfor i in $(seq 1 24); do\n  code=$(curl -s -o /dev/null -w \"%{http_code}\" -m 3 -H \"Authorization: Bearer $KEY\" http://localhost:8888/health 2>/dev/null || true)\n  if [ \"$code\" = \"200\" ]; then echo \"API ready after ${i}0s\"; break; fi\n  sleep 10\ndone\necho \"--- auth verification ---\"\necho -n \"no key GET /health          -> \"; curl -s -o /dev/null -w \"%{http_code}\\n\" -m 5 http://localhost:8888/health 2>/dev/null || echo FAIL\necho -n \"wrong key GET /health       -> \"; curl -s -o /dev/null -w \"%{http_code}\\n\" -m 5 -H \"Authorization: Bearer wrong-key\" http://localhost:8888/health 2>/dev/null || echo FAIL\necho -n \"right key GET /health       -> \"; curl -s -o /dev/null -w \"%{http_code}\\n\" -m 5 -H \"Authorization: Bearer $KEY\" http://localhost:8888/health 2>/dev/null || echo FAIL\necho -n \"right key direct GET /health-> \"; curl -s -o /dev/null -w \"%{http_code}\\n\" -m 5 -H \"Authorization: $KEY\" http://localhost:8888/health 2>/dev/null || echo FAIL\necho -n \"no key GET /v1/default/banks -> \"; curl -s -o /dev/null -w \"%{http_code}\\n\" -m 5 http://localhost:8888/v1/default/banks 2>/dev/null || echo FAIL\necho -n \"right key GET /v1/default/banks -> \"; curl -s -o /dev/null -w \"%{http_code}\\n\" -m 5 -H \"Authorization: Bearer $KEY\" http://localhost:8888/v1/default/banks 2>/dev/null || echo FAIL",
    "source": "jev",
    "action": "allow",
    "p": 0.39,
@@ -2160,7 +2160,7 @@
    "ms": 271
   },
   {
-   "command": "echo \"=== CP health (9999) ===\"; curl -s -m 8 http://localhost:9999/api/health 2>/dev/null | head -c 500; echo; echo; echo \"=== CP recent logs ===\"; docker logs hindsight 2>&1 | grep -iE \"control plane|api key|dataplane\" | tail -6",
+   "command": "echo \"=== CP health (9999) ===\"; curl -s -m 8 http://localhost:9999/api/health 2>/dev/null | head -c 500; echo; echo; echo \"=== CP recent logs ===\"; docker logs <other-tool> 2>&1 | grep -iE \"control plane|api key|dataplane\" | tail -6",
    "source": "jev",
    "action": "allow",
    "p": 0.01,
@@ -2169,7 +2169,7 @@
    "ms": 294
   },
   {
-   "command": "echo \"=== how dsh.js sends apiToken ===\"; grep -oE \"(Authorization|Bearer|apiToken|api_token|x-api-key)[^,;]{0,80}\" ~/.hindsight/coding-agents/dist/dsh.js 2>/dev/null | sort -u | head -20; echo; echo \"=== config read timing ===\"; grep -oE \"(readFileSync|readFile\\(|coding-agent\\.json|apiToken)[^,;]{0,100}\" ~/.hindsight/coding-agents/dist/dsh.js 2>/dev/null | sort -u | head -15",
+   "command": "echo \"=== how dsh.js sends apiToken ===\"; grep -oE \"(Authorization|Bearer|apiToken|api_token|x-api-key)[^,;]{0,80}\" ~/.<other-tool>/coding-agents/dist/dsh.js 2>/dev/null | sort -u | head -20; echo; echo \"=== config read timing ===\"; grep -oE \"(readFileSync|readFile\\(|coding-agent\\.json|apiToken)[^,;]{0,100}\" ~/.<other-tool>/coding-agents/dist/dsh.js 2>/dev/null | sort -u | head -15",
    "source": "jev",
    "action": "allow",
    "p": 0.01,
@@ -2178,7 +2178,7 @@
    "ms": 275
   },
   {
-   "command": "echo \"=== config read context in dsh.js ===\"; grep -oE \".{120}coding-agent\\.json.{120}\" ~/.hindsight/coding-agents/dist/dsh.js 2>/dev/null | head -3; echo; echo \"=== where apiToken is set (constructor vs per-request) ===\"; grep -oE \".{80}this\\.apiToken.{80}\" ~/.hindsight/coding-agents/dist/dsh.js 2>/dev/null | head -5; echo; echo \"=== session start time vs plugin install time ===\"; stat -c '%n %y' ~/.hindsight/coding-agents/dist/dsh.js ~/.dsh/cordis.patch.yml 2>/dev/null; ls -la --time-style=full-iso ~/.dsh/sessions/ 2>/dev/null | head -5",
+   "command": "echo \"=== config read context in dsh.js ===\"; grep -oE \".{120}coding-agent\\.json.{120}\" ~/.<other-tool>/coding-agents/dist/dsh.js 2>/dev/null | head -3; echo; echo \"=== where apiToken is set (constructor vs per-request) ===\"; grep -oE \".{80}this\\.apiToken.{80}\" ~/.<other-tool>/coding-agents/dist/dsh.js 2>/dev/null | head -5; echo; echo \"=== session start time vs plugin install time ===\"; stat -c '%n %y' ~/.<other-tool>/coding-agents/dist/dsh.js ~/.dsh/cordis.patch.yml 2>/dev/null; ls -la --time-style=full-iso ~/.dsh/sessions/ 2>/dev/null | head -5",
    "source": "jev",
    "action": "allow",
    "p": 0.01,
@@ -2187,7 +2187,7 @@
    "ms": 232
   },
   {
-   "command": "echo \"=== /mnt/g mount ===\"; ls /mnt/ 2>/dev/null; echo; ls -la \"<DRIVE_g>/Users/Administrator/Desktop/\" 2>/dev/null | head -10 || echo \"(G drive desktop not accessible)\"; echo; echo \"=== current compose env block ===\"; grep -nE \"HINDSIGHT|environment|ports\" <HOME>/hindsight/docker-compose.yml | head -30",
+   "command": "echo \"=== /mnt/g mount ===\"; ls /mnt/ 2>/dev/null; echo; ls -la \"<DRIVE_g>/Users/Administrator/Desktop/\" 2>/dev/null | head -10 || echo \"(G drive desktop not accessible)\"; echo; echo \"=== current compose env block ===\"; grep -nE \"<other-tool>|environment|ports\" <HOME>/<other-tool>/docker-compose.yml | head -30",
    "source": "jev",
    "action": "allow",
    "p": 0.01,
@@ -2196,7 +2196,7 @@
    "ms": 320
   },
   {
-   "command": "set -e\ncd <HOME>/hindsight\nts=$(date +%Y%m%d-%H%M%S)\ncp docker-compose.yml docker-compose.yml.bak-envref-$ts\nKEY=$(grep -oP 'HINDSIGHT_API_TENANT_API_KEY=\\K[0-9a-f]+' docker-compose.yml.bak-envref-$ts | head -1)\necho \"extracted key length: ${#KEY}\"\n# patch compose to env references\nsed -i \"s|^\\( *- HINDSIGHT_API_TENANT_API_KEY=\\).*|\\1\\${HINDSIGHT_TENANT_KEY}|\" docker-compose.yml\nsed -i \"s|^\\( *- HINDSIGHT_CP_DATAPLANE_API_KEY=\\).*|\\1\\${HINDSIGHT_TENANT_KEY}|\" docker-compose.yml\necho \"--- compose env lines after patch ---\"\ngrep -nE \"TENANT|DATAPLANE_API_KEY\" docker-compose.yml\n# write .env (chmod 600)\nprintf 'HINDSIGHT_TENANT_KEY=%s\\n' \"$KEY\" > .env\nchmod 600 .env\necho \"--- .env (masked) ---\"; sed 's/=.*/=<redacted>/' .env\n# recreate container to apply new env\ndocker compose -f <HOME>/hindsight/docker-compose.yml up -d 2>&1 | tail -6",
+   "command": "set -e\ncd <HOME>/<other-tool>\nts=$(date +%Y%m%d-%H%M%S)\ncp docker-compose.yml docker-compose.yml.bak-envref-$ts\nKEY=$(grep -oP '<other-tool>_API_TENANT_API_KEY=\\K[0-9a-f]+' docker-compose.yml.bak-envref-$ts | head -1)\necho \"extracted key length: ${#KEY}\"\n# patch compose to env references\nsed -i \"s|^\\( *- <other-tool>_API_TENANT_API_KEY=\\).*|\\1\\${<other-tool>_TENANT_KEY}|\" docker-compose.yml\nsed -i \"s|^\\( *- <other-tool>_CP_DATAPLANE_API_KEY=\\).*|\\1\\${<other-tool>_TENANT_KEY}|\" docker-compose.yml\necho \"--- compose env lines after patch ---\"\ngrep -nE \"TENANT|DATAPLANE_API_KEY\" docker-compose.yml\n# write .env (chmod 600)\nprintf '<other-tool>_TENANT_KEY=%s\\n' \"$KEY\" > .env\nchmod 600 .env\necho \"--- .env (masked) ---\"; sed 's/=.*/=<redacted>/' .env\n# recreate container to apply new env\ndocker compose -f <HOME>/<other-tool>/docker-compose.yml up -d 2>&1 | tail -6",
    "source": "jev",
    "action": "allow",
    "p": 0.17,
@@ -2205,7 +2205,7 @@
    "ms": 238
   },
   {
-   "command": "echo \"=== container env (masked) ===\"; docker inspect hindsight --format '{{range .Config.Env}}{{println .}}{{end}}' 2>/dev/null | grep -E \"TENANT|DATAPLANE_API_KEY\" | sed 's/=.*/=<redacted>/'; echo; echo \"=== container started time ===\"; docker inspect hindsight --format '{{.State.StartedAt}}' 2>/dev/null; echo; echo \"=== auth verify ===\"; KEY=$(grep -oP 'HINDSIGHT_TENANT_KEY=\\K.*' <HOME>/hindsight/.env); echo -n \"no key /v1/default/banks -> \"; curl -s -o /dev/null -w \"%{http_code}\\n\" -m 5 http://localhost:8888/v1/default/banks; echo -n \"with key -> \"; curl -s -o /dev/null -w \"%{http_code}\\n\" -m 5 -H \"Authorization: Bearer $KEY\" http://localhost:8888/v1/default/banks",
+   "command": "echo \"=== container env (masked) ===\"; docker inspect <other-tool> --format '{{range .Config.Env}}{{println .}}{{end}}' 2>/dev/null | grep -E \"TENANT|DATAPLANE_API_KEY\" | sed 's/=.*/=<redacted>/'; echo; echo \"=== container started time ===\"; docker inspect <other-tool> --format '{{.State.StartedAt}}' 2>/dev/null; echo; echo \"=== auth verify ===\"; KEY=$(grep -oP '<other-tool>_TENANT_KEY=\\K.*' <HOME>/<other-tool>/.env); echo -n \"no key /v1/default/banks -> \"; curl -s -o /dev/null -w \"%{http_code}\\n\" -m 5 http://localhost:8888/v1/default/banks; echo -n \"with key -> \"; curl -s -o /dev/null -w \"%{http_code}\\n\" -m 5 -H \"Authorization: Bearer $KEY\" http://localhost:8888/v1/default/banks",
    "source": "jev",
    "action": "allow",
    "p": 0.02,
@@ -2214,7 +2214,7 @@
    "ms": 232
   },
   {
-   "command": "set -e\nKEY=$(grep -oP 'HINDSIGHT_TENANT_KEY=\\K.*' <HOME>/hindsight/.env)\nDESKTOP=\"<DRIVE_g>/Users/Administrator/Desktop\"\necho \"=== 1. write key info to host desktop ===\"\ncat > \"$DESKTOP/Hindsight_API_Key.txt\" <<EOF\n====================================================\n  Hindsight API Key（Hindsight 记忆服务密钥）\n====================================================\n生成时间: $(date '+%Y-%m-%d %H:%M:%S')\n\n【API Key】\n$KEY\n\n【访问地址】\n- Hindsight API    : http://localhost:8888\n- Dashboard (WebUI): http://localhost:9999\n  （Windows 下通过 WSL2 localhost 转发访问，localhost 即可）\n\n【认证方式】\n所有 API 请求必须带请求头:\n    Authorization: Bearer $KEY\n示例:\n    curl -H \"Authorization: Bearer $KEY\" http://localhost:8888/v1/default/banks\n\n【说明】\n- 此密钥控制 Hindsight 记忆库的读写权限，等同于记忆库的访问凭证。\n- 仅限本机可信工具使用，请勿外泄或提交到代码仓库。\n- 密钥存储位置（WSL）: <HOME>/hindsight/.env\n====================================================\nEOF\necho \"written: $DESKTOP/Hindsight_API_Key.txt\"; ls -la \"$DESKTOP/Hindsight_API_Key.txt\" | awk '{print $5, $9}'\necho\necho \"=== 2. retain host-desktop path into Hindsight memory ===\"\nBANK=\"coding-agent%3A%3Adeepseek-harness\"\ncurl -s -m 60 -X POST \"http://localhost:8888/v1/default/banks/$BANK/memories\" \\\n  -H \"Content-Type: application/json\" \\\n  -H \"Authorization: Bearer $KEY\" \\\n  -d '{\"items\":[{\"content\":\"环境事实：宿主系统（Windows 11）的桌面路径是 G:\\\\Users\\\\Administrator\\\\Desktop\\\\，在 WSL 中对应 <DRIVE_g>/Users/Administrator/Desktop/。之后需要访问宿主桌面时使用这个路径。Hindsight 的 API key 存放在 WSL 的 <HOME>/hindsight/.env（变量 HINDSIGHT_TENANT_KEY）。\"}]}' | head -c 400; echo",
+   "command": "set -e\nKEY=$(grep -oP '<other-tool>_TENANT_KEY=\\K.*' <HOME>/<other-tool>/.env)\nDESKTOP=\"<DRIVE_g>/Users/Administrator/Desktop\"\necho \"=== 1. write key info to host desktop ===\"\ncat > \"$DESKTOP/<other-tool>_API_Key.txt\" <<EOF\n====================================================\n  <other-tool> API Key（<other-tool> 记忆服务密钥）\n====================================================\n生成时间: $(date '+%Y-%m-%d %H:%M:%S')\n\n【API Key】\n$KEY\n\n【访问地址】\n- <other-tool> API    : http://localhost:8888\n- Dashboard (WebUI): http://localhost:9999\n  （Windows 下通过 WSL2 localhost 转发访问，localhost 即可）\n\n【认证方式】\n所有 API 请求必须带请求头:\n    Authorization: Bearer $KEY\n示例:\n    curl -H \"Authorization: Bearer $KEY\" http://localhost:8888/v1/default/banks\n\n【说明】\n- 此密钥控制 <other-tool> 记忆库的读写权限，等同于记忆库的访问凭证。\n- 仅限本机可信工具使用，请勿外泄或提交到代码仓库。\n- 密钥存储位置（WSL）: <HOME>/<other-tool>/.env\n====================================================\nEOF\necho \"written: $DESKTOP/<other-tool>_API_Key.txt\"; ls -la \"$DESKTOP/<other-tool>_API_Key.txt\" | awk '{print $5, $9}'\necho\necho \"=== 2. retain host-desktop path into <other-tool> memory ===\"\nBANK=\"coding-agent%3A%3Adeepseek-harness\"\ncurl -s -m 60 -X POST \"http://localhost:8888/v1/default/banks/$BANK/memories\" \\\n  -H \"Content-Type: application/json\" \\\n  -H \"Authorization: Bearer $KEY\" \\\n  -d '{\"items\":[{\"content\":\"环境事实：宿主系统（Windows 11）的桌面路径是 G:\\\\Users\\\\Administrator\\\\Desktop\\\\，在 WSL 中对应 <DRIVE_g>/Users/Administrator/Desktop/。之后需要访问宿主桌面时使用这个路径。<other-tool> 的 API key 存放在 WSL 的 <HOME>/<other-tool>/.env（变量 <other-tool>_TENANT_KEY）。\"}]}' | head -c 400; echo",
    "source": "jev",
    "action": "allow",
    "p": 0.21,
@@ -2223,7 +2223,7 @@
    "ms": 277
   },
   {
-   "command": "echo \"=== current .env ===\"; sed 's/=.*/=<redacted>/' <HOME>/hindsight/.env; echo; echo \"=== compose env lines ===\"; grep -nE \"HINDSIGHT_API_LLM|TENANT|DATAPLANE\" <HOME>/hindsight/docker-compose.yml; echo; echo \"=== container LLM env (masked) ===\"; docker inspect hindsight --format '{{range .Config.Env}}{{println .}}{{end}}' 2>/dev/null | grep -E \"LLM_API_KEY|LLM_BASE_URL|LLM_MODEL\" | sed 's/\\(LLM_API_KEY=\\).*/\\1<redacted>/'",
+   "command": "echo \"=== current .env ===\"; sed 's/=.*/=<redacted>/' <HOME>/<other-tool>/.env; echo; echo \"=== compose env lines ===\"; grep -nE \"<other-tool>_API_LLM|TENANT|DATAPLANE\" <HOME>/<other-tool>/docker-compose.yml; echo; echo \"=== container LLM env (masked) ===\"; docker inspect <other-tool> --format '{{range .Config.Env}}{{println .}}{{end}}' 2>/dev/null | grep -E \"LLM_API_KEY|LLM_BASE_URL|LLM_MODEL\" | sed 's/\\(LLM_API_KEY=\\).*/\\1<redacted>/'",
    "source": "jev",
    "action": "allow",
    "p": 0.01,
@@ -2232,7 +2232,7 @@
    "ms": 296
   },
   {
-   "command": "set -e\ncd <HOME>/hindsight\nts=$(date +%Y%m%d-%H%M%S)\ncp docker-compose.yml docker-compose.yml.bak-agnes-$ts\n# extract agnes key from compose\nAGNES=$(grep -oP 'HINDSIGHT_API_LLM_API_KEY=\\K[^ ]+' docker-compose.yml | head -1)\necho \"agnes key length: ${#AGNES}\"\n# add to .env if not present\ngrep -q '^AGNES_API_KEY=' .env || printf 'AGNES_API_KEY=%s\\n' \"$AGNES\" >> .env\nchmod 600 .env\n# patch compose to env reference\nsed -i \"s|^\\( *- HINDSIGHT_API_LLM_API_KEY=\\).*|\\1\\${AGNES_API_KEY}|\" docker-compose.yml\necho \"--- compose LLM env ---\"; grep -nE \"LLM_API_KEY|TENANT\" docker-compose.yml\necho \"--- .env vars (masked) ---\"; sed 's/=.*/=<redacted>/' .env\n# recreate\ndocker compose -f docker-compose.yml up -d 2>&1 | tail -4\necho \"--- wait & check LLM connection ---\"\nfor i in $(seq 1 24); do\n  if docker logs hindsight 2>&1 | grep -q \"Connection verified\"; then echo \"LLM connection verified after ~${i}0s\"; break; fi\n  sleep 10\ndone\ndocker logs hindsight 2>&1 | grep -E \"Connection verified|Using API key|No API key\" | tail -4",
+   "command": "set -e\ncd <HOME>/<other-tool>\nts=$(date +%Y%m%d-%H%M%S)\ncp docker-compose.yml docker-compose.yml.bak-agnes-$ts\n# extract agnes key from compose\nAGNES=$(grep -oP '<other-tool>_API_LLM_API_KEY=\\K[^ ]+' docker-compose.yml | head -1)\necho \"agnes key length: ${#AGNES}\"\n# add to .env if not present\ngrep -q '^AGNES_API_KEY=' .env || printf 'AGNES_API_KEY=%s\\n' \"$AGNES\" >> .env\nchmod 600 .env\n# patch compose to env reference\nsed -i \"s|^\\( *- <other-tool>_API_LLM_API_KEY=\\).*|\\1\\${AGNES_API_KEY}|\" docker-compose.yml\necho \"--- compose LLM env ---\"; grep -nE \"LLM_API_KEY|TENANT\" docker-compose.yml\necho \"--- .env vars (masked) ---\"; sed 's/=.*/=<redacted>/' .env\n# recreate\ndocker compose -f docker-compose.yml up -d 2>&1 | tail -4\necho \"--- wait & check LLM connection ---\"\nfor i in $(seq 1 24); do\n  if docker logs <other-tool> 2>&1 | grep -q \"Connection verified\"; then echo \"LLM connection verified after ~${i}0s\"; break; fi\n  sleep 10\ndone\ndocker logs <other-tool> 2>&1 | grep -E \"Connection verified|Using API key|No API key\" | tail -4",
    "source": "jev",
    "action": "allow",
    "p": 0.21,
@@ -2241,7 +2241,7 @@
    "ms": 246
   },
   {
-   "command": "echo \"=== NOW: $(date '+%Y-%m-%d %H:%M:%S %Z (%z)') ===\"; echo\necho \"=== container identity ===\"; docker ps -a --filter name=hindsight --format 'ID={{.ID}}  IMAGE={{.Image}}  STATUS={{.Status}}  CREATED={{.CreatedAt}}'\necho\necho \"=== inspect create/start times ===\"; docker inspect hindsight --format 'ContainerID={{.Id}}\nCreatedAt={{.Created}}\nStartedAt={{.State.StartedAt}}\nFinishedAt={{.State.FinishedAt}}\nRestartCount={{.RestartCount}}'\necho\necho \"=== current env (KEY values masked, show structure) ===\"; docker inspect hindsight --format '{{range .Config.Env}}{{println .}}{{end}}' 2>/dev/null | grep -E \"TENANT|DATAPLANE|LLM_API_KEY|LLM_MODEL|LLM_BASE\" | sed -E 's/(=sk-[A-Za-z0-9]+).*/\\1<...>/; s/(TENANT_API_KEY=)[0-9a-f]+/\\1<redacted>/; s/(DATAPLANE_API_KEY=)[0-9a-f]+/\\1<redacted>/'\necho\necho \"=== is AGNES ref resolved? (compare .env value vs container env) ===\"; ENVKEY=$(docker inspect hindsight --format '{{range .Config.Env}}{{println .}}{{end}}' | grep '^HINDSIGHT_API_LLM_API_KEY=' | cut -d= -f2); DOTKEY=$(grep '^AGNES_API_KEY=' <HOME>/hindsight/.env | cut -d= -f2); echo \"container LLM key matches .env: $([ -n \"$ENVKEY\" ] && [ \"$ENVKEY\" = \"$DOTKEY\" ] && echo YES || echo NO)\"; echo \"container LLM key len: ${#ENVKEY}\"\necho\necho \"=== startup log timestamps (last starts) ===\"; docker logs hindsight --since 2h 2>&1 | grep -E \"Starting Hindsight API|Application startup complete|Connection verified|Finished server|All services stopped\" | tail -12",
+   "command": "echo \"=== NOW: $(date '+%Y-%m-%d %H:%M:%S %Z (%z)') ===\"; echo\necho \"=== container identity ===\"; docker ps -a --filter name=<other-tool> --format 'ID={{.ID}}  IMAGE={{.Image}}  STATUS={{.Status}}  CREATED={{.CreatedAt}}'\necho\necho \"=== inspect create/start times ===\"; docker inspect <other-tool> --format 'ContainerID={{.Id}}\nCreatedAt={{.Created}}\nStartedAt={{.State.StartedAt}}\nFinishedAt={{.State.FinishedAt}}\nRestartCount={{.RestartCount}}'\necho\necho \"=== current env (KEY values masked, show structure) ===\"; docker inspect <other-tool> --format '{{range .Config.Env}}{{println .}}{{end}}' 2>/dev/null | grep -E \"TENANT|DATAPLANE|LLM_API_KEY|LLM_MODEL|LLM_BASE\" | sed -E 's/(=sk-[A-Za-z0-9]+).*/\\1<...>/; s/(TENANT_API_KEY=)[0-9a-f]+/\\1<redacted>/; s/(DATAPLANE_API_KEY=)[0-9a-f]+/\\1<redacted>/'\necho\necho \"=== is AGNES ref resolved? (compare .env value vs container env) ===\"; ENVKEY=$(docker inspect <other-tool> --format '{{range .Config.Env}}{{println .}}{{end}}' | grep '^<other-tool>_API_LLM_API_KEY=' | cut -d= -f2); DOTKEY=$(grep '^AGNES_API_KEY=' <HOME>/<other-tool>/.env | cut -d= -f2); echo \"container LLM key matches .env: $([ -n \"$ENVKEY\" ] && [ \"$ENVKEY\" = \"$DOTKEY\" ] && echo YES || echo NO)\"; echo \"container LLM key len: ${#ENVKEY}\"\necho\necho \"=== startup log timestamps (last starts) ===\"; docker logs <other-tool> --since 2h 2>&1 | grep -E \"Starting <other-tool> API|Application startup complete|Connection verified|Finished server|All services stopped\" | tail -12",
    "source": "jev",
    "action": "allow",
    "p": 0.02,
@@ -2250,7 +2250,7 @@
    "ms": 278
   },
   {
-   "command": "echo \"=== ALL containers ===\"; docker ps -a --format 'table {{.Names}}\\t{{.ID}}\\t{{.Status}}\\t{{.CreatedAt}}' | head -15; echo; echo \"=== hindsight inspect ===\"; docker inspect hindsight --format 'ID={{.Id}}\nCreated={{.Created}}\nStarted={{.State.StartedAt}}\nRestartCount={{.RestartCount}}\nStatus={{.State.Status}}'; echo; echo \"=== hindsight log tail (80) ===\"; docker logs hindsight --tail 80 2>&1 | tail -80",
+   "command": "echo \"=== ALL containers ===\"; docker ps -a --format 'table {{.Names}}\\t{{.ID}}\\t{{.Status}}\\t{{.CreatedAt}}' | head -15; echo; echo \"=== <other-tool> inspect ===\"; docker inspect <other-tool> --format 'ID={{.Id}}\nCreated={{.Created}}\nStarted={{.State.StartedAt}}\nRestartCount={{.RestartCount}}\nStatus={{.State.Status}}'; echo; echo \"=== <other-tool> log tail (80) ===\"; docker logs <other-tool> --tail 80 2>&1 | tail -80",
    "source": "jev",
    "action": "allow",
    "p": 0.02,
@@ -2259,7 +2259,7 @@
    "ms": 296
   },
   {
-   "command": "echo \"=== startup lines (before 429 flood) ===\"; docker logs hindsight 2>&1 | grep -E \"Starting Hindsight|Connection verified|Application startup complete|HTTP REST API|Embeddings|Reranker|PostgreSQL started|Using API key\" | head -15; echo; echo \"=== 429 count in last 5 min ===\"; docker logs hindsight --since 5m 2>&1 | grep -c \"429\"; echo; echo \"=== non-429 errors (excluding rate limit) ===\"; docker logs hindsight --since 5m 2>&1 | grep -iE \"error|exception|fail\" | grep -viE \"429|rate limit|RateLimitError\" | head -10 || echo \"(no other errors)\"; echo; echo \"=== auth still works ===\"; KEY=$(grep -oP 'HINDSIGHT_TENANT_KEY=\\K.*' <HOME>/hindsight/.env); echo -n \"no key /v1/default/banks -> \"; curl -s -o /dev/null -w \"%{http_code}\\n\" -m 5 http://localhost:8888/v1/default/banks; echo -n \"with key -> \"; curl -s -o /dev/null -w \"%{http_code}\\n\" -m 5 -H \"Authorization: Bearer $KEY\" http://localhost:8888/v1/default/banks",
+   "command": "echo \"=== startup lines (before 429 flood) ===\"; docker logs <other-tool> 2>&1 | grep -E \"Starting <other-tool>|Connection verified|Application startup complete|HTTP REST API|Embeddings|Reranker|PostgreSQL started|Using API key\" | head -15; echo; echo \"=== 429 count in last 5 min ===\"; docker logs <other-tool> --since 5m 2>&1 | grep -c \"429\"; echo; echo \"=== non-429 errors (excluding rate limit) ===\"; docker logs <other-tool> --since 5m 2>&1 | grep -iE \"error|exception|fail\" | grep -viE \"429|rate limit|RateLimitError\" | head -10 || echo \"(no other errors)\"; echo; echo \"=== auth still works ===\"; KEY=$(grep -oP '<other-tool>_TENANT_KEY=\\K.*' <HOME>/<other-tool>/.env); echo -n \"no key /v1/default/banks -> \"; curl -s -o /dev/null -w \"%{http_code}\\n\" -m 5 http://localhost:8888/v1/default/banks; echo -n \"with key -> \"; curl -s -o /dev/null -w \"%{http_code}\\n\" -m 5 -H \"Authorization: Bearer $KEY\" http://localhost:8888/v1/default/banks",
    "source": "jev",
    "action": "allow",
    "p": 0.03,
@@ -2268,7 +2268,7 @@
    "ms": 268
   },
   {
-   "command": "KEY=$(grep -oP 'HINDSIGHT_TENANT_KEY=\\K.*' <HOME>/hindsight/.env)\nBANK=\"coding-agent%3A%3Adeepseek-harness\"\necho \"=== mental models ===\"; curl -s -m 10 -H \"Authorization: Bearer $KEY\" \"http://localhost:8888/v1/default/banks/$BANK/mental-models\" | python3 -m json.tool 2>/dev/null | head -80 || curl -s -m 10 -H \"Authorization: Bearer $KEY\" \"http://localhost:8888/v1/default/banks/$BANK/mental-models\" | head -c 1500\necho; echo \"=== bank config ===\"; curl -s -m 10 -H \"Authorization: Bearer $KEY\" \"http://localhost:8888/v1/default/banks/$BANK/config\" | python3 -m json.tool 2>/dev/null | head -60",
+   "command": "KEY=$(grep -oP '<other-tool>_TENANT_KEY=\\K.*' <HOME>/<other-tool>/.env)\nBANK=\"coding-agent%3A%3Adeepseek-harness\"\necho \"=== mental models ===\"; curl -s -m 10 -H \"Authorization: Bearer $KEY\" \"http://localhost:8888/v1/default/banks/$BANK/mental-models\" | python3 -m json.tool 2>/dev/null | head -80 || curl -s -m 10 -H \"Authorization: Bearer $KEY\" \"http://localhost:8888/v1/default/banks/$BANK/mental-models\" | head -c 1500\necho; echo \"=== bank config ===\"; curl -s -m 10 -H \"Authorization: Bearer $KEY\" \"http://localhost:8888/v1/default/banks/$BANK/config\" | python3 -m json.tool 2>/dev/null | head -60",
    "source": "jev",
    "action": "allow",
    "p": 0.01,
@@ -2277,7 +2277,7 @@
    "ms": 229
   },
   {
-   "command": "KEY=$(grep -oP 'HINDSIGHT_TENANT_KEY=\\K.*' <HOME>/hindsight/.env)\nBANK=\"coding-agent%3A%3Adeepseek-harness\"\necho \"=== mental models summary ===\"; curl -s -m 10 -H \"Authorization: Bearer $KEY\" \"http://localhost:8888/v1/default/banks/$BANK/mental-models\" | python3 -c \"\nimport json,sys\nd=json.load(sys.stdin)\nitems=d.get('items',[])\nprint('TOTAL:', len(items))\nfor m in items:\n    trig=m.get('trigger',{})\n    print('-', m.get('name'), '| id:', m.get('id')[:16], '| mode:', trig.get('mode'), '| refresh_after_consolidation:', trig.get('refresh_after_consolidation'), '| last_refreshed:', m.get('last_refreshed_at','')[:19])\n\"\necho; echo \"=== worker/concurrency env config in container ===\"; docker exec hindsight sh -c 'grep -rniE \"WORKER_|CONCURRENC|MAX_WORKER|slots|parallel\" /app/api/hindsight_api/config*.py /app/api/hindsight_api/config/ 2>/dev/null | grep -iE \"worker|concurr|parallel|slot\" | head -20' 2>/dev/null; echo; echo \"=== env vars currently set (worker-related) ===\"; docker inspect hindsight --format '{{range .Config.Env}}{{println .}}{{end}}' | grep -iE \"WORKER|CONCUR|SLOT\" | head",
+   "command": "KEY=$(grep -oP '<other-tool>_TENANT_KEY=\\K.*' <HOME>/<other-tool>/.env)\nBANK=\"coding-agent%3A%3Adeepseek-harness\"\necho \"=== mental models summary ===\"; curl -s -m 10 -H \"Authorization: Bearer $KEY\" \"http://localhost:8888/v1/default/banks/$BANK/mental-models\" | python3 -c \"\nimport json,sys\nd=json.load(sys.stdin)\nitems=d.get('items',[])\nprint('TOTAL:', len(items))\nfor m in items:\n    trig=m.get('trigger',{})\n    print('-', m.get('name'), '| id:', m.get('id')[:16], '| mode:', trig.get('mode'), '| refresh_after_consolidation:', trig.get('refresh_after_consolidation'), '| last_refreshed:', m.get('last_refreshed_at','')[:19])\n\"\necho; echo \"=== worker/concurrency env config in container ===\"; docker exec <other-tool> sh -c 'grep -rniE \"WORKER_|CONCURRENC|MAX_WORKER|slots|parallel\" /app/api/<other-tool>_api/config*.py /app/api/<other-tool>_api/config/ 2>/dev/null | grep -iE \"worker|concurr|parallel|slot\" | head -20' 2>/dev/null; echo; echo \"=== env vars currently set (worker-related) ===\"; docker inspect <other-tool> --format '{{range .Config.Env}}{{println .}}{{end}}' | grep -iE \"WORKER|CONCUR|SLOT\" | head",
    "source": "jev",
    "action": "allow",
    "p": 0.02,
@@ -2286,7 +2286,7 @@
    "ms": 257
   },
   {
-   "command": "echo \"=== defaults for concurrency/worker ===\"; docker exec hindsight sh -c 'sed -n \"545,570p;720,760p\" /app/api/hindsight_api/config.py' 2>/dev/null",
+   "command": "echo \"=== defaults for concurrency/worker ===\"; docker exec <other-tool> sh -c 'sed -n \"545,570p;720,760p\" /app/api/<other-tool>_api/config.py' 2>/dev/null",
    "source": "jev",
    "action": "allow",
    "p": 0.01,
@@ -2295,7 +2295,7 @@
    "ms": 270
   },
   {
-   "command": "set -e\ncd <HOME>/hindsight\ncp docker-compose.yml docker-compose.yml.bak-concurrency-$(date +%Y%m%d-%H%M%S)\n# insert concurrency-limit env lines after HINDSIGHT_API_WORKER_ID\npython3 - <<'PYEOF'\np='docker-compose.yml'\ns=open(p).read()\nlines=s.split('\\n')\nadd=[\n  '      - HINDSIGHT_API_MENTAL_MODEL_REFRESH_CONCURRENCY=1',\n  '      - HINDSIGHT_API_CONSOLIDATION_LLM_PARALLELISM=1',\n  '      - HINDSIGHT_API_WORKER_MAX_SLOTS=2',\n  '      - HINDSIGHT_API_WORKER_POLL_INTERVAL_MS=15000',\n]\nidx=next(i for i,l in enumerate(lines) if 'HINDSIGHT_API_WORKER_ID=' in l)\nlines[idx+1:idx+1]=add\nopen(p,'w').write('\\n'.join(lines))\nprint('inserted after WORKER_ID:')\nfor l in add: print(' ', l.strip())\nPYEOF\necho \"--- recreate ---\"\ndocker compose -f docker-compose.yml up -d 2>&1 | tail -6\necho \"--- wait ready & check worker stats ---\"\nfor i in $(seq 1 24); do\n  if docker logs hindsight --since 30s 2>&1 | grep -q \"WORKER_STATS\"; then echo \"worker up\"; break; fi\n  sleep 5\ndone\nsleep 3\ndocker logs hindsight --tail 200 2>&1 | grep -E \"WORKER_STATS|slots=\" | tail -3",
+   "command": "set -e\ncd <HOME>/<other-tool>\ncp docker-compose.yml docker-compose.yml.bak-concurrency-$(date +%Y%m%d-%H%M%S)\n# insert concurrency-limit env lines after <other-tool>_API_WORKER_ID\npython3 - <<'PYEOF'\np='docker-compose.yml'\ns=open(p).read()\nlines=s.split('\\n')\nadd=[\n  '      - <other-tool>_API_MENTAL_MODEL_REFRESH_CONCURRENCY=1',\n  '      - <other-tool>_API_CONSOLIDATION_LLM_PARALLELISM=1',\n  '      - <other-tool>_API_WORKER_MAX_SLOTS=2',\n  '      - <other-tool>_API_WORKER_POLL_INTERVAL_MS=15000',\n]\nidx=next(i for i,l in enumerate(lines) if '<other-tool>_API_WORKER_ID=' in l)\nlines[idx+1:idx+1]=add\nopen(p,'w').write('\\n'.join(lines))\nprint('inserted after WORKER_ID:')\nfor l in add: print(' ', l.strip())\nPYEOF\necho \"--- recreate ---\"\ndocker compose -f docker-compose.yml up -d 2>&1 | tail -6\necho \"--- wait ready & check worker stats ---\"\nfor i in $(seq 1 24); do\n  if docker logs <other-tool> --since 30s 2>&1 | grep -q \"WORKER_STATS\"; then echo \"worker up\"; break; fi\n  sleep 5\ndone\nsleep 3\ndocker logs <other-tool> --tail 200 2>&1 | grep -E \"WORKER_STATS|slots=\" | tail -3",
    "source": "jev",
    "action": "allow",
    "p": 0.11,
@@ -2304,7 +2304,7 @@
    "ms": 259
   },
   {
-   "command": "set -e\ncd <HOME>/hindsight\nsed -i 's/      - HINDSIGHT_API_WORKER_MAX_SLOTS=2/      - HINDSIGHT_API_WORKER_MAX_SLOTS=3/' docker-compose.yml\ngrep -n \"WORKER_MAX_SLOTS\\|MENTAL_MODEL_REFRESH\\|CONSOLIDATION_LLM\\|POLL_INTERVAL\" docker-compose.yml\necho \"--- recreate ---\"\ndocker compose -f docker-compose.yml up -d 2>&1 | tail -4\necho \"--- wait & verify ---\"\nsleep 25\ndocker logs hindsight --tail 120 2>&1 | grep -E \"starting polling loop|WORKER_STATS|refresh_mental_model\" | tail -6",
+   "command": "set -e\ncd <HOME>/<other-tool>\nsed -i 's/      - <other-tool>_API_WORKER_MAX_SLOTS=2/      - <other-tool>_API_WORKER_MAX_SLOTS=3/' docker-compose.yml\ngrep -n \"WORKER_MAX_SLOTS\\|MENTAL_MODEL_REFRESH\\|CONSOLIDATION_LLM\\|POLL_INTERVAL\" docker-compose.yml\necho \"--- recreate ---\"\ndocker compose -f docker-compose.yml up -d 2>&1 | tail -4\necho \"--- wait & verify ---\"\nsleep 25\ndocker logs <other-tool> --tail 120 2>&1 | grep -E \"starting polling loop|WORKER_STATS|refresh_mental_model\" | tail -6",
    "source": "jev",
    "action": "allow",
    "p": 0.13,
@@ -2313,7 +2313,7 @@
    "ms": 248
   },
   {
-   "command": "echo \"waiting 60s observation...\"; sleep 60\necho \"=== 429 count since this start ===\"; docker logs hindsight --since 2m 2>&1 | grep -c \"429\" || true\necho \"=== worker activity ===\"; docker logs hindsight --since 2m 2>&1 | grep -E \"WORKER_STATS|claimed|refresh_mental_model|consolidat\" | tail -10\necho; echo \"=== mental model refresh status ===\"; KEY=$(grep -oP 'HINDSIGHT_TENANT_KEY=\\K.*' <HOME>/hindsight/.env); BANK=\"coding-agent%3A%3Adeepseek-harness\"; curl -s -m 10 -H \"Authorization: Bearer $KEY\" \"http://localhost:8888/v1/default/banks/$BANK/mental-models\" | python3 -c \"\nimport json,sys\nd=json.load(sys.stdin)\nfor m in d.get('items',[]):\n    print('-', m.get('name'), '| last_refreshed:', m.get('last_refreshed_at','')[:19])\n\"\necho; echo \"=== recent errors (non-429) ===\"; docker logs hindsight --since 2m 2>&1 | grep -iE \"error|fail\" | grep -viE \"429|rate limit|RateLimitError\" | head -5 || echo \"(none)\"",
+   "command": "echo \"waiting 60s observation...\"; sleep 60\necho \"=== 429 count since this start ===\"; docker logs <other-tool> --since 2m 2>&1 | grep -c \"429\" || true\necho \"=== worker activity ===\"; docker logs <other-tool> --since 2m 2>&1 | grep -E \"WORKER_STATS|claimed|refresh_mental_model|consolidat\" | tail -10\necho; echo \"=== mental model refresh status ===\"; KEY=$(grep -oP '<other-tool>_TENANT_KEY=\\K.*' <HOME>/<other-tool>/.env); BANK=\"coding-agent%3A%3Adeepseek-harness\"; curl -s -m 10 -H \"Authorization: Bearer $KEY\" \"http://localhost:8888/v1/default/banks/$BANK/mental-models\" | python3 -c \"\nimport json,sys\nd=json.load(sys.stdin)\nfor m in d.get('items',[]):\n    print('-', m.get('name'), '| last_refreshed:', m.get('last_refreshed_at','')[:19])\n\"\necho; echo \"=== recent errors (non-429) ===\"; docker logs <other-tool> --since 2m 2>&1 | grep -iE \"error|fail\" | grep -viE \"429|rate limit|RateLimitError\" | head -5 || echo \"(none)\"",
    "source": "jev",
    "action": "allow",
    "p": 0.02,
@@ -2322,7 +2322,7 @@
    "ms": 224
   },
   {
-   "command": "echo \"=== 429 count last 10 min ===\"; docker logs hindsight --since 10m 2>&1 | grep -c \"429\" || true\necho; echo \"=== worker stats (latest) ===\"; docker logs hindsight --since 15m 2>&1 | grep -E \"starting polling loop|WORKER_STATS|claimed\" | tail -6\necho; echo \"=== mental model refresh status ===\"; KEY=$(grep -oP 'HINDSIGHT_TENANT_KEY=\\K.*' <HOME>/hindsight/.env); BANK=\"coding-agent%3A%3Adeepseek-harness\"; curl -s -m 10 -H \"Authorization: Bearer $KEY\" \"http://localhost:8888/v1/default/banks/$BANK/mental-models\" | python3 -c \"\nimport json,sys\nd=json.load(sys.stdin)\nfor m in d.get('items',[]):\n    print('-', m.get('name'), '| last_refreshed:', m.get('last_refreshed_at','')[:19])\n\"\necho; echo \"=== auth check ===\"; echo -n \"no key -> \"; curl -s -o /dev/null -w \"%{http_code}\\n\" -m 5 http://localhost:8888/v1/default/banks; echo -n \"with key -> \"; curl -s -o /dev/null -w \"%{http_code}\\n\" -m 5 -H \"Authorization: Bearer $KEY\" http://localhost:8888/v1/default/banks",
+   "command": "echo \"=== 429 count last 10 min ===\"; docker logs <other-tool> --since 10m 2>&1 | grep -c \"429\" || true\necho; echo \"=== worker stats (latest) ===\"; docker logs <other-tool> --since 15m 2>&1 | grep -E \"starting polling loop|WORKER_STATS|claimed\" | tail -6\necho; echo \"=== mental model refresh status ===\"; KEY=$(grep -oP '<other-tool>_TENANT_KEY=\\K.*' <HOME>/<other-tool>/.env); BANK=\"coding-agent%3A%3Adeepseek-harness\"; curl -s -m 10 -H \"Authorization: Bearer $KEY\" \"http://localhost:8888/v1/default/banks/$BANK/mental-models\" | python3 -c \"\nimport json,sys\nd=json.load(sys.stdin)\nfor m in d.get('items',[]):\n    print('-', m.get('name'), '| last_refreshed:', m.get('last_refreshed_at','')[:19])\n\"\necho; echo \"=== auth check ===\"; echo -n \"no key -> \"; curl -s -o /dev/null -w \"%{http_code}\\n\" -m 5 http://localhost:8888/v1/default/banks; echo -n \"with key -> \"; curl -s -o /dev/null -w \"%{http_code}\\n\" -m 5 -H \"Authorization: Bearer $KEY\" http://localhost:8888/v1/default/banks",
    "source": "jev",
    "action": "allow",
    "p": 0.02,
@@ -3844,7 +3844,7 @@
    "ms": 289
   },
   {
-   "command": "grep -rn --include='*.ts' --include='*.tsx' -iE 'hindsight' packages apps docs scripts 2>/dev/null | grep -vE '/(lib|dist|node_modules)/' | head -120",
+   "command": "grep -rn --include='*.ts' --include='*.tsx' -iE '<other-tool>' packages apps docs scripts 2>/dev/null | grep -vE '/(lib|dist|node_modules)/' | head -120",
    "source": "jev",
    "action": "allow",
    "p": 0.01,
@@ -3930,7 +3930,7 @@
    "ms": 294
   },
   {
-   "command": "grep -rniE 'hindsight' . --exclude-dir=node_modules --exclude-dir=.git --exclude-dir=dist --exclude-dir=lib --exclude-dir=tsbuildinfo -l 2>/dev/null | head -50; echo '---config files---'; ls -la .agents .claude 2>/dev/null; echo '---'; find . -maxdepth 3 -name 'docker-compose*.yml' -o -maxdepth 3 -name '.env*' -o -maxdepth 3 -name '*.mcp*.json' -o -maxdepth 3 -name 'mcp*.json' 2>/dev/null | grep -v node_modules | head -40",
+   "command": "grep -rniE '<other-tool>' . --exclude-dir=node_modules --exclude-dir=.git --exclude-dir=dist --exclude-dir=lib --exclude-dir=tsbuildinfo -l 2>/dev/null | head -50; echo '---config files---'; ls -la .agents .<other-tool> 2>/dev/null; echo '---'; find . -maxdepth 3 -name 'docker-compose*.yml' -o -maxdepth 3 -name '.env*' -o -maxdepth 3 -name '*.mcp*.json' -o -maxdepth 3 -name 'mcp*.json' 2>/dev/null | grep -v node_modules | head -40",
    "source": "jev",
    "action": "allow",
    "p": 0.01,
@@ -3948,7 +3948,7 @@
    "ms": 260
   },
   {
-   "command": "grep -rniE 'hindsight|8888|vectorize' ~/.dsh ~/.config ~/.agents 2>/dev/null | head -40",
+   "command": "grep -rniE '<other-tool>|8888|vectorize' ~/.dsh ~/.config ~/.agents 2>/dev/null | head -40",
    "source": "jev",
    "action": "allow",
    "p": 0.01,
@@ -3971,14 +3971,14 @@
    "ms": 0
   },
   {
-   "command": "cat ~/.agents/skills/hindsight-coding-agent/SKILL.md",
+   "command": "cat ~/.agents/skills/<other-tool>-coding-agent/SKILL.md",
    "source": "prefilter",
    "action": "allow",
    "reason": "read-only (cat)",
    "ms": 0
   },
   {
-   "command": "ls -la ~/.hindsight/coding-agents/dist/ 2>/dev/null; echo '---'; wc -c ~/.hindsight/coding-agents/dist/dsh.js 2>/dev/null; echo '---'; grep -nE 'pre-step|pre_step|prestep|agent/pre-step|user/message|inject|complete|first|turn|pageRefresh|tool guide|knowledge' ~/.hindsight/coding-agents/dist/dsh.js 2>/dev/null | head -120",
+   "command": "ls -la ~/.<other-tool>/coding-agents/dist/ 2>/dev/null; echo '---'; wc -c ~/.<other-tool>/coding-agents/dist/dsh.js 2>/dev/null; echo '---'; grep -nE 'pre-step|pre_step|prestep|agent/pre-step|user/message|inject|complete|first|turn|pageRefresh|tool guide|knowledge' ~/.<other-tool>/coding-agents/dist/dsh.js 2>/dev/null | head -120",
    "source": "jev",
    "action": "allow",
    "p": 0.01,
@@ -3987,28 +3987,28 @@
    "ms": 254
   },
   {
-   "command": "grep -nE 'This tool guide|re-injected|re-inject|page list|first prompt|firstPrompt|first-turn|first turn|session_start|SessionStart|pre-step|pre_step|system-prompt|systemPrompt|prompt section|complete:|complete\\\"|includeRuntimeContext' ~/.hindsight/coding-agents/dist/dsh.js | head -100",
+   "command": "grep -nE 'This tool guide|re-injected|re-inject|page list|first prompt|firstPrompt|first-turn|first turn|session_start|SessionStart|pre-step|pre_step|system-prompt|systemPrompt|prompt section|complete:|complete\\\"|includeRuntimeContext' ~/.<other-tool>/coding-agents/dist/dsh.js | head -100",
    "source": "prefilter",
    "action": "allow",
    "reason": "compound of 2 harmless segments",
    "ms": 0
   },
   {
-   "command": "sed -n '15550,15720p' ~/.hindsight/coding-agents/dist/dsh.js",
+   "command": "sed -n '15550,15720p' ~/.<other-tool>/coding-agents/dist/dsh.js",
    "source": "prefilter",
    "action": "allow",
    "reason": "read-only shape (sed)",
    "ms": 0
   },
   {
-   "command": "sed -n '16300,16720p' ~/.hindsight/coding-agents/dist/dsh.js",
+   "command": "sed -n '16300,16720p' ~/.<other-tool>/coding-agents/dist/dsh.js",
    "source": "prefilter",
    "action": "allow",
    "reason": "read-only shape (sed)",
    "ms": 0
   },
   {
-   "command": "sed -n '16900,17150p' ~/.hindsight/coding-agents/dist/dsh.js",
+   "command": "sed -n '16900,17150p' ~/.<other-tool>/coding-agents/dist/dsh.js",
    "source": "prefilter",
    "action": "allow",
    "reason": "read-only shape (sed)",
@@ -4024,21 +4024,21 @@
    "ms": 251
   },
   {
-   "command": "grep -nE 'preamble|autoReflect|reflectOnNewGoals|inject|guide|knowledgePreamble|disable.*inject|firstTurn|turn === 1|turns === 1' ~/.hindsight/coding-agents/dist/dsh.js | head -60; echo '---config defaults---'; sed -n '150,210p' ~/.hindsight/coding-agents/dist/dsh.js",
+   "command": "grep -nE 'preamble|autoReflect|reflectOnNewGoals|inject|guide|knowledgePreamble|disable.*inject|firstTurn|turn === 1|turns === 1' ~/.<other-tool>/coding-agents/dist/dsh.js | head -60; echo '---config defaults---'; sed -n '150,210p' ~/.<other-tool>/coding-agents/dist/dsh.js",
    "source": "prefilter",
    "action": "allow",
    "reason": "compound of 4 harmless segments",
    "ms": 0
   },
   {
-   "command": "grep -nE 'skipFirst|injectFrom|delayInject|firstTurn|turn === 1|turns === 1|turns > 1' ~/.hindsight/coding-agents/dist/dsh.js | head -20",
+   "command": "grep -nE 'skipFirst|injectFrom|delayInject|firstTurn|turn === 1|turns === 1|turns > 1' ~/.<other-tool>/coding-agents/dist/dsh.js | head -20",
    "source": "prefilter",
    "action": "allow",
    "reason": "compound of 2 harmless segments",
    "ms": 0
   },
   {
-   "command": "cp ~/.hindsight/coding-agents/dist/dsh.js ~/.hindsight/coding-agents/dist/dsh.js.bak-anchored-$(date +%Y%m%d-%H%M%S) && ls -la ~/.hindsight/coding-agents/dist/ | grep dsh.js",
+   "command": "cp ~/.<other-tool>/coding-agents/dist/dsh.js ~/.<other-tool>/coding-agents/dist/dsh.js.bak-anchored-$(date +%Y%m%d-%H%M%S) && ls -la ~/.<other-tool>/coding-agents/dist/ | grep dsh.js",
    "source": "jev",
    "action": "allow",
    "p": 0.03,
@@ -4047,14 +4047,14 @@
    "ms": 232
   },
   {
-   "command": "sed -n '16670,16715p' ~/.hindsight/coding-agents/dist/dsh.js",
+   "command": "sed -n '16670,16715p' ~/.<other-tool>/coding-agents/dist/dsh.js",
    "source": "prefilter",
    "action": "allow",
    "reason": "read-only shape (sed)",
    "ms": 0
   },
   {
-   "command": "node --check ~/.hindsight/coding-agents/dist/dsh.js && echo 'SYNTAX OK'; echo '---patched region---'; sed -n '16668,16715p' ~/.hindsight/coding-agents/dist/dsh.js",
+   "command": "node --check ~/.<other-tool>/coding-agents/dist/dsh.js && echo 'SYNTAX OK'; echo '---patched region---'; sed -n '16668,16715p' ~/.<other-tool>/coding-agents/dist/dsh.js",
    "source": "jev",
    "action": "allow",
    "p": 0.01,
@@ -4063,7 +4063,7 @@
    "ms": 301
   },
   {
-   "command": "node --check ~/.hindsight/coding-agents/dist/dsh.js && echo 'SYNTAX OK'; echo '---'; grep -n 'function readSessionCache' ~/.hindsight/coding-agents/dist/dsh.js; echo '---final region---'; sed -n '16668,16725p' ~/.hindsight/coding-agents/dist/dsh.js",
+   "command": "node --check ~/.<other-tool>/coding-agents/dist/dsh.js && echo 'SYNTAX OK'; echo '---'; grep -n 'function readSessionCache' ~/.<other-tool>/coding-agents/dist/dsh.js; echo '---final region---'; sed -n '16668,16725p' ~/.<other-tool>/coding-agents/dist/dsh.js",
    "source": "jev",
    "action": "allow",
    "p": 0.01,
@@ -4072,14 +4072,14 @@
    "ms": 244
   },
   {
-   "command": "sed -n '16280,16315p' ~/.hindsight/coding-agents/dist/dsh.js",
+   "command": "sed -n '16280,16315p' ~/.<other-tool>/coding-agents/dist/dsh.js",
    "source": "prefilter",
    "action": "allow",
    "reason": "read-only shape (sed)",
    "ms": 0
   },
   {
-   "command": "node --check ~/.hindsight/coding-agents/dist/dsh.js && echo 'SYNTAX OK'; echo '---final onPrompt---'; sed -n '16670,16735p' ~/.hindsight/coding-agents/dist/dsh.js",
+   "command": "node --check ~/.<other-tool>/coding-agents/dist/dsh.js && echo 'SYNTAX OK'; echo '---final onPrompt---'; sed -n '16670,16735p' ~/.<other-tool>/coding-agents/dist/dsh.js",
    "source": "jev",
    "action": "allow",
    "p": 0.01,
@@ -4097,14 +4097,14 @@
    "ms": 255
   },
   {
-   "command": "sed -n '16668,16690p' ~/.hindsight/coding-agents/dist/dsh.js.bak-anchored-20260815-193811; echo '---getInjection in backup---'; sed -n '16700,16710p' ~/.hindsight/coding-agents/dist/dsh.js.bak-anchored-20260815-193811",
+   "command": "sed -n '16668,16690p' ~/.<other-tool>/coding-agents/dist/dsh.js.bak-anchored-20260815-193811; echo '---getInjection in backup---'; sed -n '16700,16710p' ~/.<other-tool>/coding-agents/dist/dsh.js.bak-anchored-20260815-193811",
    "source": "prefilter",
    "action": "allow",
    "reason": "compound of 3 harmless segments",
    "ms": 0
   },
   {
-   "command": "node --check ~/.dsh/plugins/hindsight-anchored.mjs && echo 'WRAPPER SYNTAX OK'; echo '---'; node -e \"\nconst fs = require('fs');\nconst HOME = process.env.HOME;\nconst src = fs.readFileSync(HOME + '/.hindsight/coding-agents/dist/dsh.js.bak-anchored-20260815-193811', 'utf8');\nconst MARKER = '// [dsh-anchored-first-turn]';\nconst PATCH_A_OLD = \\`    const turns = (this.turnCount.get(sessionId) ?? 0) + 1;\n    this.turnCount.set(sessionId, turns);\n    const cacheFile = sessionCacheFile(this.harness, sessionId);\\`;\nconst PATCH_A_NEW = \\`    const turns = (this.turnCount.get(sessionId) ?? 0) + 1;\n    this.turnCount.set(sessionId, turns);\n    const cacheFile = sessionCacheFile(this.harness, sessionId);\n    // [dsh-anchored-first-turn] Brand-new sessions keep turn 1 free of Hindsight\n    // context (anchored/bootstrap presets expect only the activated conversation);\n    // resumed sessions inject normally. Turn 2 onward delivers the knowledge\n    // preamble plus any auto-reflect memory.\n    if (turns === 1) {\n      const prior = readSessionCache(cacheFile);\n      if (!prior || (prior.turns ?? 0) === 0) {\n        this.injection.set(sessionId, \\\"\\\");\n        this.lastInjection = \\\"\\\";\n        return;\n      }\n    }\\`;\nconst PATCH_B_OLD = '    if (turns === 1 && this.preamble) blocks.push(this.preamble);';\nconst PATCH_B_NEW = '    if ((turns === 1 || turns === 2) && this.preamble) blocks.push(this.preamble);';\nif (src.includes(MARKER)) throw new Error('backup unexpectedly has marker');\nif (!src.includes(PATCH_A_OLD) || !src.includes(PATCH_B_OLD)) throw new Error('pristine snippets not found');\nconst patched = src.replace(PATCH_A_OLD, PATCH_A_NEW).replace(PATCH_B_OLD, PATCH_B_NEW);\nif (!patched.includes(MARKER)) throw new Error('marker missing after patch');\nfs.writeFileSync('/tmp/dsh-anchored-pristine-patched.mjs', patched);\nconsole.log('PATCH SIMULATION OK on pristine backup ->', '/tmp/dsh-anchored-pristine-patched.mjs');\n\" && node --check /tmp/dsh-anchored-pristine-patched.mjs && echo 'PATCHED COPY SYNTAX OK'",
+   "command": "node --check ~/.dsh/plugins/<other-tool>-anchored.mjs && echo 'WRAPPER SYNTAX OK'; echo '---'; node -e \"\nconst fs = require('fs');\nconst HOME = process.env.HOME;\nconst src = fs.readFileSync(HOME + '/.<other-tool>/coding-agents/dist/dsh.js.bak-anchored-20260815-193811', 'utf8');\nconst MARKER = '// [dsh-anchored-first-turn]';\nconst PATCH_A_OLD = \\`    const turns = (this.turnCount.get(sessionId) ?? 0) + 1;\n    this.turnCount.set(sessionId, turns);\n    const cacheFile = sessionCacheFile(this.harness, sessionId);\\`;\nconst PATCH_A_NEW = \\`    const turns = (this.turnCount.get(sessionId) ?? 0) + 1;\n    this.turnCount.set(sessionId, turns);\n    const cacheFile = sessionCacheFile(this.harness, sessionId);\n    // [dsh-anchored-first-turn] Brand-new sessions keep turn 1 free of <other-tool>\n    // context (anchored/bootstrap presets expect only the activated conversation);\n    // resumed sessions inject normally. Turn 2 onward delivers the knowledge\n    // preamble plus any auto-reflect memory.\n    if (turns === 1) {\n      const prior = readSessionCache(cacheFile);\n      if (!prior || (prior.turns ?? 0) === 0) {\n        this.injection.set(sessionId, \\\"\\\");\n        this.lastInjection = \\\"\\\";\n        return;\n      }\n    }\\`;\nconst PATCH_B_OLD = '    if (turns === 1 && this.preamble) blocks.push(this.preamble);';\nconst PATCH_B_NEW = '    if ((turns === 1 || turns === 2) && this.preamble) blocks.push(this.preamble);';\nif (src.includes(MARKER)) throw new Error('backup unexpectedly has marker');\nif (!src.includes(PATCH_A_OLD) || !src.includes(PATCH_B_OLD)) throw new Error('pristine snippets not found');\nconst patched = src.replace(PATCH_A_OLD, PATCH_A_NEW).replace(PATCH_B_OLD, PATCH_B_NEW);\nif (!patched.includes(MARKER)) throw new Error('marker missing after patch');\nfs.writeFileSync('/tmp/dsh-anchored-pristine-patched.mjs', patched);\nconsole.log('PATCH SIMULATION OK on pristine backup ->', '/tmp/dsh-anchored-pristine-patched.mjs');\n\" && node --check /tmp/dsh-anchored-pristine-patched.mjs && echo 'PATCHED COPY SYNTAX OK'",
    "source": "jev",
    "action": "allow",
    "p": 0.04,
@@ -4122,7 +4122,7 @@
    "ms": 250
   },
   {
-   "command": "node --input-type=module -e \"\nconst mod = await import('file://' + process.env.HOME + '/.hindsight/coding-agents/dist/dsh.js?check=' + Date.now());\nconsole.log('exports:', Object.keys(mod));\nconsole.log('name:', mod.name);\nconsole.log('inject:', mod.inject);\nconsole.log('typeof apply:', typeof mod.apply);\nconsole.log('typeof default:', typeof mod.default);\n\"",
+   "command": "node --input-type=module -e \"\nconst mod = await import('file://' + process.env.HOME + '/.<other-tool>/coding-agents/dist/dsh.js?check=' + Date.now());\nconsole.log('exports:', Object.keys(mod));\nconsole.log('name:', mod.name);\nconsole.log('inject:', mod.inject);\nconsole.log('typeof apply:', typeof mod.apply);\nconsole.log('typeof default:', typeof mod.default);\n\"",
    "source": "jev",
    "action": "allow",
    "p": 0.02,
@@ -4138,7 +4138,7 @@
    "ms": 0
   },
   {
-   "command": "node --check ~/.dsh/plugins/hindsight-anchored.mjs && echo 'WRAPPER SYNTAX OK'; echo '---simulate full patch on pristine backup---'; node -e \"\nconst fs = require('fs');\nconst HOME = process.env.HOME;\nconst src = fs.readFileSync(HOME + '/.hindsight/coding-agents/dist/dsh.js.bak-anchored-20260815-193811', 'utf8');\nconst MARKER = '// [dsh-anchored-first-turn]';\nconst PATCH_A_OLD = \\`    const turns = (this.turnCount.get(sessionId) ?? 0) + 1;\n    this.turnCount.set(sessionId, turns);\n    const cacheFile = sessionCacheFile(this.harness, sessionId);\\`;\nconst PATCH_A_NEW = \\`    const turns = (this.turnCount.get(sessionId) ?? 0) + 1;\n    this.turnCount.set(sessionId, turns);\n    const cacheFile = sessionCacheFile(this.harness, sessionId);\n    // [dsh-anchored-first-turn] Brand-new sessions keep turn 1 free of Hindsight\n    // context (anchored/bootstrap presets expect only the activated conversation);\n    // resumed sessions inject normally. Turn 2 onward delivers the knowledge\n    // preamble plus any auto-reflect memory.\n    if (turns === 1) {\n      const prior = readSessionCache(cacheFile);\n      if (!prior || (prior.turns ?? 0) === 0) {\n        this.injection.set(sessionId, \\\"\\\");\n        this.lastInjection = \\\"\\\";\n        return;\n      }\n    }\\`;\nconst PATCH_B_OLD = \\`    const blocks = [];\n    if (turns === 1 && this.preamble) blocks.push(this.preamble);\n    if (output.context) blocks.push(output.context);\\`;\nconst PATCH_B_NEW = \\`    const blocks = [];\n    // [dsh-anchored-first-turn] Deliver the one-time knowledge preamble on the\n    // first turn this session is actually injected (turn 2 for a brand-new\n    // anchored session, turn 1 for a resumed session).\n    if (this.preamble && !this.preambleDelivered.has(sessionId)) {\n      blocks.push(this.preamble);\n      this.preambleDelivered.add(sessionId);\n    }\n    if (output.context) blocks.push(output.context);\\`;\nconst PATCH_C_OLD = \\`  turnCount = /* @__PURE__ */ new Map();\n  // sessionId -> user-turn counter (cadence)\n  sessionState = /* @__PURE__ */ new Map();\\`;\nconst PATCH_C_NEW = \\`  turnCount = /* @__PURE__ */ new Map();\n  // sessionId -> user-turn counter (cadence)\n  preambleDelivered = /* @__PURE__ */ new Set();\n  // sessionId -> knowledge preamble already delivered this process\n  sessionState = /* @__PURE__ */ new Map();\\`;\nif (src.includes(MARKER)) throw new Error('backup unexpectedly has marker');\nconst missing = [PATCH_A_OLD, PATCH_B_OLD, PATCH_C_OLD].filter(s => !src.includes(s));\nif (missing.length) throw new Error('pristine snippets not found: ' + missing.length);\nconst patched = src.replace(PATCH_A_OLD, PATCH_A_NEW).replace(PATCH_B_OLD, PATCH_B_NEW).replace(PATCH_C_OLD, PATCH_C_NEW);\nif (!patched.includes(MARKER)) throw new Error('marker missing after patch');\nfs.writeFileSync('/tmp/dsh-anchored-full-patched.mjs', patched);\nconsole.log('FULL PATCH SIMULATION OK on pristine backup');\n\" && node --check /tmp/dsh-anchored-full-patched.mjs && echo 'PATCHED COPY SYNTAX OK'; echo '---current dist marker check---'; grep -c '\\[dsh-anchored-first-turn\\]' ~/.hindsight/coding-agents/dist/dsh.js && node --check ~/.hindsight/coding-agents/dist/dsh.js && echo 'CURRENT DIST SYNTAX OK'",
+   "command": "node --check ~/.dsh/plugins/<other-tool>-anchored.mjs && echo 'WRAPPER SYNTAX OK'; echo '---simulate full patch on pristine backup---'; node -e \"\nconst fs = require('fs');\nconst HOME = process.env.HOME;\nconst src = fs.readFileSync(HOME + '/.<other-tool>/coding-agents/dist/dsh.js.bak-anchored-20260815-193811', 'utf8');\nconst MARKER = '// [dsh-anchored-first-turn]';\nconst PATCH_A_OLD = \\`    const turns = (this.turnCount.get(sessionId) ?? 0) + 1;\n    this.turnCount.set(sessionId, turns);\n    const cacheFile = sessionCacheFile(this.harness, sessionId);\\`;\nconst PATCH_A_NEW = \\`    const turns = (this.turnCount.get(sessionId) ?? 0) + 1;\n    this.turnCount.set(sessionId, turns);\n    const cacheFile = sessionCacheFile(this.harness, sessionId);\n    // [dsh-anchored-first-turn] Brand-new sessions keep turn 1 free of <other-tool>\n    // context (anchored/bootstrap presets expect only the activated conversation);\n    // resumed sessions inject normally. Turn 2 onward delivers the knowledge\n    // preamble plus any auto-reflect memory.\n    if (turns === 1) {\n      const prior = readSessionCache(cacheFile);\n      if (!prior || (prior.turns ?? 0) === 0) {\n        this.injection.set(sessionId, \\\"\\\");\n        this.lastInjection = \\\"\\\";\n        return;\n      }\n    }\\`;\nconst PATCH_B_OLD = \\`    const blocks = [];\n    if (turns === 1 && this.preamble) blocks.push(this.preamble);\n    if (output.context) blocks.push(output.context);\\`;\nconst PATCH_B_NEW = \\`    const blocks = [];\n    // [dsh-anchored-first-turn] Deliver the one-time knowledge preamble on the\n    // first turn this session is actually injected (turn 2 for a brand-new\n    // anchored session, turn 1 for a resumed session).\n    if (this.preamble && !this.preambleDelivered.has(sessionId)) {\n      blocks.push(this.preamble);\n      this.preambleDelivered.add(sessionId);\n    }\n    if (output.context) blocks.push(output.context);\\`;\nconst PATCH_C_OLD = \\`  turnCount = /* @__PURE__ */ new Map();\n  // sessionId -> user-turn counter (cadence)\n  sessionState = /* @__PURE__ */ new Map();\\`;\nconst PATCH_C_NEW = \\`  turnCount = /* @__PURE__ */ new Map();\n  // sessionId -> user-turn counter (cadence)\n  preambleDelivered = /* @__PURE__ */ new Set();\n  // sessionId -> knowledge preamble already delivered this process\n  sessionState = /* @__PURE__ */ new Map();\\`;\nif (src.includes(MARKER)) throw new Error('backup unexpectedly has marker');\nconst missing = [PATCH_A_OLD, PATCH_B_OLD, PATCH_C_OLD].filter(s => !src.includes(s));\nif (missing.length) throw new Error('pristine snippets not found: ' + missing.length);\nconst patched = src.replace(PATCH_A_OLD, PATCH_A_NEW).replace(PATCH_B_OLD, PATCH_B_NEW).replace(PATCH_C_OLD, PATCH_C_NEW);\nif (!patched.includes(MARKER)) throw new Error('marker missing after patch');\nfs.writeFileSync('/tmp/dsh-anchored-full-patched.mjs', patched);\nconsole.log('FULL PATCH SIMULATION OK on pristine backup');\n\" && node --check /tmp/dsh-anchored-full-patched.mjs && echo 'PATCHED COPY SYNTAX OK'; echo '---current dist marker check---'; grep -c '\\[dsh-anchored-first-turn\\]' ~/.<other-tool>/coding-agents/dist/dsh.js && node --check ~/.<other-tool>/coding-agents/dist/dsh.js && echo 'CURRENT DIST SYNTAX OK'",
    "source": "jev",
    "action": "allow",
    "p": 0.05,
@@ -4147,7 +4147,7 @@
    "ms": 361
   },
   {
-   "command": "node --input-type=module -e \"\nconst mod = await import('file://' + process.env.HOME + '/.dsh/plugins/hindsight-anchored.mjs');\nconsole.log('wrapper exports:', Object.keys(mod));\nconsole.log('name:', mod.name);\nconsole.log('inject:', mod.inject);\nconsole.log('typeof apply:', typeof mod.apply);\nconsole.log('typeof default:', typeof mod.default);\nconsole.log('default.name:', mod.default?.name);\n\"",
+   "command": "node --input-type=module -e \"\nconst mod = await import('file://' + process.env.HOME + '/.dsh/plugins/<other-tool>-anchored.mjs');\nconsole.log('wrapper exports:', Object.keys(mod));\nconsole.log('name:', mod.name);\nconsole.log('inject:', mod.inject);\nconsole.log('typeof apply:', typeof mod.apply);\nconsole.log('typeof default:', typeof mod.default);\nconsole.log('default.name:', mod.default?.name);\n\"",
    "source": "jev",
    "action": "allow",
    "p": 0.01,
@@ -4433,7 +4433,7 @@
    "ms": 312
   },
   {
-   "command": "du -sh ~/hindsight ~/hindsight/* 2>/dev/null | sort -h | tail -20; echo '---DEEPSEEK---'; du -sh ~/deepseek-harness ~/deepseek-harness/* 2>/dev/null | sort -h | tail -25",
+   "command": "du -sh ~/<other-tool> ~/<other-tool>/* 2>/dev/null | sort -h | tail -20; echo '---DEEPSEEK---'; du -sh ~/deepseek-harness ~/deepseek-harness/* 2>/dev/null | sort -h | tail -25",
    "source": "jev",
    "action": "allow",
    "p": 0.01,
@@ -4451,7 +4451,7 @@
    "ms": 252
   },
   {
-   "command": "ls -la ~/hindsight/ 2>&1 | head -30; echo '---'; du -sh ~/hindsight/* 2>&1 | sort -h | tail -20; echo '---LS DEEPSEEK---'; ls -la ~/deepseek-harness/ 2>&1 | head -30; echo '---DU DEEPSEEK---'; du -sh ~/deepseek-harness/* 2>&1 | sort -h | tail -25",
+   "command": "ls -la ~/<other-tool>/ 2>&1 | head -30; echo '---'; du -sh ~/<other-tool>/* 2>&1 | sort -h | tail -20; echo '---LS DEEPSEEK---'; ls -la ~/deepseek-harness/ 2>&1 | head -30; echo '---DU DEEPSEEK---'; du -sh ~/deepseek-harness/* 2>&1 | sort -h | tail -25",
    "source": "jev",
    "action": "allow",
    "p": 0.01,
@@ -4460,7 +4460,7 @@
    "ms": 282
   },
   {
-   "command": "du -sh ~/hindsight/tei-models/* 2>/dev/null | sort -h; echo '---COMPOSE---'; cat ~/hindsight/docker-compose.yml 2>/dev/null | head -80",
+   "command": "du -sh ~/<other-tool>/tei-models/* 2>/dev/null | sort -h; echo '---COMPOSE---'; cat ~/<other-tool>/docker-compose.yml 2>/dev/null | head -80",
    "source": "jev",
    "action": "allow",
    "p": 0.01,
@@ -4487,7 +4487,7 @@
    "ms": 263
   },
   {
-   "command": "grep -rn \"e5-small\\|multilingual-e5\" ~/hindsight/ ~/.dsh/ ~/start-dsh* ~/dsh.env 2>/dev/null | grep -v '\\.log:' | head -20; echo '---EXIT---'; du -sh ~/hindsight/tei-models/models--intfloat--multilingual-e5-small/* 2>/dev/null | sort -h",
+   "command": "grep -rn \"e5-small\\|multilingual-e5\" ~/<other-tool>/ ~/.dsh/ ~/start-dsh* ~/dsh.env 2>/dev/null | grep -v '\\.log:' | head -20; echo '---EXIT---'; du -sh ~/<other-tool>/tei-models/models--intfloat--multilingual-e5-small/* 2>/dev/null | sort -h",
    "source": "jev",
    "action": "allow",
    "p": 0.01,
@@ -4514,7 +4514,7 @@
    "ms": 282
   },
   {
-   "command": "du -sh ~/hindsight/tei-models/models--BAAI--bge-m3/* 2>/dev/null | sort -h | tail -15; echo '---CACHE PNPM---'; du -sh ~/.cache/pnpm/* 2>/dev/null | sort -h | tail -10; echo '---CACHE NODE---'; du -sh ~/.cache/node/* ~/.cache/node-gyp/* 2>/dev/null | sort -h | tail -12",
+   "command": "du -sh ~/<other-tool>/tei-models/models--BAAI--bge-m3/* 2>/dev/null | sort -h | tail -15; echo '---CACHE PNPM---'; du -sh ~/.cache/pnpm/* 2>/dev/null | sort -h | tail -10; echo '---CACHE NODE---'; du -sh ~/.cache/node/* ~/.cache/node-gyp/* 2>/dev/null | sort -h | tail -12",
    "source": "jev",
    "action": "allow",
    "p": 0.01,
@@ -4532,7 +4532,7 @@
    "ms": 216
   },
   {
-   "command": "du -sh ~ 2>/dev/null; echo '---TOTAL VS CANDIDATES---'; du -sh ~/.cache ~/.local/share/pnpm ~/hindsight/tei-models/models--intfloat--multilingual-e5-small ~/deepseek-harness/node_modules 2>/dev/null",
+   "command": "du -sh ~ 2>/dev/null; echo '---TOTAL VS CANDIDATES---'; du -sh ~/.cache ~/.local/share/pnpm ~/<other-tool>/tei-models/models--intfloat--multilingual-e5-small ~/deepseek-harness/node_modules 2>/dev/null",
    "source": "jev",
    "action": "allow",
    "p": 0.01,
@@ -4577,7 +4577,7 @@
    "ms": 278
   },
   {
-   "command": "set -x\nrm -rf ~/.cache/pip ~/.cache/pnpm ~/.cache/node ~/.cache/node-gyp\nrm -rf ~/hindsight/tei-models/models--intfloat--multilingual-e5-small\necho '---VERIFY---'\ndu -sh ~/.cache 2>/dev/null\ndu -sh ~/hindsight/tei-models 2>/dev/null\nls ~/hindsight/tei-models 2>/dev/null",
+   "command": "set -x\nrm -rf ~/.cache/pip ~/.cache/pnpm ~/.cache/node ~/.cache/node-gyp\nrm -rf ~/<other-tool>/tei-models/models--intfloat--multilingual-e5-small\necho '---VERIFY---'\ndu -sh ~/.cache 2>/dev/null\ndu -sh ~/<other-tool>/tei-models 2>/dev/null\nls ~/<other-tool>/tei-models 2>/dev/null",
    "source": "jev",
    "action": "allow",
    "p": 0.15,
@@ -4613,7 +4613,7 @@
    "ms": 275
   },
   {
-   "command": "echo '---HOME TOTAL---'; du -sh ~ 2>/dev/null; echo '---DISK---'; df -h / 2>/dev/null; echo '---CACHE---'; du -sh ~/.cache 2>/dev/null; echo '---TEI---'; du -sh ~/hindsight/tei-models 2>/dev/null; echo '---TMP---'; du -sh /tmp 2>/dev/null; echo '---APT/JOURNAL---'; du -sh /var/cache/apt/archives 2>/dev/null; journalctl --disk-usage 2>/dev/null | head -1",
+   "command": "echo '---HOME TOTAL---'; du -sh ~ 2>/dev/null; echo '---DISK---'; df -h / 2>/dev/null; echo '---CACHE---'; du -sh ~/.cache 2>/dev/null; echo '---TEI---'; du -sh ~/<other-tool>/tei-models 2>/dev/null; echo '---TMP---'; du -sh /tmp 2>/dev/null; echo '---APT/JOURNAL---'; du -sh /var/cache/apt/archives 2>/dev/null; journalctl --disk-usage 2>/dev/null | head -1",
    "source": "jev",
    "action": "allow",
    "p": 0.01,
@@ -4810,7 +4810,7 @@
    "ms": 331
   },
   {
-   "command": "tail -100 /tmp/hindsight-plugin.log 2>/dev/null | grep -E \"reflect|session_start|turn|inject\" | tail -40; echo \"===exit $?\"",
+   "command": "tail -100 /tmp/<other-tool>-plugin.log 2>/dev/null | grep -E \"reflect|session_start|turn|inject\" | tail -40; echo \"===exit $?\"",
    "source": "jev",
    "action": "allow",
    "p": 0.01,
@@ -4889,7 +4889,7 @@
    "ms": 215
   },
   {
-   "command": "cd <HOME>/dsh-workspace/.agents/sess-inspect && grep -c \"hindsight\" old.jsonl newer.jsonl; echo \"---\"; grep -o '\"role\":\"[a-z]*\"' old.jsonl | sort | uniq -c; echo \"---newer---\"; grep -o '\"role\":\"[a-z]*\"' newer.jsonl | sort | uniq -c",
+   "command": "cd <HOME>/dsh-workspace/.agents/sess-inspect && grep -c \"<other-tool>\" old.jsonl newer.jsonl; echo \"---\"; grep -o '\"role\":\"[a-z]*\"' old.jsonl | sort | uniq -c; echo \"---newer---\"; grep -o '\"role\":\"[a-z]*\"' newer.jsonl | sort | uniq -c",
    "source": "jev",
    "action": "allow",
    "p": 0.01,
@@ -4898,7 +4898,7 @@
    "ms": 264
   },
   {
-   "command": "cd <HOME>/dsh-workspace/.agents/sess-inspect && grep -n \"第二轮\\|延迟\\|阻塞\\|hindsight 注入\\|注入\\|推迟\" old.jsonl | head -30",
+   "command": "cd <HOME>/dsh-workspace/.agents/sess-inspect && grep -n \"第二轮\\|延迟\\|阻塞\\|<other-tool> 注入\\|注入\\|推迟\" old.jsonl | head -30",
    "source": "jev",
    "action": "allow",
    "p": 0.01,
@@ -4907,7 +4907,7 @@
    "ms": 224
   },
   {
-   "command": "cd <HOME>/dsh-workspace/.agents/sess-inspect && grep -n \"延迟\\|阻塞\\|第二轮\\|注入\\|hindsight\\|推迟\" newer.jsonl | grep '\"type\":\"user/message\"' | head -20",
+   "command": "cd <HOME>/dsh-workspace/.agents/sess-inspect && grep -n \"延迟\\|阻塞\\|第二轮\\|注入\\|<other-tool>\\|推迟\" newer.jsonl | grep '\"type\":\"user/message\"' | head -20",
    "source": "jev",
    "action": "allow",
    "p": 0.01,
@@ -4934,7 +4934,7 @@
    "ms": 237
   },
   {
-   "command": "cd <HOME>/dsh-workspace/.agents/sess-inspect && python3 - <<'EOF'\nimport zstandard as zstd, json, glob, os\n\nroots = [\n    '<HOME>/.dsh/sessions/--home-<USER>-deepseek-harness--',\n    '<HOME>/.dsh/sessions/--home-<USER>-dsh-workspace--',\n]\nkeywords = ['第二轮', '延迟', '注入', '阻塞显示', 'hindsight']\nhits = []\nfor root in roots:\n    for zf in glob.glob(root + '/*/session.jsonl.zstd'):\n        try:\n            with open(zf, 'rb') as f:\n                dctx = zstd.ZstdDecompressor()\n                data = dctx.decompress(f.read())\n            text = data.decode('utf-8', errors='replace')\n        except Exception as e:\n            print('ERR', zf, e)\n            continue\n        score = 0\n        for kw in keywords:\n            score += text.count(kw)\n        # find user human messages mentioning the delay issue\n        found = []\n        for line in text.splitlines():\n            if '\"type\":\"user/message\"' not in line:\n                continue\n            try:\n                obj = json.loads(line)\n            except Exception:\n                continue\n            data2 = obj.get('data', {})\n            src = data2.get('source', {})\n            if src.get('kind') == 'plugin':\n                continue\n            txt = ' '.join(c.get('text','') for c in data2.get('content',[]) if c.get('type')=='text')\n            if any(k in txt for k in ['第二轮','延迟','注入','阻塞']):\n                found.append(txt.replace('\\n',' ')[:120])\n        print(zf, '| kw-score:', score, '| user msgs:', len(found))\n        for f in found[:6]:\n            print('   -', f)\nEOF",
+   "command": "cd <HOME>/dsh-workspace/.agents/sess-inspect && python3 - <<'EOF'\nimport zstandard as zstd, json, glob, os\n\nroots = [\n    '<HOME>/.dsh/sessions/--home-<USER>-deepseek-harness--',\n    '<HOME>/.dsh/sessions/--home-<USER>-dsh-workspace--',\n]\nkeywords = ['第二轮', '延迟', '注入', '阻塞显示', '<other-tool>']\nhits = []\nfor root in roots:\n    for zf in glob.glob(root + '/*/session.jsonl.zstd'):\n        try:\n            with open(zf, 'rb') as f:\n                dctx = zstd.ZstdDecompressor()\n                data = dctx.decompress(f.read())\n            text = data.decode('utf-8', errors='replace')\n        except Exception as e:\n            print('ERR', zf, e)\n            continue\n        score = 0\n        for kw in keywords:\n            score += text.count(kw)\n        # find user human messages mentioning the delay issue\n        found = []\n        for line in text.splitlines():\n            if '\"type\":\"user/message\"' not in line:\n                continue\n            try:\n                obj = json.loads(line)\n            except Exception:\n                continue\n            data2 = obj.get('data', {})\n            src = data2.get('source', {})\n            if src.get('kind') == 'plugin':\n                continue\n            txt = ' '.join(c.get('text','') for c in data2.get('content',[]) if c.get('type')=='text')\n            if any(k in txt for k in ['第二轮','延迟','注入','阻塞']):\n                found.append(txt.replace('\\n',' ')[:120])\n        print(zf, '| kw-score:', score, '| user msgs:', len(found))\n        for f in found[:6]:\n            print('   -', f)\nEOF",
    "source": "jev",
    "action": "allow",
    "p": 0.02,
@@ -4943,7 +4943,7 @@
    "ms": 277
   },
   {
-   "command": "cd <HOME>/dsh-workspace/.agents/sess-inspect && python3 - <<'EOF'\nimport zstandard as zstd, json, glob\n\nroots = [\n    '<HOME>/.dsh/sessions/--home-<USER>-deepseek-harness--',\n    '<HOME>/.dsh/sessions/--home-<USER>-dsh-workspace--',\n]\nkeywords = ['第二轮', '延迟', '注入', '阻塞显示', 'hindsight', '推迟']\nfor root in roots:\n    for zf in sorted(glob.glob(root + '/*/session.jsonl.zstd')):\n        try:\n            with open(zf, 'rb') as f:\n                dctx = zstd.ZstdDecompressor()\n                out = open(zf + '.dec', 'wb')\n                dctx.copy_stream(f, out)\n                out.close()\n            with open(zf + '.dec', 'r', errors='replace') as f:\n                text = f.read()\n        except Exception as e:\n            print('ERR', zf, e)\n            continue\n        score = sum(text.count(kw) for kw in keywords)\n        found = []\n        for line in text.splitlines():\n            if '\"type\":\"user/message\"' not in line:\n                continue\n            try:\n                obj = json.loads(line)\n            except Exception:\n                continue\n            data2 = obj.get('data', {})\n            src = data2.get('source', {})\n            if src.get('kind') == 'plugin':\n                continue\n            txt = ' '.join(c.get('text','') for c in data2.get('content',[]) if c.get('type')=='text')\n            if any(k in txt for k in ['第二轮','延迟','注入','阻塞','hindsight']):\n                found.append(txt.replace('\\n',' ')[:150])\n        if score or found:\n            print(zf, '| kw-score:', score, '| user msgs:', len(found))\n            for f in found[:8]:\n                print('   -', f)\nEOF",
+   "command": "cd <HOME>/dsh-workspace/.agents/sess-inspect && python3 - <<'EOF'\nimport zstandard as zstd, json, glob\n\nroots = [\n    '<HOME>/.dsh/sessions/--home-<USER>-deepseek-harness--',\n    '<HOME>/.dsh/sessions/--home-<USER>-dsh-workspace--',\n]\nkeywords = ['第二轮', '延迟', '注入', '阻塞显示', '<other-tool>', '推迟']\nfor root in roots:\n    for zf in sorted(glob.glob(root + '/*/session.jsonl.zstd')):\n        try:\n            with open(zf, 'rb') as f:\n                dctx = zstd.ZstdDecompressor()\n                out = open(zf + '.dec', 'wb')\n                dctx.copy_stream(f, out)\n                out.close()\n            with open(zf + '.dec', 'r', errors='replace') as f:\n                text = f.read()\n        except Exception as e:\n            print('ERR', zf, e)\n            continue\n        score = sum(text.count(kw) for kw in keywords)\n        found = []\n        for line in text.splitlines():\n            if '\"type\":\"user/message\"' not in line:\n                continue\n            try:\n                obj = json.loads(line)\n            except Exception:\n                continue\n            data2 = obj.get('data', {})\n            src = data2.get('source', {})\n            if src.get('kind') == 'plugin':\n                continue\n            txt = ' '.join(c.get('text','') for c in data2.get('content',[]) if c.get('type')=='text')\n            if any(k in txt for k in ['第二轮','延迟','注入','阻塞','<other-tool>']):\n                found.append(txt.replace('\\n',' ')[:150])\n        if score or found:\n            print(zf, '| kw-score:', score, '| user msgs:', len(found))\n            for f in found[:8]:\n                print('   -', f)\nEOF",
    "source": "jev",
    "action": "allow",
    "p": 0.1,
@@ -4979,7 +4979,7 @@
    "ms": 295
   },
   {
-   "command": "HERMES_CONTAINER=$(docker ps --filter \"name=hermes\" --format \"{{.Names}}\" | head -1)",
+   "command": "<other-tool>_CONTAINER=$(docker ps --filter \"name=<other-tool>\" --format \"{{.Names}}\" | head -1)",
    "source": "jev",
    "action": "allow",
    "p": 0.01,
@@ -4988,7 +4988,7 @@
    "ms": 240
   },
   {
-   "command": "docker inspect $HERMES_CONTAINER | jq '.[0].Config.Image'",
+   "command": "docker inspect $<other-tool>_CONTAINER | jq '.[0].Config.Image'",
    "source": "jev",
    "action": "allow",
    "p": 0.01,
@@ -4997,7 +4997,7 @@
    "ms": 288
   },
   {
-   "command": "docker exec $HERMES_CONTAINER nvcc --version 2>/dev/null || echo \"nvcc 不可用\"",
+   "command": "docker exec $<other-tool>_CONTAINER nvcc --version 2>/dev/null || echo \"nvcc 不可用\"",
    "source": "jev",
    "action": "allow",
    "p": 0.01,
@@ -5006,7 +5006,7 @@
    "ms": 267
   },
   {
-   "command": "docker exec $HERMES_CONTAINER ls -l /usr/local/cuda/lib64/libcudart.so* 2>/dev/null || docker exec $HERMES_CONTAINER find / -name \"libcudart.so*\" 2>/dev/null | head -5",
+   "command": "docker exec $<other-tool>_CONTAINER ls -l /usr/local/cuda/lib64/libcudart.so* 2>/dev/null || docker exec $<other-tool>_CONTAINER find / -name \"libcudart.so*\" 2>/dev/null | head -5",
    "source": "jev",
    "action": "allow",
    "p": 0.01,
@@ -5022,7 +5022,7 @@
    "ms": 0
   },
   {
-   "command": "docker exec hermes netstat -tulpn | grep -E '8642|9119'",
+   "command": "docker exec <other-tool> netstat -tulpn | grep -E '8642|9119'",
    "source": "jev",
    "action": "allow",
    "p": 0.01,
@@ -5031,7 +5031,7 @@
    "ms": 242
   },
   {
-   "command": "docker exec hermes ps aux | grep -E 'hermes gateway|dashboard'",
+   "command": "docker exec <other-tool> ps aux | grep -E '<other-tool> gateway|dashboard'",
    "source": "jev",
    "action": "allow",
    "p": 0.01,
@@ -5040,7 +5040,7 @@
    "ms": 238
   },
   {
-   "command": "docker exec hermes cat /etc/s6/overlay/s6-rc.d/hermes/run",
+   "command": "docker exec <other-tool> cat /etc/s6/overlay/s6-rc.d/<other-tool>/run",
    "source": "jev",
    "action": "allow",
    "p": 0.01,
@@ -5049,7 +5049,7 @@
    "ms": 297
   },
   {
-   "command": "docker exec hermes cat /etc/s6/overlay/s6-rc.d/dashboard/run",
+   "command": "docker exec <other-tool> cat /etc/s6/overlay/s6-rc.d/dashboard/run",
    "source": "jev",
    "action": "allow",
    "p": 0.01,
@@ -5058,7 +5058,7 @@
    "ms": 259
   },
   {
-   "command": "docker logs hermes 2>&1 | grep -i \"listen\\|binding\\|host\"",
+   "command": "docker logs <other-tool> 2>&1 | grep -i \"listen\\|binding\\|host\"",
    "source": "jev",
    "action": "allow",
    "p": 0.01,
@@ -5067,21 +5067,21 @@
    "ms": 235
   },
   {
-   "command": "docker ps -a | grep hermes",
+   "command": "docker ps -a | grep <other-tool>",
    "source": "prefilter",
    "action": "allow",
    "reason": "compound of 2 harmless segments",
    "ms": 0
   },
   {
-   "command": "docker logs hermes --tail 100",
+   "command": "docker logs <other-tool> --tail 100",
    "source": "prefilter",
    "action": "allow",
    "reason": "read-only shape (docker)",
    "ms": 0
   },
   {
-   "command": "docker start hermes",
+   "command": "docker start <other-tool>",
    "source": "jev",
    "action": "allow",
    "p": 0.02,
@@ -5090,14 +5090,14 @@
    "ms": 260
   },
   {
-   "command": "docker logs hermes --tail 50",
+   "command": "docker logs <other-tool> --tail 50",
    "source": "prefilter",
    "action": "allow",
    "reason": "read-only shape (docker)",
    "ms": 0
   },
   {
-   "command": "docker exec hermes ss -tulpn | grep -E '8642|9119'",
+   "command": "docker exec <other-tool> ss -tulpn | grep -E '8642|9119'",
    "source": "jev",
    "action": "allow",
    "p": 0.01,
@@ -5106,7 +5106,7 @@
    "ms": 228
   },
   {
-   "command": "docker exec hermes ps aux | grep -E 'hermes|dashboard|gateway'",
+   "command": "docker exec <other-tool> ps aux | grep -E '<other-tool>|dashboard|gateway'",
    "source": "jev",
    "action": "allow",
    "p": 0.01,
@@ -5115,7 +5115,7 @@
    "ms": 247
   },
   {
-   "command": "docker exec hermes ls -la /etc/s6-overlay/s6-rc.d/ 2>/dev/null || docker exec hermes ls -la /package/admin/s6-overlay/s6-rc.d/ 2>/dev/null",
+   "command": "docker exec <other-tool> ls -la /etc/s6-overlay/s6-rc.d/ 2>/dev/null || docker exec <other-tool> ls -la /package/admin/s6-overlay/s6-rc.d/ 2>/dev/null",
    "source": "jev",
    "action": "allow",
    "p": 0.01,
@@ -5124,7 +5124,7 @@
    "ms": 283
   },
   {
-   "command": "docker exec hermes cat /etc/s6-overlay/s6-rc.d/hermes/run 2>/dev/null || docker exec hermes cat /package/admin/s6-overlay/s6-rc.d/hermes/run 2>/dev/null",
+   "command": "docker exec <other-tool> cat /etc/s6-overlay/s6-rc.d/<other-tool>/run 2>/dev/null || docker exec <other-tool> cat /package/admin/s6-overlay/s6-rc.d/<other-tool>/run 2>/dev/null",
    "source": "jev",
    "action": "allow",
    "p": 0.01,
@@ -5133,7 +5133,7 @@
    "ms": 240
   },
   {
-   "command": "docker logs hermes 2>&1 | tail -50",
+   "command": "docker logs <other-tool> 2>&1 | tail -50",
    "source": "jev",
    "action": "allow",
    "p": 0.01,
@@ -5142,7 +5142,7 @@
    "ms": 248
   },
   {
-   "command": "chmod +x start-hermes-with-chrome.sh",
+   "command": "chmod +x start-<other-tool>-with-chrome.sh",
    "source": "jev",
    "action": "allow",
    "p": 0.01,
@@ -5151,7 +5151,7 @@
    "ms": 249
   },
   {
-   "command": "rm -rf ~/.hermes/logs/gateways/*/lock",
+   "command": "rm -rf ~/.<other-tool>/logs/gateways/*/lock",
    "source": "jev",
    "action": "allow",
    "p": 0.24,
@@ -5160,7 +5160,7 @@
    "ms": 295
   },
   {
-   "command": "cd ~/hermes-agent",
+   "command": "cd ~/<other-tool>-agent",
    "source": "jev",
    "action": "allow",
    "p": 0.01,
@@ -5176,7 +5176,7 @@
    "ms": 0
   },
   {
-   "command": "nano start-hermes-with-chrome.sh",
+   "command": "nano start-<other-tool>-with-chrome.sh",
    "source": "jev",
    "action": "allow",
    "p": 0.14,
@@ -5185,7 +5185,7 @@
    "ms": 367
   },
   {
-   "command": "cp start-hermes-with-chrome.sh start-hermes-with-chrome.sh.bak",
+   "command": "cp start-<other-tool>-with-chrome.sh start-<other-tool>-with-chrome.sh.bak",
    "source": "jev",
    "action": "allow",
    "p": 0.13,
@@ -5194,7 +5194,7 @@
    "ms": 278
   },
   {
-   "command": "nano start-hermes-with-chrome.sh.bak",
+   "command": "nano start-<other-tool>-with-chrome.sh.bak",
    "source": "jev",
    "action": "allow",
    "p": 0.16,
@@ -5203,7 +5203,7 @@
    "ms": 218
   },
   {
-   "command": "echo \"\" > start-hermes-with-chrome.sh",
+   "command": "echo \"\" > start-<other-tool>-with-chrome.sh",
    "source": "jev",
    "action": "ask",
    "p": 0.7,
@@ -5212,7 +5212,7 @@
    "ms": 303
   },
   {
-   "command": "nano ~/.hermes/config.yaml",
+   "command": "nano ~/.<other-tool>/config.yaml",
    "source": "jev",
    "action": "allow",
    "p": 0.22,
@@ -5221,21 +5221,21 @@
    "ms": 281
   },
   {
-   "command": "cat ~/.hermes/config.yaml",
+   "command": "cat ~/.<other-tool>/config.yaml",
    "source": "prefilter",
    "action": "allow",
    "reason": "read-only (cat)",
    "ms": 0
   },
   {
-   "command": "cat start-hermes-with-chrome.sh",
+   "command": "cat start-<other-tool>-with-chrome.sh",
    "source": "prefilter",
    "action": "allow",
    "reason": "read-only (cat)",
    "ms": 0
   },
   {
-   "command": "cd ~/hindsight",
+   "command": "cd ~/<other-tool>",
    "source": "jev",
    "action": "allow",
    "p": 0.01,
@@ -5244,7 +5244,7 @@
    "ms": 273
   },
   {
-   "command": "docker exec -it hermes bash",
+   "command": "docker exec -it <other-tool> bash",
    "source": "jev",
    "action": "allow",
    "p": 0.02,
@@ -5271,7 +5271,7 @@
    "ms": 255
   },
   {
-   "command": "docker exec -it hermes-agent python3 -c \"import torch; print(torch.__version__)\"",
+   "command": "docker exec -it <other-tool>-agent python3 -c \"import torch; print(torch.__version__)\"",
    "source": "jev",
    "action": "allow",
    "p": 0.01,
@@ -5280,7 +5280,7 @@
    "ms": 348
   },
   {
-   "command": "docker exec -it hermes python3 -c \"\"",
+   "command": "docker exec -it <other-tool> python3 -c \"\"",
    "source": "jev",
    "action": "allow",
    "p": 0.02,
@@ -5307,7 +5307,7 @@
    "ms": 302
   },
   {
-   "command": "sudo chown -R 1000:1000 ~/.hermes/",
+   "command": "sudo chown -R 1000:1000 ~/.<other-tool>/",
    "source": "jev",
    "action": "allow",
    "p": 0.02,
@@ -5343,7 +5343,7 @@
    "ms": 321
   },
   {
-   "command": "docker pull nousresearch/hermes-agent:v0.15.2",
+   "command": "docker pull nousresearch/<other-tool>-agent:v0.15.2",
    "source": "jev",
    "action": "allow",
    "p": 0.02,
@@ -5361,7 +5361,7 @@
    "ms": 382
   },
   {
-   "command": "docker pull nousresearch/hermes-agent:docker pull nousresearch/hermes-agent:v2026.5.29.2",
+   "command": "docker pull nousresearch/<other-tool>-agent:docker pull nousresearch/<other-tool>-agent:v2026.5.29.2",
    "source": "jev",
    "action": "allow",
    "p": 0.02,
@@ -5370,7 +5370,7 @@
    "ms": 322
   },
   {
-   "command": "docker pull nousresearch/hermes-agent:v2026.5.29.2",
+   "command": "docker pull nousresearch/<other-tool>-agent:v2026.5.29.2",
    "source": "jev",
    "action": "allow",
    "p": 0.02,
@@ -5433,7 +5433,7 @@
    "ms": 370
   },
   {
-   "command": "pip install -U huggingface_hub",
+   "command": "pip install -U <other-tool>_hub",
    "source": "jev",
    "action": "allow",
    "p": 0.03,
@@ -5451,7 +5451,7 @@
    "ms": 243
   },
   {
-   "command": "huggingface-cli download --resume-download --local-dir ~/hindsight/tei-models/models--intfloat--multilingual-e5-small intfloat/multilingual-e5-small",
+   "command": "<other-tool>-cli download --resume-download --local-dir ~/<other-tool>/tei-models/models--intfloat--multilingual-e5-small intfloat/multilingual-e5-small",
    "source": "jev",
    "action": "allow",
    "p": 0.08,
@@ -5460,7 +5460,7 @@
    "ms": 264
   },
   {
-   "command": "hf download --resume-download --local-dir ~/hindsight/tei-models/models--intfloat--multilingual-e5-small intfloat/multilingual-e5-small",
+   "command": "hf download --resume-download --local-dir ~/<other-tool>/tei-models/models--intfloat--multilingual-e5-small intfloat/multilingual-e5-small",
    "source": "jev",
    "action": "allow",
    "p": 0.09,
@@ -5469,7 +5469,7 @@
    "ms": 275
   },
   {
-   "command": "hf download --local-dir ~/hindsight/tei-models/models--intfloat--multilingual-e5-small intfloat/multilingual-e5-small",
+   "command": "hf download --local-dir ~/<other-tool>/tei-models/models--intfloat--multilingual-e5-small intfloat/multilingual-e5-small",
    "source": "jev",
    "action": "allow",
    "p": 0.09,
@@ -5487,7 +5487,7 @@
    "ms": 289
   },
   {
-   "command": "cd ~/hermes-agent/",
+   "command": "cd ~/<other-tool>-agent/",
    "source": "jev",
    "action": "allow",
    "p": 0.01,
@@ -5523,7 +5523,7 @@
    "ms": 362
   },
   {
-   "command": "sudo chmod -R 1000:1000 ~/.hermes/",
+   "command": "sudo chmod -R 1000:1000 ~/.<other-tool>/",
    "source": "jev",
    "action": "allow",
    "p": 0.04,
@@ -5541,7 +5541,7 @@
    "ms": 306
   },
   {
-   "command": "cd hindsight-data",
+   "command": "cd <other-tool>-data",
    "source": "jev",
    "action": "allow",
    "p": 0.01,
@@ -5586,7 +5586,7 @@
    "ms": 315
   },
   {
-   "command": "cd ~/.hermes",
+   "command": "cd ~/.<other-tool>",
    "source": "jev",
    "action": "allow",
    "p": 0.01,
@@ -5658,7 +5658,7 @@
    "ms": 263
   },
   {
-   "command": "cp start-hermes-with-chrome.sh.s6-bak-20260704_164540 start-hermes-with-chrome.sh",
+   "command": "cp start-<other-tool>-with-chrome.sh.s6-bak-20260704_164540 start-<other-tool>-with-chrome.sh",
    "source": "jev",
    "action": "ask",
    "p": 0.72,
@@ -5703,7 +5703,7 @@
    "ms": 241
   },
   {
-   "command": "rm start-hermes-with-chrome.sh.s6-bak-20260704_164540",
+   "command": "rm start-<other-tool>-with-chrome.sh.s6-bak-20260704_164540",
    "source": "jev",
    "action": "allow",
    "p": 0.37,
@@ -5721,7 +5721,7 @@
    "ms": 332
   },
   {
-   "command": "cd ~/hermes-agentg",
+   "command": "cd ~/<other-tool>-agentg",
    "source": "jev",
    "action": "allow",
    "p": 0.01,
@@ -5868,7 +5868,7 @@
    "ms": 343
   },
   {
-   "command": "docker exec hermes source /opt/hermes/.venv/bin/activate && hermes --version",
+   "command": "docker exec <other-tool> source /opt/<other-tool>/.venv/bin/activate && <other-tool> --version",
    "source": "jev",
    "action": "allow",
    "p": 0.02,
@@ -5877,7 +5877,7 @@
    "ms": 259
   },
   {
-   "command": "docker exec hermes source /opt/hermes/.venv/bin/activate && hermes doctor",
+   "command": "docker exec <other-tool> source /opt/<other-tool>/.venv/bin/activate && <other-tool> doctor",
    "source": "jev",
    "action": "allow",
    "p": 0.03,
@@ -5886,7 +5886,7 @@
    "ms": 240
   },
   {
-   "command": "docker exec hermes bash -c \"source /opt/hermes/.venv/bin/activate && hermes doctor\"",
+   "command": "docker exec <other-tool> bash -c \"source /opt/<other-tool>/.venv/bin/activate && <other-tool> doctor\"",
    "source": "jev",
    "action": "allow",
    "p": 0.03,
@@ -5895,7 +5895,7 @@
    "ms": 271
   },
   {
-   "command": "docker exec hermes bash -c \"source /opt/hermes/.venv/bin/activate && hermes doctor --fix\"",
+   "command": "docker exec <other-tool> bash -c \"source /opt/<other-tool>/.venv/bin/activate && <other-tool> doctor --fix\"",
    "source": "jev",
    "action": "allow",
    "p": 0.19,
@@ -5904,7 +5904,7 @@
    "ms": 314
   },
   {
-   "command": "cd .hermes",
+   "command": "cd .<other-tool>",
    "source": "jev",
    "action": "allow",
    "p": 0.01,
@@ -6132,7 +6132,7 @@
    "ms": 286
   },
   {
-   "command": "~/hindsight",
+   "command": "~/<other-tool>",
    "source": "jev",
    "action": "allow",
    "p": 0.06,
@@ -6229,7 +6229,7 @@
    "ms": 0
   },
   {
-   "command": "cd ~hindsight",
+   "command": "cd ~<other-tool>",
    "source": "jev",
    "action": "allow",
    "p": 0.01,
@@ -6256,7 +6256,7 @@
    "ms": 291
   },
   {
-   "command": "cd hindsight",
+   "command": "cd <other-tool>",
    "source": "jev",
    "action": "allow",
    "p": 0.01,
