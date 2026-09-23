@@ -8,6 +8,7 @@
 [![platform](https://img.shields.io/badge/platform-WSL%20%7C%20Windows-2f2f2f.svg)](#platform-support)
 [![version](https://img.shields.io/github/v/tag/7starsseeker/dsh-jev-guard?label=version&style=flat)](https://github.com/7starsseeker/dsh-jev-guard/tags)
 [![npm](https://img.shields.io/npm/v/dsh-jev-guard?label=npm&style=flat)](https://www.npmjs.com/package/dsh-jev-guard)
+[![downloads](https://img.shields.io/npm/dm/dsh-jev-guard?label=downloads&style=flat)](https://www.npmjs.com/package/dsh-jev-guard)
 [![selftest](https://img.shields.io/github/actions/workflow/status/7starsseeker/dsh-jev-guard/selftest.yml?label=selftest)](https://github.com/7starsseeker/dsh-jev-guard/actions/workflows/selftest.yml)
 [![last commit](https://img.shields.io/github/last-commit/7starsseeker/dsh-jev-guard)](https://github.com/7starsseeker/dsh-jev-guard/commits/main)
 [![stars](https://img.shields.io/github/stars/7starsseeker/dsh-jev-guard?style=flat)](https://github.com/7starsseeker/dsh-jev-guard/stargazers)
