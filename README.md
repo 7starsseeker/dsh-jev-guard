@@ -70,7 +70,7 @@ Three layers, always in this order:
 
 Requires **Node ≥ 20** (it uses the global `fetch`). **Zero runtime dependencies** — no `npm install` needed.
 
-**Verified host version: DSH 0.1.6-alpha.2.** That is the only DSH release this plugin has been run against, and it is deliberately **not** declared as a host requirement in `package.json`: the plugin market reads that field from the npm manifest and would then block install and update on every other DSH release. Another version is therefore **untested, not forbidden**; if you run one, re-run the self-checks below.
+**Verified host versions: DSH 0.1.6-alpha.2 and 0.1.7-rc.2.** 0.1.7-rc.2 was checked end to end on 2026-09-25 (Node 24.21.0, WSL/Linux, this plugin at 0.5.3): `guard selftest` 12/12; the seven offline suites 20 / 31 / 34 / 109 / 56 / 48 / 17 assertions, all passing; the DSH adapter smoke test 23/23; and the tool-pipeline integration test running against that checkout's own `@deepseek-ai/dsh-tools` 6/6 offline and **7/7 with a key**, the extra case being one live judgement through the real five-stage pipeline. The valve also ran mounted in a real session, judging commands and writing its audit log under approval policy `ask`. No host requirement is declared in `package.json` for either version: the plugin market reads that field from the npm manifest and would then block install and update on every other DSH release. A version not listed here is therefore **untested, not forbidden**; if you run one, re-run the self-checks below.
 
 ```bash
 # 1. Put this repository somewhere permanent, e.g. T:\dsh-jev-guard (/mnt/t/dsh-jev-guard in WSL)
