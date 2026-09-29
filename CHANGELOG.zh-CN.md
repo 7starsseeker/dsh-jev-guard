@@ -5,6 +5,20 @@
 本项目遵循「按日期记录事实」的写法:每条都写清**改了什么、为什么、以及怎么验证的**。
 完整的设计取舍见 [`docs/DECISIONS.md`](./docs/DECISIONS.md),实测数据见 [`docs/MEASUREMENTS.md`](./docs/MEASUREMENTS.md)。
 
+## [0.5.4] — 2026-09-30
+
+**Windows 上,一次判定结论完全正确的联网判定,会以崩溃退出码结束。** 现在退出改为让事件循环自然排空;另外修掉两个冒烟脚本在 Windows 上的实测偏差。判定路径一行未动 —— `lib/` 与 `adapters/` 相对 0.5.3 完全一致。
+
+**出了什么事。** 在 Windows 桌面版 DSH 0.2.0-rc.2 的真实会话上跑出来:只要那条命令走到**联网语义判定**,`node bin/guard.mjs judge …` 会先打印出正确的判定(`block 0.91 jev`),然后在退出那一刻撞上 libuv 的 `Assertion failed: !(handle->flags & UV_HANDLE_CLOSING), file src\win\async.c, line 76`,进程以 `0xC0000409` abort —— 退出码从真值(block 是 `3`)变成 `-1073740791`,stderr 上还多一行与用户无关的断言。根因不在判定里:退出这一刻进程仍持有 undici 的 keep-alive socket(实测 `process._getActiveHandles()` 拿到 `["Socket","Socket"]` 外加一个未决的 `FSReqCallback`),在它们正被关闭时强退,Windows 的 libuv 就会崩在这个断言上。**判定的结论一直是对的,错的是退出路径** —— 也正因如此,只盯着 stdout 看的话这条 bug 几乎不可见。
+
+**改了什么:**
+
+1. **`bin/guard.mjs` 与两个冒烟脚本改用 `process.exitCode`,不再调用 `process.exit()`。** 事件循环自然排空后退出,退出码是判定的真值,断言不再出现。实测:`guard judge` 的 block 判定退出码恢复为 3,自然排空的额外耗时在 1 秒量级。
+2. **`tools/smoke-dsh-pipeline.mjs` 的 `JEV_GUARD_ROOT` 现在接受裸文件系统路径。** 这个值原本被直接拼进 `import()`,而 ESM 加载器先按 URL 解析说明符:Windows 的 `T:\…` 被读成协议 `t:`,报 `ERR_UNSUPPORTED_ESM_URL_SCHEME`。现在统一转成 `file://` URL,`/mnt/t/…` 与 `T:\…` 都能照原样用,而本身就是 URL 的值原样保留。
+3. **`tools/smoke-dsh-adapter.mjs` 的「没有密钥」段落现在真的在没有密钥的条件下跑。** 适配器的凭据解析顺序是 `ctx.credentials` → `apiKeyEnv`(默认 `TYPESAFE_API_KEY`)→ `apiKeyFile`,而那段用例只 mock 掉了第一层 —— 环境变量里若有真钥匙,这个前提就不成立。带着钥匙跑时,notice 的 3 组断言会假失败(实测:「没有密钥 → 注入了一条 notice」报出 `["user-1"]`,即根本没有注入)。现在这几段用例期间环境变量被摘掉,联网用例之前再放回。
+
+**验收**(Windows、Node 24.12.0,宿主为 DSH 0.2.0-rc.2 桌面版):`node bin/guard.mjs selftest` 12/12;七套离线自检 20 / 30 / 34 / 109 / 54 / 48 / 17 条断言全过(`selftest-entry` 与 `selftest-reason` 按平台分支,Windows 上比 Linux 少一例与两例);DSH 适配器冒烟**无密钥 23/23、带密钥 25/25** —— 修复前带密钥跑是「3 组失败 + 一次 abort」;真实工具管线集成测试离线 6/6、带 `TYPESAFE_API_KEY` 7/7,退出码 0。`guard judge` 的联网 block 判定实测退出码 3。三处修复都做了双向确认:把 `process.exit()` 放回去,CLI 与带密钥的适配器冒烟每次都停在 `-1073740791`(管线脚本连跑两次都复现);`JEV_GUARD_ROOT` 用裸路径时在加上转换之前一直报 `ERR_UNSUPPORTED_ESM_URL_SCHEME`;环境变量留着不放,notice 那段的三组断言就继续失败。本轮在 Windows 上实测;改动本身是平台中性的(设 `exitCode` 而不是强退),Linux 侧由同时跑两个平台的 CI 工作流覆盖。
+
 ## [0.5.3] — 2026-09-23
 
 **`403` 不再等于"你的密钥坏了":边缘拦截现在是一个独立分类,而且不降级。** 这是一处行为变更 —— 一个失败分类被拆成两个,并修掉了 `guard status --clear` 的误报。除此之外 `lib/`、`bin/`、`adapters/` 与默认配置相对 0.5.2 未变。

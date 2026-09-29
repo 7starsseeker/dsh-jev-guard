@@ -21,6 +21,12 @@
  *   cp <本文件> $T/ && cd $T && JEV_GUARD_ROOT=/mnt/t/jev-guard node smoke-dsh-pipeline.mjs
  *   # 加 TYPESAFE_API_KEY 则第 4 项会真的走一次联网判定(7/7)
  *
+ * Windows 上同一件事(2026-09-30 实测:离线 6/6、带密钥 7/7):临时目录同样要备齐 ① 和 ②
+ * (目录联接,或直接用 npm 装宿主包),然后 `JEV_GUARD_ROOT` **给裸路径就行** —— 脚本自己
+ * 转成 `file://` URL,不用手写 `file:///T:/...`:
+ *
+ *   $T = <临时目录>; $env:JEV_GUARD_ROOT = "T:\dsh-jev-guard"; node smoke-dsh-pipeline.mjs
+ *
  * 三个**别照抄**的旧配方:从检出根直接跑会以 `ERR_MODULE_NOT_FOUND` 崩在下面的 import 上;
  * 从 `packages/core/agent-loop` 跑则第 6 项会假报 FAIL(那个 cwd 下没有 `./packages/...`);
  * 用绝对路径跑本文件(不复制)同样在 import 那一步就崩 —— 裸说明符不认 cwd。
@@ -39,7 +45,15 @@ import { join } from 'node:path'
 import { pathToFileURL } from 'node:url'
 
 const ROOT = process.env.JEV_GUARD_ROOT ?? '/mnt/t/dsh-jev-guard'
-const mod = await import(`${ROOT}/adapters/dsh/index.js`)
+
+/**
+ * `ROOT` 作为**模块说明符**。裸文件系统路径不能直接拼进 `import()`:ESM 加载器先按 URL
+ * 解析,Windows 的 `T:\jev-guard` 会被读成协议 `t:`,报 `ERR_UNSUPPORTED_ESM_URL_SCHEME`
+ * (2026-09-30 实测)。所以统一转成 `file://` URL —— POSIX 的 `/mnt/t/...` 与 Windows 的
+ * `T:\...` 都适用;已经是 URL 的原样保留,免得把 `file:///T:/...` 二次转义。
+ */
+const ROOT_URL = /^[a-z][a-z0-9+.-]*:\/\//i.test(ROOT) ? ROOT : pathToFileURL(ROOT).href
+const mod = await import(`${ROOT_URL}/adapters/dsh/index.js`)
 
 /** 审计日志与降级状态都落在这里 —— 跑测试不该改动本机真实的阀门状态。 */
 const SANDBOX = await mkdtemp(join(tmpdir(), 'jev-guard-pipeline-'))
@@ -162,9 +176,9 @@ async function main() {
 
   // 收尾与 smoke-dsh-adapter 同规矩:先等审计队列落盘(record() 是 fire-and-forget,
   // 不等它 process.exit 会丢尾部记录),再把整个临时目录删掉。
-  // 审计模块从 ROOT 动态导入 —— 本文件可能被复制到临时目录里运行,相对路径在那里是无效的。
+  // 审计模块从 ROOT_URL 动态导入 —— 本文件可能被复制到临时目录里运行,相对路径在那里是无效的。
   try {
-    const audit = await import(`${ROOT}/lib/audit.js`)
+    const audit = await import(`${ROOT_URL}/lib/audit.js`)
     await audit.flush()
   } catch {
     // 清理失败不该改变测试结论
@@ -172,7 +186,14 @@ async function main() {
   await rm(SANDBOX, { recursive: true, force: true }).catch(() => {})
 
   process.stdout.write(`\n${failures === 0 ? `全部通过(${checks} 组断言)` : `${failures} 组失败 / 共 ${checks} 组`}\n`)
-  process.exit(failures === 0 ? 0 : 1)
+
+  // **不要**改成 `process.exit(code)`。联网用例跑完后进程里还留着 undici 的 keep-alive
+  // socket(以及一个未决的 fs 请求);Windows 上在这个时刻强退会撞进 libuv 的
+  // `Assertion failed: !(handle->flags & UV_HANDLE_CLOSING), file src\win\async.c, line 76`,
+  // 进程以 0xC0000409 abort,退出码从 0 变成 -1073740791 —— 一次"全部通过"被报成失败
+  // (2026-09-30 实测,连跑两次都复现)。设 `exitCode` 让事件循环自然排空即可:同一份用例
+  // 自然退出的实测耗时约 1.0s,退出码 0,连跑三次稳定。
+  process.exitCode = failures === 0 ? 0 : 1
 }
 
 await main()

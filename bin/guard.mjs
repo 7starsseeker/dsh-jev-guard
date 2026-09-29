@@ -637,4 +637,9 @@ const code = sub === 'selftest' ? selftest()
   : sub === 'key' ? await cmdKey()
   : sub === 'judge' ? await cmdJudge()
   : (process.stderr.write(`${t('cli.usage')}\n`), 2)
-process.exit(code ?? 0)
+// **不要**写成 `process.exit(code)`。`judge` 走联网语义判定时,退出这一刻进程里还留着
+// undici 的 keep-alive socket;Windows 上在这个时刻强退会撞进 libuv 的
+// `Assertion failed: !(handle->flags & UV_HANDLE_CLOSING), file src\win\async.c, line 76`,
+// 进程以 0xC0000409 abort —— 判定本身完全正确,退出码却从真值变成 -1073740791,stderr 上
+// 还多一行和用户无关的 libuv 断言(2026-09-30 实测)。设 `exitCode` 让事件循环自然排空即可。
+process.exitCode = code ?? 0

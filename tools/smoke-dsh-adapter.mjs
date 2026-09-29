@@ -180,6 +180,10 @@ async function main() {
   const d = mockContext(undefined) // 没有凭据
   applySmoke(d.ctx)
   const handlerNoKey = d.handlers.get('tools/pre-execute')
+  // 从这里到「联网用例」之前,环境变量必须一直是空的。适配器的凭据解析顺序是
+  // ctx.credentials → `apiKeyEnv`(默认 `TYPESAFE_API_KEY`)→ `apiKeyFile`,而这一段测的正是
+  // **没有密钥**时的行为:环境里留着真钥匙,前提就直接不成立(2026-09-30 实测:带着
+  // `TYPESAFE_API_KEY` 跑本文件时,notice 那 3 组断言会全部假失败)。摘掉一次,联网用例前再放回。
   process.env.TYPESAFE_API_KEY = ''
   // 命令必须绕开预筛(/tmp 之类会被当"可重建内容"直接放行,那样根本到不了需要密钥的语义层)。
   expect('无密钥 + 需要语义判定 → allow(fail-open)',
@@ -189,7 +193,6 @@ async function main() {
   expectTrue('无密钥 → 状态是粘性的、且作用域只限本入口',
     nkState?.sticky === true && nkState?.scope === 'dsh-adapter',
     JSON.stringify({ sticky: nkState?.sticky, scope: nkState?.scope }))
-  if (apiKey) process.env.TYPESAFE_API_KEY = apiKey
   await rm(degradedPath, { force: true })
 
   // ---- 探测成功、但状态文件清不掉(只读文件系统):原因必须有人能发现(2026-09-23)----
@@ -290,7 +293,9 @@ async function main() {
     JSON.stringify(withFileKey.messages?.map(m => m.id)))
 
   // ---- 联网用例(有密钥时才跑) ----
+  // 「没有密钥」的场景到此结束,把环境变量还回去。
   if (apiKey) {
+    process.env.TYPESAFE_API_KEY = apiKey
     const e = mockContext(apiKey)
     applySmoke(e.ctx)
     const h = e.handlers.get('tools/pre-execute')
@@ -327,10 +332,16 @@ async function main() {
   expectTrue('审计里记下了权限 preset(danger-full-access)', auditText.includes('"preset":"danger-full-access"'), auditText.slice(0, 200))
   await rm(audited, { force: true })
 
-  await flush() // 等审计日志落盘,否则 process.exit 会丢掉尾部记录
+  await flush() // 等审计日志落盘,否则退出时会丢掉尾部记录
   await rm(dir, { recursive: true, force: true }) // 整个测试的产物都在这个临时目录里
   process.stdout.write(`\n${failures === 0 ? `全部通过(${checks} 组断言)` : `${failures} 组失败 / 共 ${checks} 组`}\n`)
-  process.exit(failures === 0 ? 0 : 1)
+
+  // **不要**改成 `process.exit(code)`。联网用例跑完后进程里还留着 undici 的 keep-alive
+  // socket,Windows 上在这个时刻强退会撞进 libuv 的
+  // `Assertion failed: !(handle->flags & UV_HANDLE_CLOSING), file src\win\async.c, line 76`,
+  // 进程以 0xC0000409 abort,退出码从 0 变成 -1073740791(2026-09-30 实测)。设 `exitCode`
+  // 让事件循环自然排空即可,实测退出码与耗时都正常。
+  process.exitCode = failures === 0 ? 0 : 1
 }
 
 await main()
