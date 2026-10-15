@@ -42,6 +42,7 @@ command text ──▶ L0 static hard rules (offline · cannot be overridden) �
 - [Behavior under the two approval policies](#behavior-under-the-two-approval-policies)
 - [When something is blocked: the three ways a human can step in](#when-something-is-blocked-the-three-ways-a-human-can-step-in)
 - [When credit runs out: degrade, don't fail silently](#when-credit-runs-out-degrade-dont-fail-silently)
+- [If the service refuses your region: the region lock](#if-the-service-refuses-your-region-the-region-lock)
 - [Visibility: audit log and status](#visibility-audit-log-and-status)
 - [Platform support](#platform-support)
 - [Self-checks and verification](#self-checks-and-verification)
@@ -73,6 +74,8 @@ Requires **Node ≥ 20** (it uses the global `fetch`). **Zero runtime dependenci
 **Verified host versions: DSH 0.1.6-alpha.2, 0.1.7-rc.2 and 0.2.0-rc.2.** 0.1.7-rc.2 was checked end to end on 2026-09-25 (Node 24.21.0, WSL/Linux, this plugin at 0.5.3): `guard selftest` 12/12; the seven offline suites 20 / 31 / 34 / 109 / 56 / 48 / 17 assertions, all passing; the DSH adapter smoke test 23/23; and the tool-pipeline integration test running against that checkout's own `@deepseek-ai/dsh-tools` 6/6 offline and **7/7 with a key**, the extra case being one live judgement through the real five-stage pipeline. The valve also ran mounted in a real session, judging commands and writing its audit log under approval policy `ask`.
 
 **0.2.0-rc.2 was checked end to end on 2026-09-30** — this time the host *was* upgraded (`@deepseek-ai/dsh-desktop-runtime` 0.2.0-rc.2, Node 24.12.0, Windows), with this plugin at 0.5.3 and unmodified. The valve ran **mounted in a real session**: it judged the agent's commands over the live model (`jev-1.13.0`) and wrote its audit log, every record carrying the session id, the decision source (`jev` / `prefilter` / `static-rule` / `cache`), the risk probability, the latency and the token usage. Fail-open showed up in production as well as in the tests: judgements that ran past the 1800 ms budget were logged as `source: error` and allowed through, exactly as designed. Battery on that host: `guard selftest` 12/12; the seven offline suites 20 / 30 / 34 / 109 / 54 / 48 / 17 assertions, all passing (two counts differ from the Linux run — `selftest-entry` 30 vs 31 and `selftest-reason` 54 vs 56 — because those suites branch on platform); the DSH adapter smoke test 23/23; and the tool-pipeline integration test on the real `@deepseek-ai/dsh-tools` 0.2.0-rc.2 five-stage pipeline 6/6 offline and **7/7 with a key**, the extra case being one live judgement through the real pipeline. Statically, every host file this plugin touches is byte-identical between 0.1.7-rc.2 and 0.2.0-rc.2 — the `tools/pre-execute` and `agent/pre-step` declarations among them — so no code change was needed and none was made. The host's plugin version gate, which denies a plugin whose declared `@deepseek-ai/dsh*` peer requirements the running version does not satisfy, does not apply here: this plugin declares no `peerDependencies`, and both the gate's own function and the real profile-assembly path admit it.
+
+**0.2.0-rc.2 was re-checked on 2026-10-15**, with this plugin at 0.5.5 on the same Windows host: `guard selftest` 12/12; the seven offline suites 20 / 30 / 34 / 113 / 54 / 48 / 17 assertions, all passing; the DSH adapter smoke test 23/23 without a key and 25/25 with one; and the tool-pipeline integration test 6/6 offline and **7/7 with a key**. The valve spent that day mounted in a real session, and the two failure shapes the session produced are now classified and degrading instead of filed under `unknown`: an egress **region block** (`451`) and a mistyped `model` (`400`) — see [D17](docs/DECISIONS.md). A judgment that outruns its budget still fails open and is still recorded as `source: error`.
 
 No host requirement is declared in `package.json` for any of them: the plugin market reads that field from the npm manifest and would then block install and update on every other DSH release. A version not listed here is therefore **untested, not forbidden**; if you run one, re-run the self-checks below.
 
@@ -160,7 +163,7 @@ Code comments and the labels inside `tools/` stay Chinese on purpose: they are r
 
 | Key | Default | Description |
 |---|---|---|
-| `model` | `jev-latest` | Alias of the judging model |
+| `model` | `jev-1.13.0` | The judging model, **pinned**. The service's aliases move under a released plugin and this repository's thresholds were calibrated on `1.13.0`: measured on 2026-10-15, `jev-latest` still resolved to `jev-1.13.0` while `jev-preview` resolved to the image-mode `jev-1.14.0`, which is deliberately not adopted: every judgment is one text question, so an image-mode model would carry a capability this plugin never calls, and upstream's own position is that it is not ready for production |
 | `endpoint` | `https://api.typesafe.ai/v1/systemone` | Judging service endpoint |
 | `apiKeyEnv` / `apiKeyFile` | `TYPESAFE_API_KEY` / `secrets.json` | Key sources; **relative paths resolve against the package root** (independent of cwd) |
 | `lang` | `auto` | Language of every human/model-facing message (see [Languages](#languages)); `auto` reads the environment only, falling back to `zh-CN` |
@@ -173,7 +176,7 @@ Code comments and the labels inside `tools/` stay Chinese on purpose: they are r
 | `retryLimit` | `2` | How many times the same command may be blocked before it escalates (`escalate`, i.e. handed to a human) |
 | `tokens` / `tokenPath` | `true` / `~/.jev-guard/allow.txt` | One-shot allow tokens |
 | `logPath` / `logMaxBytes` | `~/.jev-guard/guard.log` / 4 MiB | Shared audit log (JSONL, rotated when over the limit) |
-| `quotaCooldownMs` / `authCooldownMs` | 15 min / 30 min | Cooldown after quota- and key-class failures |
+| `quotaCooldownMs` / `authCooldownMs` | 15 min / 30 min | Cooldown after quota- and key-class failures. The two classes added in 0.5.5 are fixed rather than configurable: `region` (`451`) 30 min, `request` (`400`/`422`) 15 min |
 | `degradePolicy` | `l0-only` | Which layer survives degradation: `l0-only` (stop only the paid semantic layer) or `off` (suspend the whole valve) |
 | `pricePerMTok` | `0.042` | Unit price for cost estimation (USD per million input tokens; output is free per the vendor's documentation) |
 
@@ -224,13 +227,45 @@ The judging service is **pay-per-use**, so running out of credit is a certainty.
 |---|---|---|
 | Credit exhausted / key invalid (`402` / `401`) | **Degrades**: writes `~/.jev-guard/degraded.json` and stops sending requests for the cooldown window (to save money), running only the **free L0 + pre-screen** by default | `guard status` (exit code 3) · one `⚠️` line in the refusal reason · `source: degraded` and `level: warn` in the audit · stderr of the CLI |
 | Cooldown expires | Automatically sends **one** probe request: success restores normal operation (you do nothing), failure keeps it degraded | `guard status` shows how long is left |
-| Timeout / network hiccup / 5xx / 429 rate limit / no key / **an edge block** (a CDN/WAF answering `403` with an HTML page: the request never reached the judging service, so the key was never checked) | **No degradation** — each call is simply allowed (fail-open), but it is categorized and recorded | the "failure breakdown" line of `guard log --stats` |
+| This egress is outside the service's region (`451`, carrying the service's own JSON body) | **Degrades for 30 minutes, globally** — the request reached the service and was refused by its region policy, and every entry point on this machine shares one egress | `guard status` names the cause (exit code 3) · the warning says to check the proxy and the egress IP · `errorKind: region` in `guard log --stats` |
+| The request itself is refused (`400` / `422`, e.g. `Unknown model: …`) | **Degrades for 15 minutes, only for the entry point that wrote the state** — retrying cannot help, the `model` is what has to change | `guard status` names the cause · the warning points at the `model` · `errorKind: request` in `guard log --stats` |
+| No key configured | **Degrades stickily** (D15): zero HTTP requests, and it ends the moment a key resolves | one `⚠️` notice in the session itself · `guard key status` exits 3 |
+| Timeout / network hiccup / 5xx / 429 rate limit / **an edge block** (a CDN/WAF answering `403` with an HTML page: the request never reached the judging service, so the key was never checked) | **No degradation** — each call is simply allowed (fail-open), but it is categorized and recorded | the "failure breakdown" line of `guard log --stats` |
 
 ```bash
 node bin/guard.mjs status --clear    # don't want to wait out the cooldown: retry once now (a failure re-enters degradation)
 ```
 
 If you want "once the credit is gone, don't interfere at all" (L0 included), set `degradePolicy: "off"`.
+
+## If the service refuses your region: the region lock
+
+The judging service is **not reachable from every region**: a request sent from a blocked egress comes back `HTTP 451` with
+the service's own body, `{"title":"Typesafe is not available in your region.","status":451}` — refused before
+authentication and before the body is validated. Measured on 2026-10-15 through the production path: the **same request
+body** returns `422` (a body-validation error, i.e. it arrived) from an allowed egress and `451` from a blocked one.
+
+What that means, and what it does not:
+
+- **It is not a plugin fault, and not a key problem.** The key is never checked; a fresh, valid key fails identically.
+- **It is a property of the egress, shared by every entry point on the machine** — the DSH host process, the CLI, a
+  scheduled job — which is why the `region` class degrades **globally** for 30 minutes instead of per entry point.
+- **It is loud now.** Before 0.5.5 the whole condition was classified `unknown`, and `unknown` degrades nothing: the valve
+  failed open on every command, kept re-sending requests the service had just refused (83 in one measured session, all
+  `source: error`), and `guard status` still printed "normal". Now `guard status` names the cause and the warning tells you
+  to check the proxy and the egress IP.
+
+**How to run in a blocked region:** route the **DSH host process** through an egress in an allowed region. What bites on
+Windows is that this routing is often applied **per executable**: a proxy configured only for your shell leaves
+`DeepSeek Harness.exe` going out directly — measured here on 2026-10-15, a proxied shell resolved to a US exit while the
+host binary, running the *same* script, resolved to a Chinese one and got `451`. Verify from inside the host rather than
+from a terminal: `node bin/guard.mjs judge 'ls'` should come back `source: jev`, and `guard log --stats` should show no
+`region` count.
+
+**The honest limit:** the valve cannot fix your egress. Under a region lock its job is to stop spending requests it has
+been told will be refused, and to say so instead of reporting health for a session in which nothing was judged. The
+`region` cooldown probes once per 30 minutes, so it recovers by itself as soon as the egress changes — see
+[`docs/DECISIONS.md`](./docs/DECISIONS.md) D17.
 
 ## Visibility: audit log and status
 

@@ -74,7 +74,7 @@ node bin/guard.mjs log --stats
 ### 13 · Quota degradation (offline)
 
 ```bash
-node tools/selftest-quota.mjs             # stand-in fetch: 402/401/403 (JSON) vs 403 (edge HTML)/two kinds of 429/5xx/timeout/network/bad state file
+node tools/selftest-quota.mjs             # stand-in fetch: 402/401/403 (JSON) vs 403 (edge HTML)/451 (region) vs 400·422 (request)/two kinds of 429/5xx/timeout/network/bad state file
 ```
 
 **Judging:** all pass. Four things to confirm specifically: a persistent failure **degrades**, a transient failure **does not degrade**,

@@ -9,7 +9,7 @@
 | 项 | 值 | 来源 |
 |---|---|---|
 | 端点 | `POST https://api.typesafe.ai/v1/systemone`,`Authorization: Bearer <key>` | 官方文档 |
-| 实际应答模型 | `jev-1.13.0`(`jev-latest` / `jev-preview` 是别名) | `GET /v1/models` 实测 |
+| 实际应答模型 | `jev-1.13.0` —— 发出去的默认值**钉在这个版本号**上;`jev-latest` 仍解析到它,而 `jev-preview` 解析到图像模式的 `jev-1.14.0`,后者**故意不跟进**(D18) | 2026-10-15 走生产路径实测 |
 | 计费 | `$0.042 / Mtok` 输入(**输出免费**) | 官方文档 + 响应 usage 实测 |
 | 单次判定成本(约 450 input token) | ≈ `$0.000019` | 实测 token × 单价 |
 | 直连上下文 | 64k/请求(32k 给 state + 最长问题) | 官方文档 |
@@ -266,7 +266,7 @@ python 源码的字符串里(`c.startswith('mkfs.ext4 …')`),被 `mkfs` 规则�
 | `degradePolicy: 'off'` | 连 L0 也放行(显式选择;默认不是这个) |
 | 自动恢复 | 冷却到期后放**一次**探测;替身 fetch 实测:成功 → 清状态并记 `probe+recovered`,失败 → 续期(failures+1、probes+1)且不再重复试 |
 
-**离线断言 109 条**(`tools/selftest-quota.mjs`,替身 `fetch` 覆盖 402/401/403(JSON 鉴权 vs 边缘 HTML)/429两种/5xx/超时/网络/无密钥/
+**离线断言 113 条**(`tools/selftest-quota.mjs`,替身 `fetch` 覆盖 402/401/403(JSON 鉴权 vs 边缘 HTML)/451(`region`,全局降级 30 分钟)与 400·422(`request`,本地降级 15 分钟)/429两种/5xx/超时/网络/无密钥/
 坏状态文件/删不掉的状态文件),其中两条是**自己抓到的真 bug**,一并记在这里:
 
 1. `readDegraded` 用 `Number(until)` 校验 ISO 字符串 → 恒为 NaN → **写进去了却永远读不出来**,
@@ -381,7 +381,10 @@ WSL 上验不出这三层里的任何一层。这次用 `C:\Program Files\nodejs
 1. **路径语义**:相对路径一律按**包根**解析(绝对路径原样使用),与 cwd 无关。
 2. **`no-key` 不再降级**:它是**本地配置**状况而不是服务状况 —— 一次 HTTP 都不发(降级省不下任何东西),
    却可能只影响一个入口。分类照记、告警照发(`guard status` 会直接说没解析到密钥),但不进降级态。
-   降级集合因此收窄为 `{quota, auth}` 两类"服务对我们的态度已经变了"的情况。
+   降级集合因此收窄为 `{quota, auth}` 两类"服务对我们的态度已经变了"的情况。此后又有两个决定改动了这个集合:D15 让
+   `no-key` 变成**粘性**降级并带上 `local` 作用域,D17 又加了 `region`(`scope: global`)与 `request`(`scope: local`)
+   —— 现在这个集合是 `{quota, auth, no-key, region, request}`。本节修好的是**推理**,而它依然成立:只有单条入口才可能
+   负责的状况,不许写进共享状态。
 
 **规律:** 凡是"共享状态 + 各入口前提独立"的组合,都要问一句"这个局部故障会不会被写进全局状态"。
 

@@ -30,7 +30,7 @@
 | Node | ≥ 20(用到全局 `fetch`、`AbortSignal.any`) | `node -v` |
 | TypeSafe 密钥 | 形如 `apikey_...`;没有就去 https://console.typesafe.ai 申请 | §2.2 |
 | 目录位置 | 建议 `T:\dsh-jev-guard`(WSL 里是 `/mnt/t/dsh-jev-guard`) | `ls /mnt/t/dsh-jev-guard` |
-| 网络 | 能访问 `https://api.typesafe.ai` | `node bin/guard.mjs judge 'pnpm test'` |
+| 网络 | 能**从服务提供服务的地区**访问 `https://api.typesafe.ai` —— 它并非从任何地区都可达:被拦的出口拿到的是 `HTTP 451` 与 `{"title":"Typesafe is not available in your region.","status":451}`,而这发生在看密钥之前。Windows 上"从哪个出口出去"往往**按可执行文件**决定,所以只给终端配代理不够:DSH 宿主进程也得走。阀门把这种情况分类为 `region`,全局降级 30 分钟,而不是逐次 fail-open(D17);用 `guard status` 与 `guard log --stats` 的 `errorKind` 一行确认 | `node bin/guard.mjs judge 'pnpm test'` → 必须是 `source: jev`,不能是 `source: error` |
 | DSH | 能装本地插件(profile 的 `package.json` 有 `dsh.profile` / bundles) | `dsh --profile <名> --dump-config` |
 | DSH 版本 | **0.1.6-alpha.2**、**0.1.7-rc.2** 与 **0.2.0-rc.2** 均已完整验证;跑了哪些见 README 的「已验证的宿主版本」段。`package.json` 未声明宿主要求,所以插件市场不会因版本不同而阻拦安装 | `dsh --version` |
 
@@ -181,6 +181,7 @@ node bin/guard.mjs status            # 健康状态(降级时退出码 3)
 | `source: error`,理由是 `HTTP 402` | 额度用尽 | 同上一行(这条会**降级**而不是逐次重试,省钱) |
 | `source: error`,理由是 `HTTP 403` 且正文是 HTML | CDN/WAF 在边缘把请求挡了,它没到判定服务 | 你这边不用做什么:这被分类为 `edge`,**不降级**。若持续出现,说明出口被拦了 —— 看 `guard log --stats` 的 `edge` 计数 |
 | `source: degraded` | 处在降级窗口内 | `guard status` 会说明是哪一类 + 还剩多久;免费的 L0 + 预筛仍在工作 |
+| `source: error`,理由是 `HTTP 451` 且正文是 `{"title":"Typesafe is not available in your region.","status":451}` | **服务锁区,而你的出口在被拦的地区** —— 请求到了服务、在检查密钥之前就被它的策略拒了(有效密钥同样被拒) | 这被分类为 `region`,**全局降级 30 分钟**:`guard status` 会点名原因。把 **DSH 宿主进程**(不只是终端 —— 分流是按可执行文件生效的)挪到服务提供服务的出口上,并用 `node bin/guard.mjs judge 'ls'` → `source: jev` 确认。冷却每 30 分钟探一次,出口一换就自己恢复。阀门改不了你的出口;见 `DECISIONS.md` D17 |
 | `source: error`,理由是 `fetch failed` | 网络/代理不通 | 检查 `https://api.typesafe.ai` 可达性。**不会降级**(瞬态),但会累计在"失败分类"里 |
 | `guard status` 一直显示已降级,或告警说状态文件删不掉 | 状态文件所在目录只读,冷却与恢复都写不进去 | 手工删除 `~/.jev-guard/degraded.json`,或修好该目录权限。除此之外阀门是健康的、照常联网判定;那个文件消失之前,每个新进程会重复一次探测 |
 | 危险命令没被拦 | 不在 L0 且 `p < lowThreshold` | 看 `judge` 输出的 `p`;必要时调低 `lowThreshold` 或给该类命令加 L0 规则 |

@@ -5,6 +5,22 @@
 本项目遵循「按日期记录事实」的写法:每条都写清**改了什么、为什么、以及怎么验证的**。
 完整的设计取舍见 [`docs/DECISIONS.md`](./docs/DECISIONS.md),实测数据见 [`docs/MEASUREMENTS.md`](./docs/MEASUREMENTS.md)。
 
+## [0.5.5] — 2026-10-15
+
+**默认模型从浮动别名改为固定版本号;另有两类原本会消失在 `unknown` 里的失败,现在各有分类、会降级、而且会说出来。** 前者改变新装默认拿哪个模型判定;后者是 `lib/quota.js` 的行为变更。
+
+**为什么固定版本号。** 插件原来发出去的是 `model: jev-latest`。2026-10-14 上游在一个**预览**别名后面发了新模型,而 `jev-latest` 是一个会在已发布插件脚下移动的别名:本仓的阈值(0.5 / 0.7)是在 `1.13.0` 上标定的。现在的默认是 `jev-1.13.0`。2026-10-15 走生产路径对真机实测:`jev-latest` 仍解析到 `jev-1.13.0`,`jev-preview` 解析到 `jev-1.14.0`(图像模式模型),而 `jev-1.14` / `jev-1.14-preview` 不存在(`400 Unknown model`)。图像模式模型是**故意不跟进**的,理由有两条,各自独立成立:**阀门没有任何东西可以喂给它** —— 每一次判定都只是一个文本问题(`questions.destroys_data`、`{ type: 'noul' }`,在 `lib/gate.js` 里构造),它回的是**一个经过标定的概率**;整条路径上没有图片、没有截图、也没有任何多模态输入 —— 而**上游自己说它还不够进生产**,跟进它等于把一个尚未验证的模型放到安全阀门的后面。钉住版本号是同一个决定:阈值 0.5 / 0.7 是在 `1.13.0` 上标定的,所以换模型是一次**重标定事件**(重新拟合 + 重跑 737 条记录命令),不是改一次配置。这两件事都写在 `config.example.json` 与 `cordis.patch.yml` 的注释里;决定本身是 [`docs/DECISIONS.md`](./docs/DECISIONS.md) 里的 **D18**。
+
+**为什么新增两个分类。** 2026-10-15,在 Windows 桌面宿主上,一整场会话**一次判定都没有做成**。每一次判定回来的都是 `HTTP 451`:`{"title":"Typesafe is not available in your region.","status":451}` —— 它在鉴权之前、在请求校验之前就被拒了 —— 而 `classifyFailure()` 把它归进 `unknown`,那一项是 `{ degraded: false, cooldownMs: 0 }`。于是阀门对每一条命令都 fail-open、把一条刚刚被告知会被拒的请求再发出去、不写任何状态文件,而 `guard status` 一直打印"正常"。实测:一天 83 条审计记录,全是 `allow`,其中 73 条 `source: error`、`errorKind: unknown`。同一份沉默也盖住了写错的 `model`:`400` 加 `{"detail":{"error_type":"api_usage_error","message":"Unknown model: …"}}` 同样是 `unknown`。**而这个状况本身还在:** 截至 2026-10-15,服务仍然拒绝本地区的出口;处在这种出口后面的部署,会一直等 `region` 那 30 分钟冷却、期间不做判定,直到把**宿主进程**挪到一个允许的出口上 —— 这件事阀门替你做不了,而 0.5.5 之后它会**说出来**,不再报"健康"(见 README「服务拒绝你的地区时:地区锁」;D17)。
+
+**改了什么:**
+
+1. **`region`(HTTP 451)= 会降级的 30 分钟冷却,作用域全局。** 正文是判定服务自己的 JSON,所以这不是 `edge` 拦截:请求到了服务、被它的地区策略拒了。形状与 `auth` 相同,而且 `guard status` 现在会说出原因,而不是报一切正常。
+2. **`request`(HTTP 400/422)= 会降级的 15 分钟冷却,作用域本地。** 被拒的是请求本身 —— `model` 写错、正文不合法 —— 重试没有意义,要改的是配置。它跟着 `no-key` 的作用域规矩(D15):只暂停写下状态的那条入口的联网判定,别的入口照常工作。
+3. **两类都有双语文案**(`quota.region.label|hint`、`quota.request.label|hint`),而且每条 hint 都说清了该做什么:`region` 先查代理与出口 IP,`request` 去改 `model`。
+
+**验收**(Windows、Node 24.12.0,宿主为 DSH 0.2.0-rc.2 桌面版):七套离线自检 20 / 30 / 34 / 113 / 54 / 48 / 17 条断言全过 —— `selftest-quota` 从 109 涨到 113,其中「会降级的类别」这条断言现在钉的是 `auth,no-key,quota,region,request`,四条新用例分别覆盖两份真机正文的分类、两类各自的作用域、以及一次端到端的 `451`(第一条命令 `source: error` + `errorKind: region`、告警里带 451、恰好一次 HTTP 请求、状态文件写成 `kind: region` + `scope: global`;第二条命令 `source: degraded` 且**不再**发请求)。`node bin/guard.mjs selftest` 12/12;DSH 适配器冒烟无密钥 23/23、带密钥 25/25;真实工具管线集成测试离线 6/6、带 `TYPESAFE_API_KEY` 7/7。分类是先在真机上量出来、不是推出来的:`model: jev-1.13.0` → `200` `{"model":"jev-1.13.0","answers":{"destroys_data":{"type":"noul","noul":0.1}},"usage":{"input_tokens":419,"output_tokens":22}}`;`model: jev-nope` → `400 Unknown model: jev-nope`;以及上面那条 `451` 正文 —— 它发生在请求校验之前:同一个请求体换一个允许的出口,答复是 `422`。固定版本号这件事则拿 `measurements/` 里记录的 737 条真实命令复测过:阈值 0.5 下 `allow` 722 / `revise` 8 / `escalate` 7 / `deny` 0,对照那次记录的 723 条 allow 与 14 条 ask;与那次可比对的 555 条命令里,|Δp| 平均 0.0045,有 3 条跨过阈值带。
+
 ## [0.5.4] — 2026-09-30
 
 **Windows 上,一次判定结论完全正确的联网判定,会以崩溃退出码结束。** 现在退出改为让事件循环自然排空;另外修掉两个冒烟脚本在 Windows 上的实测偏差。判定路径一行未动 —— `lib/` 与 `adapters/` 相对 0.5.3 完全一致。

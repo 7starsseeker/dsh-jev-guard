@@ -105,12 +105,14 @@ const noKey = Object.assign(new Error('no key'), { code: 'no-key' })
 expect('无密钥 → no-key', classifyFailure(noKey).kind === 'no-key')
 expect('未知 → unknown(不降级)', classifyFailure(new Error('???')) && !KINDS.unknown.degraded)
 
-// 2) 会降级的类别,以及**两种降级方式**(2026-09-20,D15):
-//    · quota / auth = 服务侧状况 → 冷却式:到期放一次探测;
-//    · no-key = 本地配置状况 → **粘性**:没密钥时零 HTTP、没有可探测对象,所以靠"密钥出现"结束,
-//      而且带作用域 —— 只压制写下它的那条入口(密钥解析各入口独立,degraded.json 却是全机共享)。
+// 2) 会降级的类别,以及**三种降级方式**(2026-09-20 D15;2026-10-15 D17):
+//    · quota / auth / region = 服务侧状况 → 冷却式:到期放一次探测;
+//    · no-key = 本地配置状况 → **粘性**:没密钥时零 HTTP、没有可探测对象,所以靠"密钥出现"结束;
+//    · request = 写错的 model / 被拒的请求体 —— 重试再多遍也是同一个 400,所以要降级,
+//      但它只说明**这条入口的配置**不对,作用域跟着 no-key 走(只压制写下它的那条入口)。
+//    作用域对 no-key / request 是同一个道理:密钥与配置各入口独立,degraded.json 却是全机共享。
 const degrading = Object.entries(KINDS).filter(([, v]) => v.degraded).map(([k]) => k).sort()
-expect('会降级的类别 = auth / no-key / quota', degrading.join(',') === 'auth,no-key,quota', degrading.join(','))
+expect('会降级的类别 = auth / no-key / quota / region / request', degrading.join(',') === 'auth,no-key,quota,region,request', degrading.join(','))
 expect('no-key 降级(没有效密钥必须像额度耗尽那样明说,而不是静默 fail-open)', KINDS['no-key'].degraded === true)
 expect('no-key 是粘性的(不靠时间结束)', KINDS['no-key'].sticky === true && cooldownMs('no-key', {}) === 0)
 expect('no-key 的作用域是本地(只压制写下它的入口)', KINDS['no-key'].scope === 'local' && kindScope('no-key') === 'local')
@@ -414,6 +416,31 @@ expect('铺垫:第一次确实是探测', probed.probe === true && probed.recove
 expect('缓存命中不再自称探测(记录不能写没发生的事)',
   probeReused.source === 'cache' && probeReused.probe === undefined && probeReused.recovered === undefined,
   `${probeReused.source}/${probeReused.probe}/${probeReused.recovered}`)
+
+// 18) **两类"重试也不会变"的失败各自出面,而不是落进 unknown 的静默通道**(2026-10-15,D17)。
+//     现场:2026-10-15 一整天,DSH 的每条判定都是 `HTTP 451` → 旧表把它归 `unknown`,
+//     而 unknown 不降级 ⇒ 每条命令照发一次注定被拒的请求、零告警、`guard status` 仍报"正常"。
+//     两个正文都是**实测照抄**(见 docs/DECISIONS.md D17),不是编的。
+const REGION_451 = '{"title":"Typesafe is not available in your region.","status":451}'
+const USAGE_400 = '{"detail":{"error_type":"api_usage_error","message":"Unknown model: jev-nope"}}'
+expect('451(服务按出口地区拒绝)→ region,且会降级',
+  classifyFailure(httpError(451, REGION_451, 'application/json')).kind === 'region' && KINDS.region.degraded === true)
+expect('400(model 写错)→ request(**本地配置**类),不再落进 unknown',
+  classifyFailure(httpError(400, USAGE_400, 'application/json')).kind === 'request' && KINDS.request.degraded === true)
+expect('region 是全局状态(出口被封时每个入口都一样),request 是本入口状态(D15 的作用域规矩)',
+  kindScope('region') === 'global' && kindScope('request') === 'local')
+await clearDegraded(cfg)
+script = [httpError(451, REGION_451, 'application/json')]
+calls = []
+const regionFirst = await evaluateCommand(CMD, { ...DEFAULTS, ...cfg, apiKey: 'x', cache: undefined, quotaGuard: true })
+const regionSecond = await evaluateCommand(CMD, { ...DEFAULTS, ...cfg, apiKey: 'x', cache: undefined, quotaGuard: true })
+const regionState = await readDegraded(cfg)
+expect('451 → 这一次 fail-open,但留下可读状态:下一条命令不再发请求,且告警说出 451',
+  regionFirst.action === 'allow' && regionFirst.source === 'error' && regionFirst.errorKind === 'region'
+    && String(regionFirst.warning ?? '').includes('451')
+    && calls.length === 1 && regionSecond.source === 'degraded'
+    && regionState?.kind === 'region' && regionState?.scope === 'global',
+  JSON.stringify({ first: regionFirst.errorKind, calls: calls.length, second: regionSecond.source, state: `${regionState?.kind}/${regionState?.scope}` }))
 
 await rm(dir, { recursive: true, force: true })
 process.stdout.write(`\n${failed === 0 ? '全部通过' : `${failed} 项失败`}(${checks} 例)\n`)

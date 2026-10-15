@@ -9,7 +9,7 @@ These numbers are not estimates — they were produced on **this machine** on 20
 | Item | Value | Source |
 |---|---|---|
 | Endpoint | `POST https://api.typesafe.ai/v1/systemone`, `Authorization: Bearer <key>` | official docs |
-| Actual responding model | `jev-1.13.0` (`jev-latest` / `jev-preview` are aliases) | measured with `GET /v1/models` |
+| Actual responding model | `jev-1.13.0` — the shipped default is **pinned** to this version; `jev-latest` still resolves to it, while `jev-preview` resolves to the image-mode `jev-1.14.0`, which is deliberately not adopted (D18) | measured through the production path on 2026-10-15 |
 | Pricing | `$0.042 / Mtok` input (**output is free**) | official docs + measured `usage` in responses |
 | Cost of one judging (about 450 input tokens) | ≈ `$0.000019` | measured tokens × unit price |
 | Direct context | 64k/request (32k for state + the longest question) | official docs |
@@ -248,7 +248,7 @@ The judging service is paid, so "out of quota" has to be designed for as a **cer
 | `degradePolicy: 'off'` | even L0 allows it through (an explicit choice; this is not the default) |
 | Automatic recovery | when the cooldown expires it fires **one** probe; measured with a stub fetch: on success → clears the state and records `probe+recovered`, on failure → extends it (failures+1, probes+1) and does not try again |
 
-**109 offline assertions** (`tools/selftest-quota.mjs`, with a stub `fetch` covering 402/401/403 (JSON auth vs edge HTML)/two kinds of 429/5xx/timeout/network/no key/
+**113 offline assertions** (`tools/selftest-quota.mjs`, with a stub `fetch` covering 402/401/403 (JSON auth vs edge HTML)/451 (`region`, degrading globally for 30 minutes) and 400·422 (`request`, degrading locally for 15 minutes)/two kinds of 429/5xx/timeout/network/no key/
 a corrupt state file/a state file that cannot be removed), two of which are **real bugs it caught itself**, recorded here as well:
 
 1. `readDegraded` validated the ISO string with `Number(until)` → always NaN → **written into the file yet never readable**,
@@ -366,6 +366,10 @@ Two fixes:
 2. **`no-key` no longer degrades**: it is a **local configuration** condition, not a service condition — it sends no HTTP at all (degrading saves nothing),
    and may affect only one entry. The classification is still recorded and the warning still emitted (`guard status` says outright that no key was resolved), but it does not enter the degraded state.
    The degradation set therefore narrows to the two classes `{quota, auth}`, "the service's attitude towards us has changed".
+   Two later decisions moved that set again: D15 made `no-key` degrade **stickily** and scoped `local`, and D17 added
+   `region` (`scope: global`) and `request` (`scope: local`) — the set is now `{quota, auth, no-key, region, request}`.
+   What this section fixed is the *reasoning*, and it still holds: a condition that a single entry point can be
+   responsible for must not be written into shared state.
 
 **The pattern:** for any combination of "shared state + independent per-entry preconditions", ask "will this local failure get written into global state".
 

@@ -73,7 +73,7 @@ node bin/guard.mjs log --stats
 ### 13 · 额度降级(离线)
 
 ```bash
-node tools/selftest-quota.mjs             # 替身 fetch:402/401/403(JSON)与 403(边缘 HTML)/429两种/5xx/超时/网络/坏状态文件
+node tools/selftest-quota.mjs             # 替身 fetch:402/401/403(JSON)与 403(边缘 HTML)、451(region)与 400·422(request)/429两种/5xx/超时/网络/坏状态文件
 ```
 
 **判定:** 全过。重点确认四件事:持久性失败**降级**、瞬态失败**不降级**、

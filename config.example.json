@@ -1,6 +1,7 @@
 {
   "_comment": "复制成 config.json 后按需修改。config.json 与 secrets.json 不进版本库。",
-  "model": "jev-latest",
+  "_model": "2026-10-15 起默认锁定版本号:阈值 0.5/0.7 标定于 jev-1.13.0,别名会在上游转正式后静默前移(jev-latest 目前=1.13.0;1.14 仍在预览期,挂 jev-preview)。不跟进 1.14 的理由有两条:①本插件每次判定只发一个文本问题(questions.destroys_data、type=noul)、只读回一个概率,整条路径上没有图片/多模态输入可喂;②上游自己说它当前不适合进生产。换模型 = 重标定事件(737 条复测 + 阈值重标),不是改字符串。详见 docs/DECISIONS.md D18。",
+  "model": "jev-1.13.0",
   "endpoint": "https://api.typesafe.ai/v1/systemone",
   "apiKeyEnv": "TYPESAFE_API_KEY",
   "_apiKeyFile": "密钥的第三来源(优先级低于 DSH 凭据层与环境变量)。相对路径按**包根**解析,与 cwd 无关。用 `node bin/guard.mjs key set` 录入(只从标准输入读,写这个文件、权限 0600);`node bin/guard.mjs key status` 会告诉你当前哪个来源在生效,永不回显密钥。该文件在 .gitignore 里,也不在 npm files 白名单内 —— 仓库与发布包里都没有它。",

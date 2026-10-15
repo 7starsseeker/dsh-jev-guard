@@ -498,3 +498,78 @@ process, and the adapter records one `level: 'warn'` audit entry so the cause st
 errno instead of swallowing it, and `guard status --clear` prints it and exits 1 rather than claiming "nothing to clear".
 What cannot be fixed from inside is a **new process**: it reads the same old file, and since nobody can delete it, one more
 probe happens. That is the honest limit of a filesystem that refuses to forget.
+
+---
+
+## D17 · A `451` is a **region** block and a `400`/`422` is a **request** problem — both **degrade**, neither is `unknown` (2026-10-15)
+
+**Decision:** `451` becomes its own class `region`: degrading, **global** scope, 30-minute cooldown. `400`/`422` becomes
+`request`: degrading, **local** scope, 15-minute cooldown. Neither is an `edge` block, and neither stays in `unknown`.
+
+**Why `unknown` was the wrong answer, measured:** on 2026-10-15 a Windows desktop deployment judged 83 times in one session and
+succeeded **zero** times — every call came back `HTTP 451` carrying the service's own
+`{"title":"Typesafe is not available in your region.","status":451}`. `unknown` is `{ degraded: false, cooldownMs: 0 }`, so the
+valve failed open on every command, re-sent a request the service had just refused, wrote no state file, and `guard status`
+kept printing "normal" (73 of those 83 entries are `source: error` / `errorKind: unknown`, all `allow`). `unknown` was created
+for the honest case "we genuinely cannot tell"; field data says here we can. The same silence covered a mistyped `model`:
+`400` with `{"detail":{"error_type":"api_usage_error","message":"Unknown model: jev-nope"}}` also landed in `unknown`, and
+nothing said the configuration was wrong.
+
+**Why not `edge`:** D16's rule is that a response which does not look like the JSON API — HTML, a WAF fingerprint — never
+reached the application, so it must not degrade. This body **is** the application's JSON, with a JSON content-type, so the
+request reached the service and the service made a policy decision about where it came from. `looksLikeEdgeBlock()` is
+deliberately not consulted for `451`; using D16's split here would have hidden a real, persistent condition behind
+per-call fail-open.
+
+**Why `region` is global and `request` is local** (D15's rule, applied): a region block is a property of the **egress path**,
+and every entry point on this machine shares it — so the state has to suppress all of them, or each one rediscovers the
+block with its own refused request. A `400`/`422` says something about **this entry point's configuration** (its `model`, its
+body), which other entry points do not share, so the state is written with `scope: 'local'` and filters exactly like
+`no-key`.
+
+**Why a cooldown rather than per-call fail-open:** a region block does not clear itself between two commands — per-call
+fail-open is precisely what produced 83 refused round-trips in one session. Probing once every 30 minutes costs one refused
+request per half hour and recovers on its own as soon as the egress reaches an allowed region; `request` is shorter
+(15 minutes) because a corrected `model` can be there a minute later.
+
+**The honest limit:** the valve cannot fix the egress — that is the operator's side. When the region block is real, the
+valve's job is to say so loudly (the new `quota.region.*` copy names the egress IP and the proxy) and to stop reporting
+"normal" for a session in which nothing was judged. `tools/selftest-quota.mjs` section 18 pins all of it, including the
+end-to-end shape: one `451`, one HTTP request, a state file with `kind: region` + `scope: global`, and the next command
+suppressed.
+
+---
+
+## D18 · The judging model is a **pinned version** rather than a floating alias, and the newer **image-mode** model is deliberately **not** adopted (2026-10-15, user decision)
+
+**Decision:** this plugin ships `model: jev-1.13.0` and stays there until someone re-calibrates. `jev-latest` is no longer
+used, and `jev-preview` — the alias upstream's new image-mode model `jev-1.14.0` sits behind — is deliberately not adopted.
+Measured through the production path on 2026-10-15: `jev-latest` still resolved to `jev-1.13.0`, `jev-preview` resolved to
+`jev-1.14.0`, and `jev-1.14` / `jev-1.14-preview` do not exist at all (`400 Unknown model`, which this release now
+classifies as `request` — see D17).
+
+**Why a version and not an alias:** an alias is a promise made by the service, not by this repository. `jev-latest` may
+point somewhere else the moment upstream promotes a new model, and this repository's thresholds (0.5 / 0.7) were fitted on
+`1.13.0` — a plugin that ships an alias changes what a fresh install judges with, silently, with no version bump and no test
+run. Those thresholds decide whether a destructive command is `allow`, `revise` or `escalate`, so the model belongs in the
+same category as the thresholds: pinned, and changed only together with them.
+
+**Why the image-mode model is not adopted** — two reasons, each sufficient on its own:
+
+1. **The valve has nothing to send it.** Every judgment is one text question: `QUESTION_ID = 'destroys_data'`, a
+   `{ type: 'noul' }` question built by `judgeQuestion()` in `lib/gate.js`, of whose answer this plugin reads a single
+   probability (`answer.noul`). There is no screenshot, no image and no multimodal input anywhere on the path, and no plan
+   for one — a command string is what gets judged. An image-mode model would answer the same text question while carrying a
+   capability that is never called.
+2. **Upstream's own position is that it is not production-ready.** Said to us in those terms on 2026-10-15. Putting a model
+   the vendor declines to stand behind on the refusing side of a safety valve would trade the one property this component
+   exists to provide — a calibrated, trusted decision — for currency with the vendor's newest release.
+
+**What adoption would actually require** (so a later reader does not mistake this for a one-line config edit): a
+re-calibration of both thresholds on the new model, plus a re-run of the 737 recorded commands in `measurements/` to show
+where the verdicts move. That corpus is the same instrument that was used to check the pin itself changed nothing:
+`allow` 722 / `revise` 8 / `escalate` 7 / `deny` 0, mean |Δp| 0.0045 over the 555 commands comparable with the recorded run.
+
+**The honest limit:** nothing here can say whether `1.14.0` judges better — only that adopting it without re-calibration
+cannot be justified, and that neither reason above depends on the other. If upstream promotes a text model that calibrates
+better, that is a different decision made the same way: re-fit, re-run the corpus, then bump the version.

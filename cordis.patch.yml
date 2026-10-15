@@ -75,7 +75,14 @@
         # 第三层就是 `node bin/guard.mjs key set` 写的那一份 —— 缺了它,"用 CLI 录入密钥"
         # 对 DSH 用户就是一句空话。三处永不打印密钥。
         apiKeyEnv: TYPESAFE_API_KEY
-        model: jev-latest
+
+        # 2026-10-15 锁定版本号(与 config.json / config.example.json 同步):阈值 0.5/0.7
+        # 标定于 jev-1.13.0,而别名会在上游转正式后静默前移 —— jev-latest 目前仍=1.13.0,
+        # 1.14(10-14 发布、预览期)挂在 jev-preview 上。**不跟进它的理由有两条**:①本插件每次
+        # 判定只发一个文本问题(questions.destroys_data、type=noul)、只读回一个概率,整条路径上
+        # 没有图片/多模态输入可喂;②上游自己说它当前不适合进生产。换模型 = 重标定事件
+        # (重新拟合阈值 + 重跑 737 条记录命令),不是改字符串。详见 docs/DECISIONS.md D18。
+        model: jev-1.13.0
 
         # ── 会话内提示(2026-09-20,见 docs/DECISIONS.md D15)─────────────────────────
         # 纯 host 插件没有任何 toast / banner / 启动提示接口(DSH 的设置页都由浏览器侧注册占位),
