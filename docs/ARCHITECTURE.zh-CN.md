@@ -21,7 +21,7 @@
 
 ### L0 — 静态硬规则(不联网)
 
-**职责:** "永不允许"和"必须人工确认"两类清单。`lib/rules.js`,21 条 deny + 16 条 ask。
+**职责:** "永不允许"和"必须人工确认"两类清单。`lib/rules.js`,26 条 deny + 24 条 ask。
 
 **为什么单独一层:** 它必须不依赖网络、不依赖模型、不可被任何下游覆盖。DSH 里对应的是
 `ctx.tools.guard()` —— 文档原话:may deny or abstain, **never force-allow**。

@@ -21,7 +21,7 @@ and it is also the reason it can run the same judging on both Windows and WSL.
 
 ### L0 — static hard rules (offline)
 
-**Responsibility:** the two lists "never allowed" and "must be confirmed by a human". `lib/rules.js`, 21 deny + 16 ask.
+**Responsibility:** the two lists "never allowed" and "must be confirmed by a human". `lib/rules.js`, 26 deny + 24 ask.
 
 **Why it is a separate layer:** it must not depend on the network, must not depend on a model, and must not be overridable
 by anything downstream. In DSH the counterpart is

@@ -32,7 +32,7 @@ and **have acceptable evidence for every step**. **Both WSL and Windows are supp
 | Directory location | `T:\dsh-jev-guard` recommended (in WSL that is `/mnt/t/dsh-jev-guard`) | `ls /mnt/t/dsh-jev-guard` |
 | Network | able to reach `https://api.typesafe.ai` **from an egress the service serves** — it is not reachable from every region: a blocked egress gets `HTTP 451` with `{"title":"Typesafe is not available in your region.","status":451}`, before the key is looked at. Which egress a request goes out from is decided **per executable** on Windows, so routing your shell is not enough: the DSH host process needs it too. The valve classifies this as `region` and degrades globally for 30 minutes rather than failing open (D17); verify with `guard status` and the `errorKind` line of `guard log --stats` | `node bin/guard.mjs judge 'pnpm test'` → must be `source: jev`, not `source: error` |
 | DSH | able to install local plugins (the profile's `package.json` has `dsh.profile` / bundles) | `dsh --profile <name> --dump-config` |
-| DSH version | **0.1.6-alpha.2**, **0.1.7-rc.2** and **0.2.0-rc.2** — all verified end to end; what was run is listed in the README's "Verified host versions" paragraph. No host requirement is declared in `package.json`, so the plugin market never blocks install on a different version | `dsh --version` |
+| DSH version | **0.1.6-alpha.2**, **0.1.7-rc.2**, **0.2.0-rc.2** and **0.2.1-rc.2** — all verified end to end; what was run is listed in the README's "Verified host versions" paragraph. No host requirement is declared in `package.json`, so the plugin market never blocks install on a different version | `dsh --version` |
 
 ## 2. Install and configure
 
@@ -83,7 +83,7 @@ If you really want to switch: re-calibrate first, or lower both thresholds by ab
 ```bash
 cd /mnt/t/dsh-jev-guard
 node bin/guard.mjs selftest                                    # expect: all 12 checks pass (offline)
-node bin/guard.mjs rules | head -5                             # expect: 21 deny + 16 ask rules listed
+node bin/guard.mjs rules | head -5                             # expect: 26 deny + 24 ask rules listed
 node bin/guard.mjs judge 'ls -la' 'git push --force origin main' 'pnpm test'
 ```
 

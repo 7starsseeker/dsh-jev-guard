@@ -178,7 +178,7 @@ is **to add another layer** (sandbox / low-privilege user / container), not to r
 |---|---|---|---|
 | **One-shot token** | Allows **the exact text of one command** once | The valve (`~/.jev-guard/allow.txt`) | Not persistent: deleted once used, not replayable |
 | **DSH approval** | A nod for **this one call** | DSH | Only "allow once", **no permanent allow** (see [`USER-INTERVENTION.md`](./USER-INTERVENTION.md) §2.1) |
-| **L0 static rules** | Hard rules with no network (21 deny + 16 ask) | `lib/rules.js` | A token **cannot get past** `deny` |
+| **L0 static rules** | Hard rules with no network (26 deny + 24 ask) | `lib/rules.js` | A token **cannot get past** `deny` |
 
 Two numbering systems must also be distinguished: `L0 / L1 / L2` are **judging layers** (see [`ARCHITECTURE.md`](./ARCHITECTURE.md)),
 and `allow / revise / block / escalate` are **judging results**. The former is "how it was computed", the latter is "what was computed".

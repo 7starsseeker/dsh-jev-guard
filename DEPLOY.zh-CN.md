@@ -32,7 +32,7 @@
 | 目录位置 | 建议 `T:\dsh-jev-guard`(WSL 里是 `/mnt/t/dsh-jev-guard`) | `ls /mnt/t/dsh-jev-guard` |
 | 网络 | 能**从服务提供服务的地区**访问 `https://api.typesafe.ai` —— 它并非从任何地区都可达:被拦的出口拿到的是 `HTTP 451` 与 `{"title":"Typesafe is not available in your region.","status":451}`,而这发生在看密钥之前。Windows 上"从哪个出口出去"往往**按可执行文件**决定,所以只给终端配代理不够:DSH 宿主进程也得走。阀门把这种情况分类为 `region`,全局降级 30 分钟,而不是逐次 fail-open(D17);用 `guard status` 与 `guard log --stats` 的 `errorKind` 一行确认 | `node bin/guard.mjs judge 'pnpm test'` → 必须是 `source: jev`,不能是 `source: error` |
 | DSH | 能装本地插件(profile 的 `package.json` 有 `dsh.profile` / bundles) | `dsh --profile <名> --dump-config` |
-| DSH 版本 | **0.1.6-alpha.2**、**0.1.7-rc.2** 与 **0.2.0-rc.2** 均已完整验证;跑了哪些见 README 的「已验证的宿主版本」段。`package.json` 未声明宿主要求,所以插件市场不会因版本不同而阻拦安装 | `dsh --version` |
+| DSH 版本 | **0.1.6-alpha.2**、**0.1.7-rc.2**、**0.2.0-rc.2** 与 **0.2.1-rc.2** 均已完整验证;跑了哪些见 README 的「已验证的宿主版本」段。`package.json` 未声明宿主要求,所以插件市场不会因版本不同而阻拦安装 | `dsh --version` |
 
 ## 2. 安装与配置
 
@@ -81,7 +81,7 @@
 ```bash
 cd /mnt/t/dsh-jev-guard
 node bin/guard.mjs selftest                                    # 期望:12 项全部通过(不联网)
-node bin/guard.mjs rules | head -5                             # 期望:列出 21 条 deny + 16 条 ask
+node bin/guard.mjs rules | head -5                             # 期望:列出 26 条 deny + 24 条 ask
 node bin/guard.mjs judge 'ls -la' 'git push --force origin main' 'pnpm test'
 ```
 

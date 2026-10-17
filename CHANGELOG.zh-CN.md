@@ -5,6 +5,21 @@
 本项目遵循「按日期记录事实」的写法:每条都写清**改了什么、为什么、以及怎么验证的**。
 完整的设计取舍见 [`docs/DECISIONS.md`](./docs/DECISIONS.md),实测数据见 [`docs/MEASUREMENTS.md`](./docs/MEASUREMENTS.md)。
 
+## [0.5.6] — 2026-10-17
+
+**PowerShell 的破坏性操作面进了 L0 规则 —— 就在本 profile 的执行器从 bash 翻成 pwsh 的这一天。** L0 是在语义层降级或超时之后仍然站得住的那层地板;联网模型只有 1800ms,超时即 fail-open,`Remove-Item -Recurse C:\`、`bcdedit /delete`、`iex`、`powershell -EncodedCommand`、`reg delete`、`net user … /delete`、`takeown /f C:\` 这些形态此前只靠联网判定兜着。现在它们是离线规则:**DENY 21 → 26,ASK 16 → 24**。理由见 [`docs/DECISIONS.md`](./docs/DECISIONS.md) 的 D19。
+
+**为什么是现在。** 2026-10-17 本 profile 的执行器从 bash 换成了 pwsh(Git Bash 的 MSYS2 运行时在沙盒的 `WRITE_RESTRICTED` 令牌下起不来;四处配置改动记在 `cordis.patch.yml`)。插件的工具列表本来就同时包含两者(`DEFAULT_TOOLS = ['bash', 'pwsh']`),所以没有哪类命令"失去守卫" —— 但 L0 规则是用 bash 语法写的,而语义层 1800ms 就 fail-open。在这台机器上量到的:当天 8 条判定是 `source: error`,每一条都是超时,也就是那些命令跑的时候背后没有任何模型判定。重启之后审计日志里也第一次出现了 `"tool": "pwsh"` 记录,说明新的执行器确实走到了 pre-execute 钩子。
+
+**改了什么:**
+
+1. **新增 DENY 5 条:** 递归删除指向**盘符根**(`Remove-Item -Recurse C:\`,以及 `ri` / `rm` / `del` / `rd` 别名带 `-Recurse` / `/s`)、指向 `C:\Windows`(`$env:SystemRoot`、`%SystemRoot%`)、或指向**用户目录根**(`$env:USERPROFILE`、`$HOME`、`C:\Users\<名>`、`~`);`format C:`;`bcdedit /set|/delete|/create|/import`;`Disable-ComputerRestore`。
+2. **旧的盘符根规则被重写,因为它错在另一个方向。** 改之前实测:`Remove-Item -Recurse C:\Users\me\build` 会被 **deny** —— 模式判的是"任意盘符路径"而不是根,而 `[^*]` 连路径自己的第一个字符都放过了。现在它判的是**目标**是不是根,并带 token 边界;`-Recurse` / `/s` 用 lookahead 找,所以 `-Path C:\ -Recurse`(flag 写在目标之后)也覆盖到了。
+3. **新增 ASK 8 条:** `iex` / `Invoke-Expression`;`powershell -EncodedCommand`(`-e`、`-ec`、`-enc`);`Clear-Content`;`reg delete`;`Remove-Item` 碰 `HKLM:` / `HKCU:` / `HKCR:`;`net user|localgroup … /delete`;`takeown /f <盘符>` 与 `icacls <盘符> /reset`;`Clear-RecycleBin`。
+4. **包装器识别补上 PowerShell 形态。** `SHELL_C` 现在能咬 `pwsh -NoProfile -Command "…"` —— 二进制与 `-Command` 之间夹着参数,旧的 `-[a-z]*c` 根本到不了 —— 以及 cmd 的 `/c`,所以这两种写法里的破坏性命令仍会在它自己的命令位置被看见。`where: 'anywhere'` 仍然恰好两条(redirect-to-device、fork-bomb),这套自检钉的正是这个结构不变量。
+
+**验收**(Windows、Node 24.12.0,宿主为 DSH 0.2.1-rc.2 桌面版,同日重新验过 —— 见 `verification-results/dsh.json` 第 24 项):`guard selftest` 12/12;七套离线自检 **30 / 34 / 113 / 54 / 17 / 83 / 20** 条断言(entry / i18n / quota / reason / token / rules / audit)全过;DSH 适配器冒烟 23/23(本工作区没有配密钥,所以带密钥那一轮不在本次记录里)。`selftest-rules` 从 48 例涨到 83 例:E 组 24 条用真实字符串把新规则喂给 `staticRule`,F 组钉住十条**不该**命中的:相对目录 `.\build`、`C:\Users` **之下**的路径、`C:\Windows.old`、把 `Remove-Item` 写进散文、`Format-Table`、`Get-Help Clear-Content`。这套自检不断言规则条数,只断言 `anywhere` 仍是 2,所以以后改规则不会悄悄把某条退回全文匹配。`selftest-i18n` 现在覆盖全部 50 条 L0 规则,要求每条都有 zh-CN 与 en 的 `why`。真实工具管线集成测试本次没跑:它从自身位置解析 `@deepseek-ai/cordis`,而本仓刻意零依赖 —— CI 与发布工作流也都不跑它。
+
 ## [0.5.5] — 2026-10-15
 
 **默认模型从浮动别名改为固定版本号;另有两类原本会消失在 `unknown` 里的失败,现在各有分类、会降级、而且会说出来。** 前者改变新装默认拿哪个模型判定;后者是 `lib/quota.js` 的行为变更。

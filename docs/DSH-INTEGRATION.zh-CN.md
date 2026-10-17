@@ -170,7 +170,7 @@ DSH 这边最坏的失效形态是**插件一声不响地没挂上**:没有报�
 |---|---|---|---|
 | **一次性令牌** | 放行**某一条命令原文**一次 | 阀门(`~/.jev-guard/allow.txt`) | 不持久:用掉即删,不可重放 |
 | **DSH 审批** | 对**这一次调用**点头 | DSH | 只有"允许一次",**没有永久允许**(见 [`USER-INTERVENTION.md`](./USER-INTERVENTION.md) §2.1) |
-| **L0 静态规则** | 不联网的硬规则(21 条 deny + 16 条 ask) | `lib/rules.js` | 令牌**过不去** `deny` |
+| **L0 静态规则** | 不联网的硬规则(26 条 deny + 24 条 ask) | `lib/rules.js` | 令牌**过不去** `deny` |
 
 还要区分两个编号体系:`L0 / L1 / L2` 是**判定层**(见 [`ARCHITECTURE.md`](./ARCHITECTURE.md)),
 `allow / revise / block / escalate` 是**判定结果**。前者是"怎么算出来的",后者是"算出了什么"。

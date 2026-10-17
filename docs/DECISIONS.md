@@ -573,3 +573,46 @@ where the verdicts move. That corpus is the same instrument that was used to che
 **The honest limit:** nothing here can say whether `1.14.0` judges better — only that adopting it without re-calibration
 cannot be justified, and that neither reason above depends on the other. If upstream promotes a text model that calibrates
 better, that is a different decision made the same way: re-fit, re-run the corpus, then bump the version.
+
+---
+
+## D19 · The destructive surface of the executor that **actually runs** belongs in L0 (2026-10-17)
+
+**Decision:** the L0 rule set is written in the syntax of the shell that executes on this machine, not the one the project
+was born on. On 2026-10-17 this profile's executor was flipped from bash to pwsh — Git Bash's MSYS2 runtime cannot start
+under the sandbox's `WRITE_RESTRICTED` token, so `pwsh` is what actually runs commands here (the four config edits are the
+ones in `cordis.patch.yml`). The PowerShell destructive surface moved into the offline rules in 0.5.6: recursive deletes of
+a drive root, the Windows directory or a profile root, plus `format`, `bcdedit`, `Disable-ComputerRestore` became `deny`;
+`iex` / `-EncodedCommand` / registry deletes / `net user … /delete` / `takeown`+`icacls` on a drive root / `Clear-RecycleBin`
+became `ask`.
+
+**Why L0 rather than "the model will catch it":**
+
+1. **L0 is the floor that survives.** The semantic layer is given 1800 ms and fails open when it runs out, and it stands
+   aside entirely during a degradation window. Measured in this workspace on the day of the flip: 8 of the judgments were
+   `source: error`, every one of them a timeout — each of those commands ran with no model decision behind it. A
+   `Remove-Item -Recurse C:\` that lands in that set is stopped by nothing else.
+2. **It is free, and its failure is loud.** L0 runs offline and in-process before any request; a false positive is visible
+   and has an exit (the token / the host's approval prompt), while a miss at the semantic layer is silent by construction.
+3. **A rule set written for a shell that no longer runs is a false claim in the docs.** The README says the valve covers
+   destructive shell commands; on this host bash never executes, so a bash-only L0 was covering the wrong syntax.
+
+**Why the old drive-root rule was rewritten, not extended.** The pre-0.5.6 pattern
+`Remove-Item[^\n]*-Recurse[^\n]*\b[A-Za-z]:\\` never tested the *target*: it matched the first drive-letter path anywhere
+on the line, so an ordinary cleanup — `Remove-Item -Recurse C:\Users\me\build` — was **denied**. Measured before the
+change. This is the friction D4 warns about, in reverse: an accident net that cries wolf on routine work gets ignored, and
+an ignored net is worse than a narrow one. The rule now requires a **root** target (a drive root, `C:\Windows` /
+`$env:SystemRoot` / `%SystemRoot%`, a profile root / `$env:USERPROFILE` / `$HOME` / `C:\Users\<name>` / `~`) with a token
+boundary, and detects `-Recurse` / `/s` by lookahead so `-Path C:\ -Recurse` (flag after the target) is covered too.
+
+**What is deliberately not denied.** `Remove-Item -Recurse .\build` (project-local cleanup), `Clear-Content <file>` and
+`Clear-RecycleBin` (ask, not deny), `Format-Table` (not `format`), and prose that merely mentions a cmdlet
+(`Get-Help Clear-Content`). The F group of `tools/selftest-rules.mjs` pins that with ten negative cases, so widening a rule
+later cannot quietly start denying routine work. `format` only fires when a drive letter is given: a bare `format` opens an
+interactive prompt and destroys nothing until a human answers it.
+
+**The honest limit.** Dynamic composition defeats any pattern: `Remove-Item -Recurse ("C" + ":\")` is not matched by the
+deny rule, and `iex (New-Object Net.WebClient).DownloadString(…)` is only an `ask`. That is the boundary D1 already draws —
+an accident net, not a security boundary. The ask rules exist so a composed command is seen by a human at the moment it
+would run, rather than passing silently.
+

@@ -536,3 +536,21 @@ notice 是持久的、带来源标注的、模型可见的;而自己造一个 UI
 
 **诚实的上限:** 这里说不出 `1.14.0` 判定得更好还是更差 —— 只能说:不重新标定就跟进,无法被论证;而上面两条理由
 互不依赖。如果上游转正的是一个标定更好的文本模型,那是另一个决定,走同样的流程:重新拟合、重跑语料、再抬版本号。
+
+---
+
+## D19 · **真正在执行的**那个执行器的破坏性操作面,属于 L0(2026-10-17)
+
+**决定:** L0 规则用**这台机器上真正执行**的那个 shell 的语法来写,而不是项目出生时的那个。2026-10-17 本 profile 的执行器从 bash 翻成 pwsh —— Git Bash 的 MSYS2 运行时在沙盒的 `WRITE_RESTRICTED` 令牌下起不来,所以这里真正跑命令的是 `pwsh`(四处配置改动就是 `cordis.patch.yml` 里的那几处)。0.5.6 把 PowerShell 的破坏性操作面移进了离线规则:递归删除盘符根 / Windows 目录 / 用户目录根,以及 `format`、`bcdedit`、`Disable-ComputerRestore` 进 `deny`;`iex` / `-EncodedCommand` / 注册表删除 / `net user … /delete` / 盘符根上的 `takeown`+`icacls` / `Clear-RecycleBin` 进 `ask`。
+
+**为什么是 L0,而不是"模型会抓到":**
+
+1. **L0 是超时之后还在的那层地板。** 语义层只有 1800ms,超时即 fail-open;降级窗口里它更是整个退场。翻执行器当天在这个工作区量到的:8 条判定是 `source: error`,每一条都是超时 —— 那些命令跑的时候,背后没有任何模型判定。一条落进这 8 条里的 `Remove-Item -Recurse C:\`,没有别的东西会拦它。
+2. **它免费,而且失败是响的。** L0 离线、同进程、在任何请求之前跑;误报看得见、也有出口(令牌 / 宿主审批弹窗),而语义层漏判在结构上就是静默的。
+3. **给一个已经不跑的 shell 写规则,等于文档说谎。** README 说阀门覆盖破坏性 shell 命令;在这台机器上 bash 根本不会执行,那么一份只写 bash 的 L0,覆盖的就是错的语法。
+
+**为什么旧的盘符根规则是重写而不是扩展。** 0.5.6 之前的模式 `Remove-Item[^\n]*-Recurse[^\n]*\b[A-Za-z]:\\` 从不检查**目标**:它匹配行内任意位置的第一条盘符路径,于是正常的清理 —— `Remove-Item -Recurse C:\Users\me\build` —— 会被 **deny**。改之前实测如此。这正是 D4 警告的那种摩擦的反面:一张对例行工作乱叫的事故网会被忽略,而一张被忽略的网比一张窄的网更糟。现在规则要求目标是**根**(盘符根、`C:\Windows` / `$env:SystemRoot` / `%SystemRoot%`、用户目录根 / `$env:USERPROFILE` / `$HOME` / `C:\Users\<名>` / `~`)并带 token 边界;`-Recurse` / `/s` 用 lookahead 找,所以 `-Path C:\ -Recurse`(flag 在目标之后)也覆盖。
+
+**故意不进 deny 的:** `Remove-Item -Recurse .\build`(项目内清理)、`Clear-Content <文件>` 与 `Clear-RecycleBin`(ask,不是 deny)、`Format-Table`(不是 `format` 盘符)、以及只是**提到**某个 cmdlet 的散文(`Get-Help Clear-Content`)。`tools/selftest-rules.mjs` 的 F 组用十条反例把这些钉住,以后放宽某条规则也不会悄悄开始拒绝例行工作。`format` 只有带盘符时才命中:裸 `format` 会开一个交互提示,人不答它什么也不毁。
+
+**诚实的上限。** 动态拼接能绕过任何模式:`Remove-Item -Recurse ("C" + ":\")` 不命中 deny 规则,`iex (New-Object Net.WebClient).DownloadString(…)` 只是 `ask`。这就是 D1 已经画下的边界 —— 一张事故网,不是安全边界。ask 规则存在的意义是:拼接出来的命令在真要跑的那一刻被人看见,而不是静默通过。

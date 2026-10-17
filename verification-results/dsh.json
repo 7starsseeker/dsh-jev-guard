@@ -1,7 +1,14 @@
 {
   "host": "dsh",
-  "updatedAt": "2026-09-20T14:18:39.104Z",
+  "updatedAt": "2026-10-17T10:31:26.000Z",
   "items": {
+    "24": {
+      "status": "pass",
+      "evidence": "DSH 0.2.1-rc.2 兼容性复查(2026-10-17;宿主 @deepseek-ai/dsh-desktop 0.2.1-rc.2,dshBuildCommit 332895e0)。① 契约对照:把 npm 上 0.2.0-rc.2 的 @deepseek-ai/dsh-tools、dsh-agent-loop、dsh-session 包与 app.asar 解出的 0.2.1 源码逐处 diff —— 插件实际依赖的四面(dsh-tools/lib/types/index.js:885 的 tools/pre-execute 瀑布与 allow/ask/deny 形状;dsh-agent-loop/lib/index.js:917 的默认 {kind:'enter',messages} 决策;dsh-session/lib/types/index.js:572 的 snapshotEvents 与 :812 的 deriveMessages;approval/policy 与 permission/preset 事件载荷)逐字节一致,适配器一行未改。② 运行时:重启后 guard.log 216 条判定(allow 212 / revise 2 / block 2),唯一的失败形状是 8 条 1800ms 超时(按设计 fail-open,service 侧问题),没有契约错误。③ 同日执行器从 bash 翻成 pwsh 后,guard.log 已有 tool:\"pwsh\" 记录(cwd T:\\jev-guard,source jev,model jev-1.13.0),证明新工具体确实经过 pre-execute 钩子(适配器 DEFAULT_TOOLS 本就含 pwsh)。④ 0.5.6 为 PowerShell 破坏性语法补了 L0 规则,自检计数见 CHANGELOG 0.5.6。",
+      "notes": "本项验的是宿主版本兼容,不是规则行为。工具管线集成测试(tools/smoke-dsh-pipeline.mjs)在本工作区跑不了:它从自身位置解析 @deepseek-ai/cordis,而本仓刻意零依赖、profile 的 node_modules 也没有该包 —— 既有开发环境缺口,与 0.2.1 无关;发布工作流与 CI 也都不跑它。",
+      "question": "",
+      "at": "2026-10-17T10:31:26.000Z"
+    },
     "6": {
       "status": "pass",
       "evidence": "重启后实测(12:52 启动):① L0 路径生效——远端强推类命令被拦,理由含硬规则 id git-force-push;② Jev 联网路径生效——rm -rf /home/user/jev-guard-probe-dir 被拦,理由含'Jev 判定风险概率 70.0%'(CLI 独立复核同一命令 p=0.80);③ 策略读取正确——完全权限(approval=never)下理由含'这是自动判定,不是用户手动拒绝';④ 无误伤——ls -la /tmp、写自建探针文件(p=0.11)、node -e rmSync(p=0.22) 均正常放行;⑤ 探针全部无害,残留已清理",
