@@ -12,6 +12,7 @@
 [![selftest](https://img.shields.io/github/actions/workflow/status/7starsseeker/dsh-jev-guard/selftest.yml?label=selftest)](https://github.com/7starsseeker/dsh-jev-guard/actions/workflows/selftest.yml)
 [![last commit](https://img.shields.io/github/last-commit/7starsseeker/dsh-jev-guard)](https://github.com/7starsseeker/dsh-jev-guard/commits/main)
 [![stars](https://img.shields.io/github/stars/7starsseeker/dsh-jev-guard?style=flat)](https://github.com/7starsseeker/dsh-jev-guard/stargazers)
+[![](https://img.shields.io/badge/powered_by-dsh-4D6BFE?style=flat-square&logo=deepseek&logoColor=white)](https://github.com/deepseek-ai/deepseek-harness)
 
 > **English** | [简体中文](README.zh-CN.md) | [Changelog](CHANGELOG.md) | [Design decisions](docs/DECISIONS.md) | [Measurements](docs/MEASUREMENTS.md)
 
