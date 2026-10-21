@@ -448,18 +448,22 @@ installable at all (zero dependencies, no build step, source install with no bui
 
 **Evidence.** `tools/selftest-quota.mjs` (109 cases) covers the sticky state, the never-probe rule, scope
 isolation in both directions, the clear-on-key, and (since 2026-09-23) a state file that cannot be removed.
-`tools/smoke-dsh-adapter.mjs` (23 assertions, now
+`tools/smoke-dsh-adapter.mjs` (24 assertions, now
 hermetic — it no longer writes into the real `~/.jev-guard/`) covers the notice being **appended** rather
-than replacing, the empty-batch guard, the four-key `source` shape and the summary bound, and the file
-fallback. `tools/selftest-entry.mjs` runs `guard key set` for real (including the interactive path through a
-fake TTY) and asserts the file is written, parseable, 0600 on POSIX, and never echoed.
+than replacing, the empty-batch guard, the three-key `source` shape and the summary bound, the file
+fallback, and (since 0.5.7) a v3-shaped notice (`kind:'plugin'`) still being recognised by the dedupe path —
+history written before the fix must not make the plugin repeat itself. `tools/selftest-entry.mjs` runs
+`guard key set` for real (including the interactive path through a fake TTY) and asserts the file is
+written, parseable, 0600 on POSIX, and never echoed.
 
-**The shape is a contract.** `source` carries exactly `kind`/`plugin`/`form`/`summary`; a fifth key is
-rejected by the pre-v3 migration validator, and a malformed message surfaces as
-`SessionPersistenceCorruptionError` at the **next resume** — a session that will not open, long after the
-change. That shape was verified against DSH's own `snapshotJsonValue` (the step `Session.append` performs
-first) from inside a DSH checkout; the CHANGELOG records why `tools/smoke-dsh-pipeline.mjs` itself could not
-be run in this deployment.
+**The shape is a contract, and the value is the part that breaks — not the key count.** `source` carries
+exactly `kind` / `form` / `summary`, and `kind` must be a **producer-owned** kind (`plugin:jev-guard`), the
+rule DSH's v4 format enforces. Getting it wrong raises nothing where it is written; it surfaces as a
+`SessionFormatError` at the **next resume** — a session that will not open, long after the change. That is
+what 0.5.6 shipped (GitHub issue #1): the key set was right and the value was v3's retired `'plugin'`
+wrapper, so an assertion that compared key names stayed green while every resumed session failed to read.
+0.5.7 fixes the value and replaces key-name comparison with the host's own admission function; the
+reasoning, and why the old test could not have caught it, is D20.
 
 **Trade-off accepted:** a notice is a `role:'user'` message, so it **enters the model's context** (intended —
 the model should know the valve is degraded) and costs one prefix-cache miss from that point on. That is why
@@ -615,4 +619,39 @@ interactive prompt and destroys nothing until a human answers it.
 deny rule, and `iex (New-Object Net.WebClient).DownloadString(…)` is only an `ask`. That is the boundary D1 already draws —
 an accident net, not a security boundary. The ask rules exist so a composed command is seen by a human at the moment it
 would run, rather than passing silently.
+
+---
+
+## D20 · The notice's `source.kind` must be a **producer-owned** kind, and the contract is guarded by the **host's own admission**, not by a key-name constant (2026-10-21, GitHub issue #1)
+
+**Trigger.** Issue #1 was filed against 0.5.6: with `notifyInSession` on, a conversation could not be read back. 0.5.6
+wrote `source = { kind: 'plugin', plugin: 'jev-guard', form: 'notice', summary }` — the v3 wrapper. DSH's v4 format
+requires `source.kind` to be **producer-owned** (its own fallback is `plugin:${plugin}`), and the persistence scanner's
+`assertV4RowAdmission` rejects anything else with `SessionFormatError: format v4 message requires a producer-owned source
+kind`. Writing never fails; the row is rejected when the conversation is **next read**. The notice fires on the first step
+of a session that has no key, so the first step of a fresh install was enough.
+
+**Why the old tests were green.** Both suites compared against constants copied out of the implementation:
+`smoke-dsh-adapter.mjs` pinned `kind === 'plugin' && plugin === 'jev-guard' && 4 keys`, and `smoke-dsh-pipeline.mjs` pinned
+the key *names* `kind,plugin,form,summary` as returned by `snapshotJsonValue`. The second is not even an admission
+predicate — it normalises a value without judging it — so the check could not have caught the bug even if it had been run
+in this deployment. This is the repository's own §3 rule ("do not verify yourself") failing on the one message that is
+written into somebody else's durable store.
+
+**What 0.5.7 does.** `noticeMessage()` writes `{ kind: 'plugin:jev-guard', form: 'notice', summary }`. `announcedSummaries()`
+keeps recognising the v3 wrapper when reading history, so conversations written before the fix keep deduplicating
+instead of replaying every notice once — read wide, write strict. Item 6 of `smoke-dsh-pipeline.mjs` now imports the host's
+`assertV4RowAdmission`, passes the plugin's real output through it after a JSON round-trip (exactly the scanner's path), and
+then asserts the 0.5.6 shape is **rejected**: without the counterexample the check would be decoration. If the validator
+cannot be resolved the item **fails**; it never degrades to key-name comparison.
+
+**Evidence.** `tools/smoke-dsh-adapter.mjs` 24/24, including the v3-history dedupe case; `tools/smoke-dsh-pipeline.mjs` 6/6
+inside an unpacked copy of the live `app.asar`, reporting `0.5.6 旧形态被拒=true`; a direct probe with the same validator
+printed `THREW SessionFormatError` for the 0.5.6 row and `ACCEPTED` for the 0.5.7 row. Locally the session store holds 216
+sessions and **0** messages with `kind: 'plugin'` — the plugin is disabled in this desktop profile, so no harm happened
+here, which is precisely why the report had to be settled by contract rather than by an incident.
+
+**Rule of thumb.** When the host exposes an admission predicate for a format you write into, call that predicate. Never
+encode your *assumption* about it in an assertion: the assumption is the part that breaks — silently, at the host's next
+release — while the test keeps reporting success.
 

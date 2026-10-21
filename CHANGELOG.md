@@ -5,6 +5,24 @@
 This project follows a "record the facts by date" approach: every entry states clearly **what changed, why, and how it was verified**.
 The complete design trade-offs are in [`docs/DECISIONS.md`](./docs/DECISIONS.md), the measured data in [`docs/MEASUREMENTS.md`](./docs/MEASUREMENTS.md).
 
+## [0.5.7] — 2026-10-21
+
+**Issue #1 was real, and it was worse than a display bug: with `notifyInSession` on, 0.5.6 wrote a `source.kind` that DSH's format v4 refuses, so the conversation could not be read back.** Writing the row never failed — the failure lands on the *next* resume, where the persistence scanner rejects the line and the session will not open. Fixed by writing the producer-owned kind the format asks for, and by replacing the assertion that let it through with the host's own admission check.
+
+**What the bug actually was.** 0.5.6 emitted `source = { kind: 'plugin', plugin: 'jev-guard', form: 'notice', summary }` — the v3 wrapper shape. v4 requires `source.kind` to be producer-owned (its own fallback is `plugin:${plugin}`), and `assertV4RowAdmission` — the predicate the persistence scanner runs per line — rejects anything else with `SessionFormatError: format v4 message requires a producer-owned source kind`. The notice fires on the first step of a session that has no key, so the first step of a fresh install was enough to make that conversation unreadable on the next start.
+
+**Why the tests were green — the part worth fixing.** `tools/smoke-dsh-adapter.mjs` pinned `source.kind === 'plugin' && source.plugin === 'jev-guard' && Object.keys(source).length === 4`, and `tools/smoke-dsh-pipeline.mjs` pinned the key *names* `kind,plugin,form,summary` as returned by `snapshotJsonValue`. Both were copied out of the implementation, so both proved only that "the constant is written twice"; `snapshotJsonValue` also normalises without judging, so the pipeline check could not have caught this even if it had been run in this deployment. This is the repository's own rule (`不验证自己`) failing on the one message that is written into somebody else's durable store.
+
+**What changed:**
+
+1. `noticeMessage()` writes `{ kind: 'plugin:jev-guard', form: 'notice', summary }` — three keys, producer-owned kind.
+2. `announcedSummaries()` still recognises the v3 wrapper when reading history, so conversations written before this fix keep deduplicating instead of replaying every notice once (read wide, write strict). That is the compatibility half of this release: v4 for writing, v3 still readable.
+3. `tools/smoke-dsh-adapter.mjs` asserts the producer-owned kind and three keys, and replays a v3-shaped notice through the dedupe path — **24 assertions, was 23**.
+4. `tools/smoke-dsh-pipeline.mjs` item 6 now imports the host's `assertV4RowAdmission`, passes the plugin's real output through it after a JSON round-trip (exactly the scanner's path), and then asserts the 0.5.6 shape is **rejected**. If the validator cannot be resolved the item **fails**; it never degrades to comparing key names.
+5. `docs/DECISIONS.md` **D20** records the decision; D15's shape paragraph now points at it, and `docs/DSH-INTEGRATION.md` §4b plus the pipeline-test recipe in `docs/AGENT-TASK-dsh.md` were corrected (the notice check no longer reads `packages/util/values`; it resolves the v4 admission module).
+
+**How it was verified** (Windows, Node 24.12.0, this workstation, 2026-10-21): the pipeline test ran inside an unpacked copy of the live `app.asar` — **6/6**, including `0.5.6 旧形态被拒=true`. A direct probe with the same validator: the 0.5.6 row **THREW** `SessionFormatError`, the 0.5.7 row **ACCEPTED**. `tools/smoke-dsh-adapter.mjs` **24/24**; the seven offline suites unchanged at **30 / 34 / 113 / 54 / 17 / 83 / 20** (entry / i18n / quota / reason / token / rules / audit). The local session store was scanned as a sanity check: 216 sessions on disk contain **0** messages with `kind: 'plugin'` — the plugin is disabled in this desktop profile, so no damage happened here, which is exactly why the report had to be settled by contract rather than by an incident.
+
 ## [0.5.6] — 2026-10-17
 
 **PowerShell's destructive surface is in the L0 rules now — on the day this profile's executor flipped from bash to pwsh.** L0 is the floor that survives a degraded or timed-out semantic layer; with the live model given 1800 ms before it fails open, forms like `Remove-Item -Recurse C:\`, `bcdedit /delete`, `iex`, `powershell -EncodedCommand`, `reg delete`, `net user … /delete` and `takeown /f C:\` were relying on the online verdict alone. They are offline rules now: **DENY 21 → 26, ASK 16 → 24**. The reasoning is D19 in [`docs/DECISIONS.md`](./docs/DECISIONS.md).

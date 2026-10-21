@@ -93,10 +93,13 @@ CDN/WAF 的错误页 —— 把它归进 `auth`,一次边缘抖动就换来半�
    静默吞掉用户的消息。处理器总是先 `await next()`,再返回 `[...decision.messages, notice]`。
 2. **绝不往空批次里注入**(`decision.messages.length === 0 && (step === 1 || messages.length > 0)`):
    非空决策会开启一个步,往那里加一条消息等于为了说一句话白白多花一次模型请求。
-3. **消息形状是一份契约。** `source` 恰好带 `kind` / `plugin` / `form` / `summary`,`summary` ≤120 字符
-   (它要当折叠行的标题),`id` / `role` 都要有。形状写错的表现是**下次恢复会话时**报
-   `SessionPersistenceCorruptionError` —— 会话打不开,而现场离改动很远。所以这个形状要交给 DSH 自己的
-   `snapshotJsonValue`(`Session.append` 首先执行的那一步)验证,由一份必须跑在 DSH 检出里的测试执行。
+3. **消息形状是一份契约,而宿主自己的准入判据是它唯一的权威。** `source` 恰好带 `kind` / `form` / `summary`,`summary` ≤120 字符
+   (它要当折叠行的标题),`id` / `role` 都要有。`kind` 必须是**生产者自有**的 kind —— `plugin:jev-guard`,而不是 v3 的
+   包装 `{ kind: 'plugin', plugin }`。0.5.6 交出去的就是那个包装(issue #1):键集全对,于是"比对键名"一直绿着,
+   而宿主在**下次恢复会话**时把这一行判掉,报 `SessionFormatError: format v4 message requires a producer-owned source kind`。
+   所以 `tools/smoke-dsh-pipeline.mjs` 第 6 项把插件真实产物交给宿主自己的 `assertV4RowAdmission`(持久化扫描器逐行跑的那个)
+   准入,并断言 0.5.6 的形态**必须被拒** —— 有反例,这条检查才有意义。它必须跑在 DSH 树里,
+   而且拿不到那个校验器时会**失败**,不会降级成"只比键名"。
 
 去重的依据是**持久化的历史**(`agent.session.deriveMessages()`),而不是内存里的标记:DSH 重启或会话恢复都会
 产生一个全新的插件实例,而已经写进历史的那条提示不该被重复。`notifyInSession: false` 可以整条关掉。

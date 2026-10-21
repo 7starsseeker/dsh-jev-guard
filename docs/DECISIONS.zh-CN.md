@@ -432,15 +432,18 @@ escalate —— 对带 L0 `deny` 规则的硬命中也一样。那意味着 `ask
    (相对路径按包根解析,与 cwd 无关)。
 
 **证据。** `tools/selftest-quota.mjs`(109 例)覆盖粘性状态、永不探测的规则、双向的作用域隔离、
-"密钥出现即清除",以及(2026-09-23 起)删不掉的状态文件。`tools/smoke-dsh-adapter.mjs`(23 组断言,现在已密闭 —— 它不再往真实的
-`~/.jev-guard/` 写东西)覆盖 notice 是**追加**而非替换、空批次守卫、四键 `source` 形状与摘要上限、
-以及文件回退层。`tools/selftest-entry.mjs` 真的跑了一遍 `guard key set`(包括通过伪 TTY 走的交互路径),
+"密钥出现即清除",以及(2026-09-23 起)删不掉的状态文件。`tools/smoke-dsh-adapter.mjs`(24 组断言,现在已密闭 —— 它不再往真实的
+`~/.jev-guard/` 写东西)覆盖 notice 是**追加**而非替换、空批次守卫、三键 `source` 形状与摘要上限、
+文件回退层,以及(0.5.7 起)v3 形态(`kind:'plugin'`)的旧历史仍被去重路径认出来 —— 修复前写下的历史
+不能让插件把自己说过的话再说一遍。`tools/selftest-entry.mjs` 真的跑了一遍 `guard key set`(包括通过伪 TTY 走的交互路径),
 并断言文件被写出、可解析、POSIX 上权限为 0600、且从不回显。
 
-**形状是一份契约。** `source` 恰好带 `kind`/`plugin`/`form`/`summary`;第五个键会被 v3 之前的迁移校验
-拒绝,而形状写错的表现是**下次恢复会话时**报 `SessionPersistenceCorruptionError` —— 会话打不开,而那时
-离改动已经很久。这个形状已在一个 DSH 检出里对着 DSH 自己的 `snapshotJsonValue`(`Session.append` 首先
-执行的那一步)验证过;CHANGELOG 记录了 `tools/smoke-dsh-pipeline.mjs` 本身为何在本部署里跑不起来。
+**形状是一份契约,而坏的是**值**、不是键的个数。** `source` 恰好带 `kind` / `form` / `summary`,且 `kind` 必须是
+**生产者自有**的 kind(`plugin:jev-guard`)—— 这是 DSH 的 v4 格式强制的规则。写错在**写下去的地方**不报错;
+它的表现是**下次恢复会话时**报 `SessionFormatError` —— 会话打不开,而那时离改动已经很久。0.5.6 交出去的
+正是这种形态(GitHub issue #1):键集全对、值是 v3 已退役的 `'plugin'` 包装,于是一条"比对键名"的断言
+一直绿着,而每一条被恢复的会话都读不出来。0.5.7 修的是值,并把"比对键名"换成宿主自己的准入函数;
+推理过程、以及为什么旧测试不可能抓住它,见 D20。
 
 **接受的代价:** notice 是 `role:'user'` 消息,所以它**会进入模型上下文**(这是本意 —— 模型也该知道阀门
 降级了),并从那一刻起造成一次前缀缓存失效。这正是它按状态跃迁触发、而绝不按步触发的原因。
@@ -554,3 +557,31 @@ notice 是持久的、带来源标注的、模型可见的;而自己造一个 UI
 **故意不进 deny 的:** `Remove-Item -Recurse .\build`(项目内清理)、`Clear-Content <文件>` 与 `Clear-RecycleBin`(ask,不是 deny)、`Format-Table`(不是 `format` 盘符)、以及只是**提到**某个 cmdlet 的散文(`Get-Help Clear-Content`)。`tools/selftest-rules.mjs` 的 F 组用十条反例把这些钉住,以后放宽某条规则也不会悄悄开始拒绝例行工作。`format` 只有带盘符时才命中:裸 `format` 会开一个交互提示,人不答它什么也不毁。
 
 **诚实的上限。** 动态拼接能绕过任何模式:`Remove-Item -Recurse ("C" + ":\")` 不命中 deny 规则,`iex (New-Object Net.WebClient).DownloadString(…)` 只是 `ask`。这就是 D1 已经画下的边界 —— 一张事故网,不是安全边界。ask 规则存在的意义是:拼接出来的命令在真要跑的那一刻被人看见,而不是静默通过。
+
+---
+
+## D20 · notice 的 `source.kind` 必须是**生产者自有**的 kind;这份契约由**宿主自己的准入**来守,不用键名常量(2026-10-21,GitHub issue #1)
+
+**触发。** issue #1 是对 0.5.6 报的:开着 `notifyInSession` 时,会话读不回来。0.5.6 写的是
+`source = { kind: 'plugin', plugin: 'jev-guard', form: 'notice', summary }` —— v3 的包装。DSH 的 v4 格式要求
+`source.kind` **生产者自有**(宿主自己的回退是 `plugin:${plugin}`),持久化扫描器的 `assertV4RowAdmission` 对别的值一律
+拒绝,报 `SessionFormatError: format v4 message requires a producer-owned source kind`。**写下去**永远不报错;
+这一行是在**下次读取**会话时才被判掉的。而 notice 是在没有密钥的会话第一步就触发,所以刚装好的第一步就足够中招。
+
+**为什么旧测试是绿的。** 两套测试都在跟"从实现里抄出来的常量"比对:`smoke-dsh-adapter.mjs` 钉的是
+`kind === 'plugin' && plugin === 'jev-guard' && 4 键`,`smoke-dsh-pipeline.mjs` 钉的是 `snapshotJsonValue` 返回的**键名**
+`kind,plugin,form,summary`。后者根本不是准入判据 —— 它只规范化值、不判断值 —— 所以哪怕它在本部署里跑起来了,也抓不到这个
+bug。这正是本仓自己的 §3「不验证自己」栽在**唯一会写进别人持久化存储**的那条消息上。
+
+**0.5.7 怎么做。** `noticeMessage()` 写 `{ kind: 'plugin:jev-guard', form: 'notice', summary }`。`announcedSummaries()`
+在读历史时仍然认 v3 包装,于是修复前写下的会话继续正常去重,而不是把每条 notice 再播一遍 —— **读要宽,写要严**。
+`smoke-dsh-pipeline.mjs` 第 6 项改为导入宿主的 `assertV4RowAdmission`,把插件真实产物过一遍 JSON 往返(与扫描器同一条路)
+再准入,然后断言 0.5.6 的形态**必须被拒**:没有反例,这条检查就是摆设。拿不到校验器时这一项**失败**,绝不降级成"只比键名"。
+
+**证据。** `tools/smoke-dsh-adapter.mjs` 24/24(含 v3 历史去重用例);`tools/smoke-dsh-pipeline.mjs` 在**现场 `app.asar`
+的解包副本**里跑出 6/6,并打印 `0.5.6 旧形态被拒=true`;同一校验器上的直接探针:0.5.6 的行 `THREW SessionFormatError`,
+0.5.7 的行 `ACCEPTED`。本机会话库里 216 个会话、`kind: 'plugin'` 的消息 **0** 条 —— 桌面 profile 里插件是禁用状态,
+所以这台机器上没真出事;也正因如此,这份报告只能靠契约比对来定案,不能靠事故。
+
+**经验法则。** 宿主给你要写入的那种格式提供了准入判据,就调用它。**不要**把你对它的**假设**写成断言:坏掉的恰恰是那个
+假设 —— 静默地坏、在宿主的下一版里坏 —— 而测试会一直报成功。

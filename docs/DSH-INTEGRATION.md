@@ -97,11 +97,15 @@ Three properties are load-bearing, and each is asserted by `tools/smoke-dsh-adap
    own array silently swallows the user's message. The handler always `await next()` first and returns `[...decision.messages, notice]`.
 2. **It never injects into an empty batch** (`decision.messages.length === 0 && (step === 1 || messages.length > 0)`): a non-empty
    decision opens a step, so adding a message there would spend a whole extra model request just to say something.
-3. **The message shape is a contract.** `source` carries exactly `kind` / `plugin` / `form` / `summary`, `summary` is ≤120 characters
-   (it becomes the collapsed row's title), and `id` / `role` are set. A malformed message surfaces as
-   `SessionPersistenceCorruptionError` at the **next resume** — a session that will not open, far from the change that caused it. The
-   shape is therefore validated against DSH's own `snapshotJsonValue` (the step `Session.append` runs first) by a test that must run
-   inside a DSH checkout.
+3. **The message shape is a contract, and the vendor's admission predicate is the only authority on it.** `source` carries
+   exactly `kind` / `form` / `summary`, `summary` is ≤120 characters (it becomes the collapsed row's title), and `id` / `role`
+   are set. `kind` must be a **producer-owned** kind — `plugin:jev-guard`, not the v3 wrapper `{ kind: 'plugin', plugin }`.
+   0.5.6 shipped the wrapper (issue #1): the key set was right, so "compare the keys" stayed green, while the host rejected
+   the row on the next resume with `SessionFormatError: format v4 message requires a producer-owned source kind`. Item 6 of
+   `tools/smoke-dsh-pipeline.mjs` therefore admits the plugin's real output through the host's own `assertV4RowAdmission`
+   (what the persistence scanner runs per line) and asserts the 0.5.6 shape is **rejected** — the counterexample is what makes
+   the check mean anything. It must run inside a DSH tree, and it **fails rather than degrades** when that validator cannot
+   be resolved.
 
 Deduplication runs against the **durable history** (`agent.session.deriveMessages()`), not an in-memory flag: a harness restart or a
 session resume starts a fresh plugin instance, and a notice already written into the history must not be repeated. `notifyInSession:

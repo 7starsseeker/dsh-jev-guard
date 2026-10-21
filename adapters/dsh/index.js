@@ -43,6 +43,20 @@ const ADAPTER_SCOPE = 'dsh-adapter'
 const SUMMARY_MAX = 120
 
 /**
+ * 会话 notice 的 `source.kind` —— **生产者自有的** kind,不是 `'plugin'`。
+ *
+ * DSH 的会话格式 v4 把 v3 的 `{ kind: 'plugin', plugin: '<id>' }` 包装列为**退役写法**:
+ * 读盘时 `source()` 直接拒(`format v4 message requires a producer-owned source kind`),
+ * 而写盘那一步只校验"kind 非空" —— 于是坏消息**写得进去、读不回来**,表现是
+ * 下次恢复会话时报 `SessionFormatError`(0.5.6 的真实缺陷,issue #1)。
+ *
+ * 值不是猜的:DSH 自己的 v3→v4 迁移函数 `producerKind()` 对**不认识的插件**的 fallback
+ * 就是 `` `plugin:${plugin}` ``(见 `@deepseek-ai/dsh-session-format-v3-to-v4`)。
+ * 照抄它,写出去的就与"老会话迁移之后"是同一种字节,而不是第三种形态。
+ */
+const NOTICE_SOURCE_KIND = `plugin:${PLUGIN_ID}`
+
+/**
  * Read config.json so there is ONE place to tune thresholds for every surface.
  * The cordis patch config still wins over it, and DEFAULTS lose to both.
  * @returns the file config, or an empty object.
@@ -176,13 +190,15 @@ function effectivePreset(ctx, agent) {
 /**
  * 造一条 DSH 会话消息(`notice` 形态)。
  *
- * 形状必须与 DSH 的 `UserMessage` 严格一致,而且 `source` **只带这四个键**:
- *   · 多一个键会在**下次恢复会话**时被旧格式校验判成损坏(`SessionPersistenceCorruptionError`)
- *     —— 也就是说这里写错能让用户的会话打不开;
+ * 形状必须与 DSH 的 `UserMessage` 一致,而且 `source` **只带这三个键**:`kind` / `form` / `summary`。
+ *   · 多一个键会在**下次恢复会话**时被判成损坏 —— 也就是说这里写错能让用户的会话打不开;
  *   · 值为 `undefined` 的键不该出现(会破坏快照的"可移植原样"性质)—— 这是防御性规则,
- *     本插件的四个键永远都被填上。
- * 这两条都是**实测过**的:`tools/smoke-dsh-pipeline.mjs` 会把本函数的产物交给 DSH 自己的
- * `snapshotJsonValue`(真实 `Session.append` 之前跑的那一步)校验一遍。
+ *     本插件的三个键永远都被填上。
+ * 但**键的个数不是这份契约最容易错的地方,键的值才是**:0.5.6 把 `kind` 写成 `'plugin'`,
+ * 键集完全正确,却是格式 v4 明令退役的写法 —— 写进去不报错,读的时候整条会话打不开
+ * (issue #1)。所以这条契约不能靠"比对键名"来守,那正是 0.5.6 的测试漏掉它的原因;
+ * 必须把产物交给**宿主自己的准入校验**:`tools/smoke-dsh-pipeline.mjs` 在真实的 DSH 管线里
+ * 跑完一步之后,用 `assertV4RowAdmission`(持久化读盘时逐行调用的那个函数)校验本函数的产物。
  *
  * `id` 用 Node 自带的 `randomUUID`:DSH 的 id 是编译期 branded string,运行时就是一个普通字符串,
  * 所以我们不必为了这个字段去依赖它的包(本插件保持零依赖)。
@@ -200,8 +216,7 @@ export function noticeMessage(text, summary) {
     role: 'user',
     content: [{ type: 'text', text }],
     source: {
-      kind: 'plugin',
-      plugin: PLUGIN_ID,
+      kind: NOTICE_SOURCE_KIND,
       form: 'notice',
       summary: summary.length <= SUMMARY_MAX ? summary : `${summary.slice(0, SUMMARY_MAX - 1)}…`,
     },
@@ -215,6 +230,11 @@ export function noticeMessage(text, summary) {
  * 于是已经写在会话历史里的提示会被**再说一遍**。会话历史是持久的,真相在那儿 ——
  * 扫自己发过的 notice 才是跨重启可靠的去重依据。
  *
+ * **两种形态都要认。** 0.5.6 写的是 v3 的 `{ kind: 'plugin', plugin: 'jev-guard' }` 包装
+ * (那份历史在 v4 宿主上根本读不出来,但在还停在 v3 的宿主上读得出来),现在的写的是
+ * {@link NOTICE_SOURCE_KIND}。只认新形态会让升级前的历史被当成"没说过" —— 于是旧会话里
+ * 每一条已经说过的话都会再说一遍。去重是**读历史**,所以读要宽、写要严。
+ *
  * @param agent - the agent proposing the step.
  * @returns 已出现过的摘要集合。
  */
@@ -223,9 +243,10 @@ function announcedSummaries(agent) {
   try {
     for (const message of agent?.session?.deriveMessages?.() ?? []) {
       const source = message?.source
-      if (source?.kind === 'plugin' && source.plugin === PLUGIN_ID && typeof source.summary === 'string') {
-        seen.add(source.summary)
-      }
+      if (typeof source?.summary !== 'string') continue
+      const own = source.kind === NOTICE_SOURCE_KIND
+        || (source.kind === 'plugin' && source.plugin === PLUGIN_ID)
+      if (own) seen.add(source.summary)
     }
   } catch {
     // 读不到历史就当"没说过":宁可再说一遍,也不能漏掉"没有密钥"这条要求。

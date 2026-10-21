@@ -5,6 +5,24 @@
 本项目遵循「按日期记录事实」的写法:每条都写清**改了什么、为什么、以及怎么验证的**。
 完整的设计取舍见 [`docs/DECISIONS.md`](./docs/DECISIONS.md),实测数据见 [`docs/MEASUREMENTS.md`](./docs/MEASUREMENTS.md)。
 
+## [0.5.7] — 2026-10-21
+
+**issue #1 是真的,而且比"显示不对"严重:开着 `notifyInSession` 时,0.5.6 写出的 `source.kind` 会被 DSH 的 v4 格式拒绝,那条会话读不回来。** 写下去的时候从不报错 —— 失败落在**下一次恢复**时,持久化扫描器把这一行判掉,会话打不开。修法是改成格式要求的**生产者自有** kind,并把那条放它过去的断言,换成宿主自己的准入校验。
+
+**bug 到底是什么。** 0.5.6 发出的是 `source = { kind: 'plugin', plugin: 'jev-guard', form: 'notice', summary }` —— v3 的包装。v4 要求 `source.kind` 生产者自有(宿主自己的回退是 `plugin:${plugin}`),而 `assertV4RowAdmission` —— 持久化扫描器逐行跑的那条判据 —— 对别的值一律报 `SessionFormatError: format v4 message requires a producer-owned source kind`。notice 是在没有密钥的会话第一步触发,所以刚装好的第一步就足够让那条会话在下次启动时读不出来。
+
+**为什么测试是绿的 —— 这才是该修的地方。** `tools/smoke-dsh-adapter.mjs` 钉的是 `source.kind === 'plugin' && source.plugin === 'jev-guard' && Object.keys(source).length === 4`,`tools/smoke-dsh-pipeline.mjs` 钉的是 `snapshotJsonValue` 返回的**键名** `kind,plugin,form,summary`。两条都是从实现里抄出来的,所以只证明了"同一个常量写了两遍";而 `snapshotJsonValue` 只规范化、不判断,哪怕它在本部署里跑起来也抓不到这个 bug。这正是本仓自己的规矩(`不验证自己`)栽在**唯一会写进别人持久化存储**的那条消息上。
+
+**改了什么:**
+
+1. `noticeMessage()` 写 `{ kind: 'plugin:jev-guard', form: 'notice', summary }` —— 三个键,生产者自有的 kind。
+2. `announcedSummaries()` 读历史时仍然认 v3 包装,于是修复前写下的会话继续正常去重,而不是把每条 notice 再播一遍(读要宽、写要严)。这就是本次的兼容性那一半:**写用 v4,v3 的历史照样读得懂**。
+3. `tools/smoke-dsh-adapter.mjs` 断言生产者自有的 kind 与三个键,并把一条 v3 形态的 notice 喂进去重路径 —— **24 组断言,原为 23 组**。
+4. `tools/smoke-dsh-pipeline.mjs` 第 6 项改为导入宿主的 `assertV4RowAdmission`,把插件真实产物过一遍 JSON 往返(与扫描器同一条路)再准入,然后断言 0.5.6 的形态**必须被拒**。拿不到校验器时这一项**失败**,绝不降级成"只比键名"。
+5. `docs/DECISIONS.md` 新增 **D20** 记录这个决定;D15 的形状段改为指向它,`docs/DSH-INTEGRATION.md` §4b 与 `docs/AGENT-TASK-dsh.md` 里的管线测试配方一并修正(第 6 项不再读 `packages/util/values`,改为解析 v4 准入模块)。
+
+**怎么验证的**(Windows、Node 24.12.0、本机,2026-10-21):管线测试在**现场 `app.asar` 的解包副本**里跑 —— **6/6**,含 `0.5.6 旧形态被拒=true`。同一校验器上的直接探针:0.5.6 的行 **THREW** `SessionFormatError`,0.5.7 的行 **ACCEPTED**。`tools/smoke-dsh-adapter.mjs` **24/24**;七套离线自检维持 **30 / 34 / 113 / 54 / 17 / 83 / 20**(entry / i18n / quota / reason / token / rules / audit)。另外扫了一遍本机会话库做对照:216 个会话里 `kind: 'plugin'` 的消息 **0** 条 —— 桌面 profile 里插件是禁用状态,这台机器上没真出事;也正因如此,这份报告只能靠契约比对定案,不能靠事故。
+
 ## [0.5.6] — 2026-10-17
 
 **PowerShell 的破坏性操作面进了 L0 规则 —— 就在本 profile 的执行器从 bash 翻成 pwsh 的这一天。** L0 是在语义层降级或超时之后仍然站得住的那层地板;联网模型只有 1800ms,超时即 fail-open,`Remove-Item -Recurse C:\`、`bcdedit /delete`、`iex`、`powershell -EncodedCommand`、`reg delete`、`net user … /delete`、`takeown /f C:\` 这些形态此前只靠联网判定兜着。现在它们是离线规则:**DENY 21 → 26,ASK 16 → 24**。理由见 [`docs/DECISIONS.md`](./docs/DECISIONS.md) 的 D19。

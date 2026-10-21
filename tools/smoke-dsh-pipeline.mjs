@@ -153,26 +153,67 @@ async function main() {
   const ctx2 = await harness({ tools: ['read'], inlineScripts: false, ...paths })
   expect('tools 不匹配 → 放行', await run(ctx2, 'ls -la'), false, ['RAN: ls -la'])
 
-  // 6. 会话内 notice 的形状:交给 DSH 自己的 JSON 快照校验(真实 Session.append 之前那一步)
+  // 6. 会话内 notice 的形状:交给 DSH 自己**读盘时逐行调用**的 v4 准入校验
   //
   // 为什么必须在这里做:notice 是本插件唯一"写进别人会话历史"的东西,而形状写错的表现是
-  // **下次恢复会话时**报 SessionPersistenceCorruptionError —— 会话打不开,而现场离改动很远。
-  // 这个校验需要 DSH 自己的模块,所以只有"在 DSH 目录树里跑"的这一份测试能做(见文件头部的运行方式)。
+  // **下次恢复会话时**整条会话打不开(issue #1)—— 会话打不开,现场离改动很远。
+  // 为什么不能只量键名:0.5.6 的键名全是"对"的,`snapshotJsonValue` 也放行它;真正把它判成
+  // 损坏的是 `assertV4RowAdmission`。所以这里直接跑那一道准入,并且反过来证明 0.5.6 的形态
+  // 确实被拒 —— 一条"只要能过就绿"的检查,抓不住它自己放过的东西。
+  // 需要 DSH 自己的模块,所以只有"在 DSH 目录树里跑"的这一份测试能做(见文件头部运行方式)。
+  /**
+   * 取宿主的 v4 准入校验。两种安装形态都要能跑:解包/安装的 app.asar(裸包名可解析)
+   * 与 pnpm 检出(packages/ 目录里)。**取不到就报错**,不许静默降级成"只比键名"。
+   */
+  const loadAdmission = async (treeRoot) => {
+    const attempts = [
+      '@deepseek-ai/dsh-session-format-v3-to-v4',
+      new URL('./packages/session/session-format-v3-to-v4/lib/index.js', treeRoot).href,
+    ]
+    const errors = []
+    for (const specifier of attempts) {
+      try {
+        const loaded = await import(specifier)
+        if (typeof loaded.assertV4RowAdmission === 'function') return loaded
+        errors.push(`${specifier}: 没有导出 assertV4RowAdmission`)
+      } catch (error) {
+        errors.push(`${specifier}: ${String(error?.message ?? error).slice(0, 80)}`)
+      }
+    }
+    throw new Error(`拿不到宿主的 v4 准入校验 —— ${errors.join(' | ')}`)
+  }
+
   let noticeOk = false
   let noticeWhy = ''
   try {
     const treeRoot = pathToFileURL(`${process.cwd()}/`)
-    const values = await import(new URL('./packages/util/values/lib/index.js', treeRoot).href)
-    const snapshot = values.snapshotJsonValue(mod.noticeMessage('正文', '摘要'))
-    noticeOk = Object.keys(snapshot).join(',') === 'id,role,content,source'
-      && Object.keys(snapshot.source).join(',') === 'kind,plugin,form,summary'
-    noticeWhy = `keys=${Object.keys(snapshot).join(',')} | source=${Object.keys(snapshot.source).join(',')}`
+    const admission = await loadAdmission(treeRoot)
+    /** 与 consumeEventLine 一样"从 JSON 行里解析出来":顺带证明产物是可序列化的。 */
+    const admit = (message) => {
+      const row = { type: 'user/message', seq: 7, time: 1, data: message }
+      const decoded = JSON.parse(JSON.stringify(row))
+      admission.assertV4RowAdmission(decoded)
+      return decoded.data
+    }
+    const fresh = admit(mod.noticeMessage('正文', '摘要'))
+    // 0.5.6 真的写进过会话历史的那份形态,原样拿来当反例:它必须被拒。
+    const legacy = { ...fresh, source: { kind: 'plugin', plugin: 'jev-guard', form: 'notice', summary: '摘要' } }
+    let legacyRejected = false
+    try {
+      admit(legacy)
+    } catch {
+      legacyRejected = true
+    }
+    const keysOk = Object.keys(fresh).join(',') === 'id,role,content,source'
+      && Object.keys(fresh.source).join(',') === 'kind,form,summary'
+    noticeOk = keysOk && legacyRejected
+    noticeWhy = `keys=${Object.keys(fresh).join(',')} | source=${Object.keys(fresh.source).join(',')} | 0.5.6 旧形态被拒=${legacyRejected}`
   } catch (error) {
     noticeWhy = String(error?.message ?? error).slice(0, 200)
   }
   checks += 1
   if (!noticeOk) failures += 1
-  process.stdout.write(`${noticeOk ? 'ok  ' : 'FAIL'}  notice 通过 DSH 自己的 snapshotJsonValue(Session.append 之前那一步)\n      ${noticeWhy}\n`)
+  process.stdout.write(`${noticeOk ? 'ok  ' : 'FAIL'}  notice 通过宿主的 v4 准入校验,且 0.5.6 的旧形态被拒\n      ${noticeWhy}\n`)
 
   // 收尾与 smoke-dsh-adapter 同规矩:先等审计队列落盘(record() 是 fire-and-forget,
   // 不等它 process.exit 会丢尾部记录),再把整个临时目录删掉。

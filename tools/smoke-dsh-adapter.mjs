@@ -260,12 +260,15 @@ async function main() {
     JSON.stringify(withNotice.messages?.map(m => m.id)))
   expectTrue('注入是**追加**:原来那条用户消息还在', withNotice.messages[0]?.id === 'user-1')
   const notice = withNotice.messages[1] ?? {}
-  expectTrue('notice 形状正确(role/content + source 恰好四个键)',
+  // 这条断言在 0.5.6 里写的是 `kind === 'plugin' && plugin === 'jev-guard' && 4 键` ——
+  // 它把当时的 bug 固化成了期望值,于是**形状明明错了,测试全绿**。现在断言的是宿主要求的
+  // **判据**而不是某个常量:kind 必须是生产者自有的(带 plugin 前缀),v3 的 'plugin' 包装已退役。
+  expectTrue('notice 形状正确(role/content + source 恰好三个键且 kind 生产者自有)',
     notice.role === 'user'
       && notice.content?.[0]?.type === 'text' && typeof notice.content?.[0]?.text === 'string'
-      && notice.source?.kind === 'plugin' && notice.source?.plugin === 'jev-guard'
+      && notice.source?.kind === 'plugin:jev-guard'
       && notice.source?.form === 'notice' && typeof notice.source?.summary === 'string'
-      && Object.keys(notice.source).length === 4,
+      && Object.keys(notice.source).length === 3,
     JSON.stringify(notice.source))
   expectTrue('notice 摘要 ≤120 字符且无换行(它要当折叠行的标题)',
     String(notice.source?.summary ?? '').length <= 120 && !String(notice.source?.summary ?? '').includes('\n'),
@@ -276,6 +279,19 @@ async function main() {
   const again = await preStep(fakeStep([notice]), nextEnter)
   expectTrue('同一条提示不会说第二遍(去重靠持久化的会话历史)',
     Array.isArray(again.messages) && again.messages.length === 1, JSON.stringify(again.messages?.map(m => m.id)))
+
+  // 去重是**读历史**:0.5.6 写进历史的是 v3 包装,升级后那些历史仍要认出来。
+  // 只认新形态会让升级前会话里已经说过的提示全部再说一遍 —— 读要宽,写要严。
+  const legacyNotice = {
+    id: 'legacy-notice',
+    role: 'user',
+    content: [{ type: 'text', text: '旧形态' }],
+    source: { kind: 'plugin', plugin: 'jev-guard', form: 'notice', summary: notice.source.summary },
+  }
+  const legacyAgain = await preStep(fakeStep([legacyNotice]), nextEnter)
+  expectTrue('升级前写的旧形态(v3 包装)也能去重',
+    Array.isArray(legacyAgain.messages) && legacyAgain.messages.length === 1,
+    JSON.stringify(legacyAgain.messages?.map(m => m.id)))
 
   const emptyBatch = await preStep(fakeStep(), nextEmpty)
   expectTrue('空批次不塞消息(否则会白白多花一次模型请求)',
