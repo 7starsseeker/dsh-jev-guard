@@ -1,14 +1,7 @@
 {
   "host": "dsh",
-  "updatedAt": "2026-10-17T10:31:26.000Z",
+  "updatedAt": "2026-10-24T09:51:22.673Z",
   "items": {
-    "24": {
-      "status": "pass",
-      "evidence": "DSH 0.2.1-rc.2 兼容性复查(2026-10-17;宿主 @deepseek-ai/dsh-desktop 0.2.1-rc.2,dshBuildCommit 332895e0)。① 契约对照:把 npm 上 0.2.0-rc.2 的 @deepseek-ai/dsh-tools、dsh-agent-loop、dsh-session 包与 app.asar 解出的 0.2.1 源码逐处 diff —— 插件实际依赖的四面(dsh-tools/lib/types/index.js:885 的 tools/pre-execute 瀑布与 allow/ask/deny 形状;dsh-agent-loop/lib/index.js:917 的默认 {kind:'enter',messages} 决策;dsh-session/lib/types/index.js:572 的 snapshotEvents 与 :812 的 deriveMessages;approval/policy 与 permission/preset 事件载荷)逐字节一致,适配器一行未改。② 运行时:重启后 guard.log 216 条判定(allow 212 / revise 2 / block 2),唯一的失败形状是 8 条 1800ms 超时(按设计 fail-open,service 侧问题),没有契约错误。③ 同日执行器从 bash 翻成 pwsh 后,guard.log 已有 tool:\"pwsh\" 记录(cwd T:\\jev-guard,source jev,model jev-1.13.0),证明新工具体确实经过 pre-execute 钩子(适配器 DEFAULT_TOOLS 本就含 pwsh)。④ 0.5.6 为 PowerShell 破坏性语法补了 L0 规则,自检计数见 CHANGELOG 0.5.6。",
-      "notes": "本项验的是宿主版本兼容,不是规则行为。工具管线集成测试(tools/smoke-dsh-pipeline.mjs)在本工作区跑不了:它从自身位置解析 @deepseek-ai/cordis,而本仓刻意零依赖、profile 的 node_modules 也没有该包 —— 既有开发环境缺口,与 0.2.1 无关;发布工作流与 CI 也都不跑它。",
-      "question": "",
-      "at": "2026-10-17T10:31:26.000Z"
-    },
     "6": {
       "status": "pass",
       "evidence": "重启后实测(12:52 启动):① L0 路径生效——远端强推类命令被拦,理由含硬规则 id git-force-push;② Jev 联网路径生效——rm -rf /home/user/jev-guard-probe-dir 被拦,理由含'Jev 判定风险概率 70.0%'(CLI 独立复核同一命令 p=0.80);③ 策略读取正确——完全权限(approval=never)下理由含'这是自动判定,不是用户手动拒绝';④ 无误伤——ls -la /tmp、写自建探针文件(p=0.11)、node -e rmSync(p=0.22) 均正常放行;⑤ 探针全部无害,残留已清理",
@@ -134,6 +127,20 @@
       "notes": "promptLang 不在本项通过条件内:它是判定参数不是文案开关,切它属于重标定(MEASUREMENTS §14:英文问话 12/21 更低、平均 -0.043、三条翻带全朝放行、噪声地板 0.015;两轮独立运行一致)。默认保持 zh-CN。",
       "question": "",
       "at": "2026-09-20T14:18:39.104Z"
+    },
+    "24": {
+      "status": "pass",
+      "evidence": "DSH 0.2.1-rc.2 兼容性复查(2026-10-17;宿主 @deepseek-ai/dsh-desktop 0.2.1-rc.2,dshBuildCommit 332895e0)。① 契约对照:把 npm 上 0.2.0-rc.2 的 @deepseek-ai/dsh-tools、dsh-agent-loop、dsh-session 包与 app.asar 解出的 0.2.1 源码逐处 diff —— 插件实际依赖的四面(dsh-tools/lib/types/index.js:885 的 tools/pre-execute 瀑布与 allow/ask/deny 形状;dsh-agent-loop/lib/index.js:917 的默认 {kind:'enter',messages} 决策;dsh-session/lib/types/index.js:572 的 snapshotEvents 与 :812 的 deriveMessages;approval/policy 与 permission/preset 事件载荷)逐字节一致,适配器一行未改。② 运行时:重启后 guard.log 216 条判定(allow 212 / revise 2 / block 2),唯一的失败形状是 8 条 1800ms 超时(按设计 fail-open,service 侧问题),没有契约错误。③ 同日执行器从 bash 翻成 pwsh 后,guard.log 已有 tool:\"pwsh\" 记录(cwd T:\\jev-guard,source jev,model jev-1.13.0),证明新工具体确实经过 pre-execute 钩子(适配器 DEFAULT_TOOLS 本就含 pwsh)。④ 0.5.6 为 PowerShell 破坏性语法补了 L0 规则,自检计数见 CHANGELOG 0.5.6。",
+      "notes": "本项验的是宿主版本兼容,不是规则行为。工具管线集成测试(tools/smoke-dsh-pipeline.mjs)在本工作区跑不了:它从自身位置解析 @deepseek-ai/cordis,而本仓刻意零依赖、profile 的 node_modules 也没有该包 —— 既有开发环境缺口,与 0.2.1 无关;发布工作流与 CI 也都不跑它。",
+      "question": "",
+      "at": "2026-10-17T10:31:26.000Z"
+    },
+    "25": {
+      "status": "pass",
+      "evidence": "DSH 0.2.1-rc.3 兼容性复查(2026-10-24;宿主 dsh 0.2.1-rc.3,Node 24.22.1,cordis 4.0.5,插件 0.5.7 一行未改)。① 契约对照:对照对象改为随宿主发布的 app.asar 内包(Electron 以 ELECTRON_RUN_AS_NODE 跑脚本读 asar,按 dependencies+peerDependencies 闭包提取)—— tools/pre-execute 仍是 dsh-tools/lib/index.js:3321 的 waterfall,默认 {kind:'allow'},allow/ask/deny/cancel 决策形状见 dsh-tools/lib/types/index.js:885;agent/pre-step 仍默认 {kind:'enter',messages}(dsh-agent-loop/lib/index.js:909);approval/policy 与 permission/preset 仍按原样 append 与回读(dsh-user-approval/lib/index.js:65/:163、dsh-permission-presets/lib/index.js:359/:380/:87-90);dsh.bundle.patch 契约见 dsh-app-boot 的 bundlePatchFiles。插件实际匹配的行一行未变,适配器未改也无需改。② 第 24 项遗留的工具管线集成测试在 rc3 包上跑通:tools/smoke-dsh-pipeline.mjs 离线 6/6,其中 item 6 走宿主真实的 v4 准入校验 —— 0.5.7 的 source.kind=plugin:jev-guard 被接受,0.5.6 的 kind:'plugin' 旧形态被拒(true)。③ 真机挂载:guard.log 当日 264 条判定全部 allow(jev 244 / cache 2 / 1800ms 超时 fail-open 18),policy=never 与 preset=danger-full-access 均取自真实会话事件,证明两个事件载荷在 rc3 上照旧可读。④ 电池:guard selftest 12/12;七套离线 30/34/113/54/17/83/20 全过;DSH 适配器冒烟 24/24。",
+      "notes": "本项验的是宿主版本兼容,不是规则行为。顺带把超时景象量化成一条待办:当日 18/264(6.8%)撞 1800ms 预算,fail-open 与设计一致,但语义层实测 1.25-2.31 秒一条、1800ms 已接近 p90,建议评估调大 timeoutMs 或扩大预筛覆盖 —— 与 0.2.1-rc.3 无关。README 兼容段(中英)已同步本项结论;未改版本号、未写 CHANGELOG。",
+      "question": "",
+      "at": "2026-10-24T09:51:22.673Z"
     },
     "6-pre": {
       "status": "pass",
