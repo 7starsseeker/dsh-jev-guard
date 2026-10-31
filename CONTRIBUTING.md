@@ -38,7 +38,7 @@ Cutting a release is a separate, written-down procedure — it publishes on a ta
 
 ## Documentation is bilingual
 
-Each document ships as English (`NAME.md`, the default) with a Chinese sibling (`NAME.zh-CN.md`), linked from a language line under the H1. Change one, change the other in the same commit. `node tools/check-doc-pairs.mjs` compares the two structurally and lists the Chinese left inside the English file. Its fidelity check compares the Chinese file against the English baseline byte-for-byte and therefore fails for every document as things stand; the structural and leftover-Chinese checks are the actionable ones.
+Each document ships as English (`NAME.md`, the default) with a Chinese sibling (`NAME.zh-CN.md`), linked from a language line under the H1. Change one, change the other in the same commit. `node tools/check-doc-pairs.mjs` compares the two structurally, lists the Chinese left inside the English file, and fails a pair when only one side changed since `--base` (default `HEAD`) — a deliberate one-sided change is declared with `--edited-both`.
 
 Every number in a document must be reproducible from the repository.
 

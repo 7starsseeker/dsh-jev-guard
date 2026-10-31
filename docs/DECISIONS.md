@@ -377,14 +377,14 @@ switching must be acknowledged as a recalibration, not a translation.
 - The judging behaviour itself is **unaffected**: L0 rules, the pre-screen, thresholds, cache keys and the promptLang default all stay the same —
   `lang` only swaps copy.
 
-5. **The repository's documents are English-first too**: every document defaults to English, with the
-   Chinese kept byte-for-byte as `<name>.zh-CN.md` in the same directory and a language line at the top
-   of both (point 1 above was about *messages*; this one is about the documents themselves). The rules:
-   - **the Chinese file is a byte-for-byte copy of the original**, differing only by that one language
-     line; **change both together**;
-   - **mechanical comparison instead of trust**, run by `node tools/check-doc-pairs.mjs`: the Chinese
-     file must equal the baseline byte-for-byte plus that one language line, and the two sides must
-     agree on heading-level sequence, code-fence count, table row count, link-target set and numeric
+5. **The repository's documents are English-first too**: every document defaults to English, with a
+   Chinese sibling `<name>.zh-CN.md` in the same directory — a translation, not a byte copy — and a
+   language line at the top of both (point 1 above was about *messages*; this one is about the documents
+   themselves). The rules:
+   - **change both together**: a pair fails when only one side moved since the baseline, and a deliberate
+     one-sided edit has to be declared (`--edited-both`);
+   - **mechanical comparison instead of trust**, run by `node tools/check-doc-pairs.mjs`: the two sides
+     must agree on heading-level sequence, code-fence count, table row count, link-target set and numeric
      multiset (the tool also prints every Chinese line left in the English file, so you can check that
      they are all quotations);
    - **quoted measurements are not translated** — log lines, command samples and Chinese corpus entries

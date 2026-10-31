@@ -6,11 +6,10 @@
  * 真实风险不是翻错,而是**漂移**:改了英文那份忘了中文,或者中文那份被人顺手润色,
  * 两边从此说的不是一件事。所以这里把三件事变成断言:
  *
- *   A) **逐字节保真**:中文版必须等于该文件的基线(默认 `HEAD`)加上**唯一一行**语言切换行。
- *      比对方式是枚举切换行在 H1 之后的四种插入形态(前后各 0/1 个空行)并要求逐字节命中 ——
- *      多一个空格、少一个空行、被"顺手润色"过一个字,都会当场失败。
- *      两边**故意一起改**的文档(切换行之外还有内容改动)用 `--edited-both` 列出,
- *      对它们只验 B) 与"两部各有切换行"。
+ *   A) **成对改动**:两份各自在 H1 下面带一行语言切换行(互相指向),并且相对基线(默认 `HEAD`)
+ *      **不能只动一边** —— 改了英文忘了中文、或中文被顺手润色而英文没动,都会当场失败。
+ *      这里**不再**拿中文版去和英文基线比:中文是真翻译,逐字节比对对任何已翻译文档恒假
+ *      (那正是本检查长期红着的原因)。确属有意只改一边的,用 `--edited-both` 声明,只留一条提示。
  *   B) **两部同构**:英文版与中文版必须在标题层级序列、代码围栏数、表格行数、链接目标集合、
  *      数字多重集上一致。链接比较会剔除两类注定不同的目标:同文件锚点(英文标题的锚点当然
  *      与中文标题不同)与语言切换行互相指向的那两个文件名。
@@ -113,25 +112,28 @@ for (const en of FILES) {
   const zh = zhOf(en)
   const zhText = read(zh)
   const enText = read(en)
-  const original = atBase(base, en)
 
-  // A) 保真(基线里没有这份文件时,只有"两部都带切换行"这一条可查)
-  const switcher = `> [English](${en.split('/').pop()}) | **简体中文**`
-  const hasSwitchers = zhText.includes('> [English](') && enText.includes('> **English** | [简体中文](')
-  const newFile = original === null
-  let faithful = hasSwitchers
-  if (!newFile && !editedBoth.has(en)) {
-    const lines = original.split('\n')
-    const h1 = lines.findIndex(l => l.startsWith('# '))
-    const candidates = []
-    for (const before of [0, 1]) {
-      for (const after of [0, 1]) {
-        const copy = [...lines]
-        copy.splice(h1 + 1, 0, ...Array(before).fill(''), switcher, ...Array(after).fill(''))
-        candidates.push(copy.join('\n'))
-      }
-    }
-    faithful = candidates.includes(zhText)
+  // A) 成对改动:两边各自带语言切换行,且相对基线**必须同时变或同时不变**。
+  //    (旧版把中文版与英文基线逐字节比 —— 中文是真翻译,那条对任何已翻译文档恒假,已废弃。)
+  const enBase = en.split('/').pop()
+  const zhBase = zh.split('/').pop()
+  const lineStartingWith = (text, prefix) => text.split('\n').find(l => l.startsWith(prefix)) ?? ''
+  // README 那行后面还挂着几个导航链接,所以只要求"这行以切换行开头、且确实指向对侧文件"。
+  const enSwitcherOk = lineStartingWith(enText, '> **English**').includes(`[简体中文](${zhBase})`)
+  const zhSwitcherOk = lineStartingWith(zhText, '> [English](').includes(`[English](${enBase})`)
+  const originalEn = atBase(base, en)
+  const originalZh = atBase(base, zh)
+  const newFile = originalEn === null || originalZh === null
+  // 比的是内容,不是工作区那份的换行风格:`git show` 永远吐 LF,而 Windows 上 core.autocrlf
+  // 检出的是 CRLF —— 不归一化的话"两边都算改过",单边改动就永远抓不到。
+  const norm = (s) => s.replace(/\r\n/g, '\n')
+  const changedEn = originalEn !== null && norm(enText) !== norm(originalEn)
+  const changedZh = originalZh !== null && norm(zhText) !== norm(originalZh)
+  let faithful = enSwitcherOk && zhSwitcherOk
+  let sideEdit = ''
+  if (faithful && !newFile && changedEn !== changedZh) {
+    sideEdit = changedEn ? '英文改了、中文版没跟着改' : '中文版改了、英文版没跟着改'
+    if (!editedBoth.has(en)) faithful = false
   }
   if (!faithful) failed += 1
 
@@ -151,8 +153,18 @@ for (const en of FILES) {
   // C) 残留中文
   const leftovers = enText.split('\n').filter(l => /[\u4e00-\u9fff]/.test(l) && !l.startsWith('> **English**'))
   console.log(`${faithful && (diff.length === 0 || onlyNumbers) ? 'ok  ' : 'FAIL'} ${en}`)
-  if (!faithful) console.log(`     中文版不等于"基线 + 仅一行切换行"的任一种形态${editedBoth.has(en) ? '(该文件声明了两边一起改,只查切换行是否都在)' : ''}`)
-  if (newFile && faithful && (diff.length === 0 || onlyNumbers)) console.log('     (基线里没有这份文件:新文档只查结构同构与切换行,保真检查要等它进了基线才算数)')
+  if (!enSwitcherOk || !zhSwitcherOk) {
+    const missing = !enSwitcherOk && !zhSwitcherOk
+      ? '两份都缺'
+      : (!enSwitcherOk ? `英文版缺 \`> **English** | [简体中文](${zhBase})\`` : `中文版缺 \`> [English](${enBase}) | **简体中文**\``)
+    console.log(`     语言切换行:${missing}`)
+  }
+  if (sideEdit) {
+    console.log(editedBoth.has(en)
+      ? `     只动了一边:${sideEdit}(已用 --edited-both 声明,不计失败)`
+      : `     单边改动:${sideEdit}(两份要在同一个提交里一起改;确属有意只改一边就加 --edited-both ${en})`)
+  }
+  if (newFile && faithful && (diff.length === 0 || onlyNumbers)) console.log('     (基线里没有这份文件:新文档只查结构同构与切换行,单边改动要等它进了基线才算数)')
   if (diff.length) console.log(`     ${onlyNumbers ? '仅数字多重集差异(标题序号 一→1. 会造成这个)' : '两部未对齐'}: ${diff.join(', ')}`)
   if (leftovers.length) console.log(`     英文版残留中文 ${leftovers.length} 行(应只有实测引用): ${leftovers.map(l => l.trim().slice(0, 60)).join(' || ')}`)
 }
