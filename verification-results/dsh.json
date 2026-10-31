@@ -1,6 +1,6 @@
 {
   "host": "dsh",
-  "updatedAt": "2026-10-24T09:51:22.673Z",
+  "updatedAt": "2026-10-31T07:22:46.387Z",
   "items": {
     "6": {
       "status": "pass",
@@ -141,6 +141,13 @@
       "notes": "本项验的是宿主版本兼容,不是规则行为。顺带把超时景象量化成一条待办:当日 18/264(6.8%)撞 1800ms 预算,fail-open 与设计一致,但语义层实测 1.25-2.31 秒一条、1800ms 已接近 p90,建议评估调大 timeoutMs 或扩大预筛覆盖 —— 与 0.2.1-rc.3 无关。README 兼容段(中英)已同步本项结论;未改版本号、未写 CHANGELOG。",
       "question": "",
       "at": "2026-10-24T09:51:22.673Z"
+    },
+    "26": {
+      "status": "pass",
+      "evidence": "DSH 0.2.1-rc.5 兼容性复查(2026-10-31;宿主 @deepseek-ai/dsh-desktop 0.2.1-rc.5,dshBuildCommit d4db512a969fccf0c5cc7ec8fe38e9c1d27af916,channel nightly,Node 24.21.0,cordis 4.0.5,插件 0.5.7 一行未改)。① 契约对照:对照对象仍是随宿主发布的 app.asar 内包(按 dependencies+peerDependencies 闭包提取)—— tools/pre-execute 仍是 dsh-tools/lib/index.js:3321 的 waterfall,默认 {kind:'allow'},allow/ask/deny/cancel 决策形状见 dsh-tools/lib/types/index.js:885;agent/pre-step 仍默认 {kind:'enter',messages}(dsh-agent-loop/lib/index.js:909);approval/policy 与 permission/preset 仍按原样 append 与回读(dsh-user-approval/lib/index.js:65/:74、dsh-permission-presets/lib/index.js:92-95);dsh.bundle.patch 仍接受单个路径字符串(dsh-app-boot/lib/index.js:517-519 的 bundlePatchFiles);snapshotEvents / deriveMessages 见 dsh-session/lib/index.js:1452/:1672;credentials.resolve 见 dsh-credentials-local/lib/index.js:480;v4 准入 assertV4RowAdmission 见 dsh-session-format-v3-to-v4/lib/index.js:1107(rc5 新增可选第二参 knownEventTypes,不传时行为不变),旧形态仍被拒见 :142,producerKind 见 :87。九条宿主契约逐处仍在,适配器未改也无需改。② 管线集成:tools/smoke-dsh-pipeline.mjs 对这些 rc5 包离线 6/6 —— 只读命令真的穿过五段管线执行、git push --force 在工具体之前被拦、git reset --hard 无审批通道被拒、非匹配工具原样放过、notice 过宿主真实的 v4 准入且 0.5.6 旧形态被拒=true。③ 真机挂载:guard.log 当日 381 条判定(截至 15:24 本地)—— allow 380 / escalate 1(真机探针),source jev 376 / error 4(全部 1800ms 超时 fail-open,ms 1812/1812/1809/1804)/ static-rule 1,policy=never 与 preset=danger-full-access 全部取自真实会话事件、跨 6 个会话(当前会话 87 条),证明两个事件载荷照旧可读;真机 escalate 链路亦实测:rsync -a --delete 命 rsync-delete 硬规则被拦、工具体未执行、理由带一次性令牌,审计落 action=escalate decision=deny source=static-rule ms=0。notice 通道当日 0 条 —— 它只在阀门失明(无密钥/降级/配额冷却)时说话,健康时不触发;形状正确性由管线测试第 6 项覆盖。④ 电池:guard selftest 12/12;七套离线 30/34/113/54/17/83/20 全过;DSH 适配器冒烟 24/24。",
+      "notes": "本项验的是宿主版本兼容,不是规则行为。观察项沿用第 25 项并已收敛:当日 4/381(1.0%)撞 1800ms 预算后 fail-open,ms 均值 507、p90 1044、最大 1812;建议仍评估调大 timeoutMs 或扩大预筛覆盖 —— 与 0.2.1-rc.5 无关。README 兼容段(中英)已同步本项结论;未改版本号、未写 CHANGELOG。",
+      "question": "",
+      "at": "2026-10-31T07:22:46.387Z"
     },
     "6-pre": {
       "status": "pass",
