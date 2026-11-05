@@ -48,8 +48,10 @@
 1. **DSH 凭据层**(推荐):`ctx.credentials.resolve('TYPESAFE_API_KEY')` —— 走 DSH 自己的凭据存储,
    轮换后**无需重启**。
 2. 环境变量 `TYPESAFE_API_KEY`(名字由 `config.json` 的 `apiKeyEnv` 决定)。
-3. **你自己在包根建的** `secrets.json`,内容 `{"TYPESAFE_API_KEY": "apikey_..."}`
+3. **你自己建的** `secrets.json` —— 默认 `~/.jev-guard/secrets.json`(或 `$JEV_GUARD_HOME/secrets.json`),
+   内容 `{"TYPESAFE_API_KEY": "apikey_..."}`。包根遗留的那份仍会被读到,只是兜底
    (**`apiKeyFile` 若给相对路径,按包根解析,与当前目录无关** —— Windows/WSL 都成立)。
+   默认放包外,是因为包更新会换掉整个目录,放在里面的文件会一起没。
 
 三种都不要提交进任何仓库。
 

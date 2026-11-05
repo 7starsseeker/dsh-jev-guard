@@ -16,15 +16,16 @@
 
 import { randomUUID } from 'node:crypto'
 import { readFileSync } from 'node:fs'
-import { dirname, isAbsolute, join } from 'node:path'
+import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { flush, record } from '../../lib/audit.js'
 import { DEFAULTS, evaluateCommand } from '../../lib/gate.js'
 import { setLang, getLang, t } from '../../lib/i18n.js'
+import { configFilePath, keyFilePath } from '../../lib/paths.js'
 import { DEGRADING_KINDS, appliesTo, isSticky, kindLabel, readDegraded } from '../../lib/quota.js'
 import { RetryBudget, fingerprint, reviseGuidance, toHostDecision } from '../../lib/verdict.js'
 
-/** Package root (adapters/dsh/ → ../..), so every adapter reads the same config.json. */
+/** Package root (adapters/dsh/ → ../..), used for the legacy in-package config fallback. */
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..')
 
 /** CLI 入口绝对路径:写进拒绝理由里,让用户能直接复制粘贴授权命令(不用自己找路径)。 */
@@ -59,11 +60,14 @@ const NOTICE_SOURCE_KIND = `plugin:${PLUGIN_ID}`
 /**
  * Read config.json so there is ONE place to tune thresholds for every surface.
  * The cordis patch config still wins over it, and DEFAULTS lose to both.
+ *
+ * 路径与 CLI 共用 `lib/paths.js`:包外用户目录优先、包根兜底。包更新是整包替换,
+ * 只读包内那份等于"更新一次就把本机设置清零"(0.5.8 修的就是这个)。
  * @returns the file config, or an empty object.
  */
 function loadConfigFile() {
   try {
-    return JSON.parse(readFileSync(join(ROOT, 'config.json'), 'utf8'))
+    return JSON.parse(readFileSync(configFilePath(ROOT), 'utf8'))
   } catch {
     return {}
   }
@@ -124,10 +128,7 @@ async function resolveKey(ctx, ref, cfg = {}) {
   }
   if (process.env[ref]) return process.env[ref]
   try {
-    const configured = typeof cfg.apiKeyFile === 'string' && cfg.apiKeyFile.trim() !== '' ? cfg.apiKeyFile : undefined
-    const file = configured === undefined
-      ? join(ROOT, 'secrets.json')
-      : (isAbsolute(configured) ? configured : join(ROOT, configured))
+    const file = keyFilePath(cfg, ROOT)
     const parsed = JSON.parse(readFileSync(file, 'utf8'))
     const value = parsed[ref] ?? parsed.apiKey
     if (typeof value === 'string' && value.trim() !== '') return value.trim()

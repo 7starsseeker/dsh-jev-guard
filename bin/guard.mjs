@@ -22,10 +22,11 @@
  */
 
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
-import { dirname, isAbsolute, join } from 'node:path'
+import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { DEFAULTS, evaluateCommand, prefilter } from '../lib/gate.js'
 import { DEFAULT_LOG_PATH, lastLogError, readTail, resolveLogPath, summarize } from '../lib/audit.js'
+import { configFilePath, keyFilePath as resolveKeyFilePath } from '../lib/paths.js'
 import {
   clearDegraded, enterDegraded, isDegraded, isSticky, probeDue, readDegraded, resolveDegradedPath, statusText, warningLine,
 } from '../lib/quota.js'
@@ -93,13 +94,16 @@ function flag(name) {
 }
 
 /**
- * Load config.json from the package root and merge it over the defaults.
+ * Load config.json and merge it over the defaults.
+ *
+ * 路径由 `lib/paths.js` 决定(包外用户目录优先、包根兜底),不再写死 `join(ROOT, ...)`:
+ * 包更新是整包替换,读包内那份等于"每次更新都把本机设置清零"。
  * @returns the effective config object.
  */
 async function loadConfig() {
   let file = {}
   try {
-    file = JSON.parse(await readFile(join(ROOT, 'config.json'), 'utf8'))
+    file = JSON.parse(await readFile(configFilePath(ROOT), 'utf8'))
   } catch {
     // no config.json -> defaults only
   }
@@ -110,19 +114,15 @@ async function loadConfig() {
 /**
  * 密钥文件的实际路径 —— **读取与写入共用这一个函数**。
  *
- * 为什么必须共用:`apiKeyFile` 给相对路径时,语义是"按**包根**解析,与 cwd 无关"。旧写法
- * `cfg.apiKeyFile ?? join(ROOT, 'secrets.json')` 只在"字段缺失"时回落到包根,一旦填了相对
- * 路径就变成"按调用时的 cwd 解析" —— 在包目录外调用(CLI 与离线脚本都可能)就读不到密钥。
- * 读写若各写一份这种解析,分叉的后果是"写得进去却读不出来",那是最难查的一类错。
- * 绝对路径原样使用。
+ * 解析规则已搬到 `lib/paths.js`(与 DSH 适配器共用同一份):`apiKeyFile` 相对路径按
+ * **包根**解析(既有语义不变),缺省时落在 `JEV_GUARD_HOME`(默认 `~/.jev-guard/secrets.json`),
+ * 包根旧文件仍作兜底。理由见该模块头部:包更新是整包替换,包内那份会被冲掉。
  *
  * @param cfg - effective config.
  * @returns 绝对路径。
  */
 function keyFilePath(cfg) {
-  const configured = typeof cfg.apiKeyFile === 'string' && cfg.apiKeyFile.trim() !== '' ? cfg.apiKeyFile : undefined
-  if (configured === undefined) return join(ROOT, 'secrets.json')
-  return isAbsolute(configured) ? configured : join(ROOT, configured)
+  return resolveKeyFilePath(cfg, ROOT)
 }
 
 /**

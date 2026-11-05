@@ -123,9 +123,9 @@ The declaration in `package.json` is a standard DSH bundle:
 }
 ```
 
-`cordis.patch.yml` mounts the plugin on `tools/pre-execute`, and **every tunable lives there** (you can also put them in `config.json`; precedence is `patch > config.json > built-in defaults`).
+`cordis.patch.yml` mounts the plugin on `tools/pre-execute`, and **every tunable lives there** (you can also put them in `config.json`, which lives **outside the package** — `~/.jev-guard/config.json`, or wherever `JEV_GUARD_CONFIG` points; precedence is `patch > config.json > built-in defaults`).
 
-**API key** — three sources, highest precedence first: the DSH credentials layer (`ctx.credentials`, rotation needs no restart) → the environment variable `TYPESAFE_API_KEY` → a `secrets.json` **you create yourself in the package root** (`{"TYPESAFE_API_KEY": "apikey_..."}`). That file is in `.gitignore` and is deliberately **not** part of the repository or of the published package, so nobody ships one to you — the two sources above it are the ones to prefer. `node bin/guard.mjs key set` writes that file for you (mode 0600), and the DSH adapter reads it too. The key is never printed, and it is masked before anything is written to the log.
+**API key** — three sources, highest precedence first: the DSH credentials layer (`ctx.credentials`, rotation needs no restart) → the environment variable `TYPESAFE_API_KEY` → a `secrets.json` **you create yourself** (default `~/.jev-guard/secrets.json`, `{"TYPESAFE_API_KEY": "apikey_..."}`). That file is deliberately **not** part of the repository or of the published package, so nobody ships one to you — the two sources above it are the ones to prefer. Keeping it outside the package is what makes it survive an update: `npm i` / `dsh plugin update` replaces the whole package directory, so a copy inside it would be wiped. `node bin/guard.mjs key set` writes that file for you (mode 0600), and the DSH adapter reads it too. The key is never printed, and it is masked before anything is written to the log.
 
 **Verify right after installing** (don't settle for "it didn't error"):
 

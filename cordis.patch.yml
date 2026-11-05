@@ -71,7 +71,8 @@
         maxScriptBytes: 8192
 
         # 密钥解析:优先 ctx.credentials(即 ~/.dsh/.credentials.yaml 的 refs),
-        # 其次进程环境变量,最后包根 secrets.json(相对路径的 apiKeyFile 按**包根**解析)。
+        # 其次进程环境变量,最后 secrets.json(默认 ~/.jev-guard/secrets.json,可用
+        # JEV_GUARD_SECRETS 指定;包根旧文件作兜底。相对路径的 apiKeyFile 按**包根**解析)。
         # 第三层就是 `node bin/guard.mjs key set` 写的那一份 —— 缺了它,"用 CLI 录入密钥"
         # 对 DSH 用户就是一句空话。三处永不打印密钥。
         apiKeyEnv: TYPESAFE_API_KEY

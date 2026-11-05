@@ -5,6 +5,16 @@
 本项目遵循「按日期记录事实」的写法:每条都写清**改了什么、为什么、以及怎么验证的**。
 完整的设计取舍见 [`docs/DECISIONS.md`](./docs/DECISIONS.md),实测数据见 [`docs/MEASUREMENTS.md`](./docs/MEASUREMENTS.md)。
 
+## [0.5.8] — 2026-11-05
+
+**本机设置放在包内,于是每次更新安装都被清零。** `config.json` 与 `secrets.json` 原先都从包根读(`bin/guard.mjs` 与 DSH 适配器里都是 `join(ROOT, 'config.json')`)。`npm i` / `dsh plugin update` 是**整包替换**,而这两个文件都不在发布 `files` 白名单里 —— 也就是说,文档写的"在包根建 `secrets.json`"每隔一次更新就得重做一遍。审计日志、放行令牌、降级状态早就在包外(`JEV_GUARD_HOME`,默认 `~/.jev-guard`);唯独**人亲手敲进去的那些设置**被留在了包里。
+
+**改了什么。** 路径解析收进一个模块 `lib/paths.js`,CLI 与适配器都调它 —— 读写同一条规则,不允许出现"相对 `apiKeyFile` 从一个路径写进去、从另一个路径读不出来"。优先级:显式 `JEV_GUARD_CONFIG` / `JEV_GUARD_SECRETS` → `JEV_GUARD_HOME` 里的文件(默认 `~/.jev-guard/config.json` / `secrets.json`)→ 包根旧位置。第三步是刻意保留的:开发仓、`link:` 安装、以及还没迁移的机器行为完全不变,新默认只在旧文件缺席的地方生效。`apiKeyFile` 的既有语义不变 —— 相对路径按**包根**解析、与 cwd 无关 —— 改掉它会重新打开"这个目录写、那个目录读"的老问题,`keyFilePath` 的注释就是为它写的。
+
+**验证。** `guard selftest` 12/12;七套离线自检 30 / 113 / 54 / 17 / 83 / 20 / 34 条断言全部通过;DSH 适配器冒烟 24/24。优先级用临时 `JEV_GUARD_HOME` 实测:没有用户文件时用包根 `config.json`(行为不变);`$JEV_GUARD_HOME/config.json` 存在后它胜出;`JEV_GUARD_CONFIG` 覆盖两者;相对 `apiKeyFile` 仍解析到 `<包根>/mine/secrets.json`。管线冒烟本机没跑 —— 它 import `@deepseek-ai/cordis`,而这个刻意零依赖的检出里没有(与本文件 0.2.1-rc.2 那一轮记录的同一个限制,不是本次引入)。
+
+**文档**(`START-HERE`、`DEPLOY`、`README`、`cordis.patch.yml`、`config.example.json`,以及中英两份 `no-key` 提示文案)同步说明这两个文件该放哪、以及为什么放包外。
+
 ## [0.5.7] — 2026-10-21
 
 **issue #1 是真的,而且比"显示不对"严重:开着 `notifyInSession` 时,0.5.6 写出的 `source.kind` 会被 DSH 的 v4 格式拒绝,那条会话读不回来。** 写下去的时候从不报错 —— 失败落在**下一次恢复**时,持久化扫描器把这一行判掉,会话打不开。修法是改成格式要求的**生产者自有** kind,并把那条放它过去的断言,换成宿主自己的准入校验。

@@ -5,6 +5,16 @@
 This project follows a "record the facts by date" approach: every entry states clearly **what changed, why, and how it was verified**.
 The complete design trade-offs are in [`docs/DECISIONS.md`](./docs/DECISIONS.md), the measured data in [`docs/MEASUREMENTS.md`](./docs/MEASUREMENTS.md).
 
+## [0.5.8] — 2026-11-05
+
+**Machine settings lived inside the package, so every install update wiped them.** `config.json` and `secrets.json` were both read from the package root (`join(ROOT, 'config.json')` in `bin/guard.mjs` and in the DSH adapter). An `npm i` / `dsh plugin update` replaces the whole package directory, and neither file is in the published `files` allowlist — which means the documented setup ("create `secrets.json` in the package root") had to be redone after every single update. The audit log, the allow-list tokens and the degraded state were already outside the package (`JEV_GUARD_HOME`, default `~/.jev-guard`); the two files that hold *the settings a human typed* were the ones left behind.
+
+**What changed.** Resolution now lives in one module, `lib/paths.js`, and both the CLI and the adapter call it — the same rule for reading and writing, so a relative `apiKeyFile` can never be written through one path and read through another. Precedence: an explicit `JEV_GUARD_CONFIG` / `JEV_GUARD_SECRETS` → the file in `JEV_GUARD_HOME` (default `~/.jev-guard/config.json` / `secrets.json`) → the old package-root location. The third step is deliberate: a checkout, a `link:` install, or a machine that has not migrated yet keeps working with no change, and the new default only takes effect where the old file is absent. `apiKeyFile` keeps its documented meaning — a relative path resolves against the package root, independently of cwd — because changing it would re-open the "written from one directory, read from another" bug the comment in `keyFilePath` exists to prevent.
+
+**Verified.** `guard selftest` 12/12; the seven offline suites 30 / 113 / 54 / 17 / 83 / 20 / 34 assertions, all passing; the DSH adapter smoke test 24/24. Precedence was exercised against a temporary `JEV_GUARD_HOME`: with no user file the package-root `config.json` is used (unchanged behaviour); once `$JEV_GUARD_HOME/config.json` exists it wins; `JEV_GUARD_CONFIG` overrides both; `apiKeyFile` with a relative path still resolves to `<package root>/mine/secrets.json`. The pipeline smoke test was not run here — it imports `@deepseek-ai/cordis`, which this deliberately zero-dependency checkout does not have (unchanged, and the same limitation recorded in the 0.2.1-rc.2 round above).
+
+**Docs** (`START-HERE`, `DEPLOY`, `README`, `cordis.patch.yml`, `config.example.json`, and both `no-key` hint strings) now say where the files actually belong, and why they are outside the package.
+
 ## [0.5.7] — 2026-10-21
 
 **Issue #1 was real, and it was worse than a display bug: with `notifyInSession` on, 0.5.6 wrote a `source.kind` that DSH's format v4 refuses, so the conversation could not be read back.** Writing the row never failed — the failure lands on the *next* resume, where the persistence scanner rejects the line and the session will not open. Fixed by writing the producer-owned kind the format asks for, and by replacing the assertion that let it through with the host's own admission check.

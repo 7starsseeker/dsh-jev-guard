@@ -17,9 +17,12 @@ verbatim to the AI on that machine, and it can work it out on its own, verify it
 
 1. Make the key resolvable, one of two ways:
    - **Recommended**: put it into DSH's credential layer (`ctx.credentials`, no restart needed after rotation); or
-   - create `secrets.json` in the package with the content `{"TYPESAFE_API_KEY": "apikey_..."}`.
+   - create `secrets.json` (default `~/.jev-guard/secrets.json`) with the content `{"TYPESAFE_API_KEY": "apikey_..."}`.
      **Do not** paste the key into any AI conversation — let the AI read it from this file.
-2. To change thresholds / degradation policy / language, `cp config.example.json config.json` and then edit it.
+2. To change thresholds / degradation policy / language, copy `config.example.json` to `~/.jev-guard/config.json` and then edit it.
+   (Both files live **outside the package** on purpose: an `npm i` / `dsh plugin update` replaces the whole package directory,
+   so anything kept inside it is wiped on the next update. A `config.json` / `secrets.json` left in the package root is still
+   read as a fallback; `JEV_GUARD_CONFIG` / `JEV_GUARD_SECRETS` point at an explicit path.)
    The copy comes in two versions, Chinese and English, and `lang` defaults to `'auto'` (follows the system locale); **leave `promptLang` alone** — it is a judging parameter,
    and the Chinese default is exactly the language in which the thresholds 0.5/0.7 were calibrated (`docs/MEASUREMENTS.md` §14).
 3. Run `node bin/guard.mjs judge 'pnpm test'` once to confirm it can judge over the network (`source` in the output should be `jev`).

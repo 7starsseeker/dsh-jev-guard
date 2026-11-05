@@ -48,8 +48,10 @@ Three sources, highest precedence first:
 1. **The DSH credentials layer** (recommended): `ctx.credentials.resolve('TYPESAFE_API_KEY')` — goes through DSH's own credential store,
    and after a rotation **needs no restart**.
 2. The environment variable `TYPESAFE_API_KEY` (the name is decided by `apiKeyEnv` in `config.json`).
-3. A `secrets.json` **you create yourself in the package root**, containing `{"TYPESAFE_API_KEY": "apikey_..."}`
+3. A `secrets.json` **you create yourself** — default `~/.jev-guard/secrets.json` (or `$JEV_GUARD_HOME/secrets.json`),
+   containing `{"TYPESAFE_API_KEY": "apikey_..."}`. A copy left in the package root is still read as a fallback
    (**if `apiKeyFile` is given a relative path it resolves against the package root, independently of the current directory** — true on both Windows and WSL).
+   Outside the package is the default because a package update replaces the whole directory and would take the file with it.
 
 Do not commit any of the three into any repository.
 

@@ -1,5 +1,5 @@
 {
-  "_comment": "复制成 config.json 后按需修改。config.json 与 secrets.json 不进版本库。",
+  "_comment": "复制成 config.json 后按需修改。推荐放在包外:~/.jev-guard/config.json(Windows 同路径,JEV_GUARD_HOME 可改目录,JEV_GUARD_CONFIG 可指定文件);包根的同名文件仍会被读到,但包更新会冲掉。config.json 与 secrets.json 都不进版本库。",
   "_model": "2026-10-15 起默认锁定版本号:阈值 0.5/0.7 标定于 jev-1.13.0,别名会在上游转正式后静默前移(jev-latest 目前=1.13.0;1.14 仍在预览期,挂 jev-preview)。不跟进 1.14 的理由有两条:①本插件每次判定只发一个文本问题(questions.destroys_data、type=noul)、只读回一个概率,整条路径上没有图片/多模态输入可喂;②上游自己说它当前不适合进生产。换模型 = 重标定事件(737 条复测 + 阈值重标),不是改字符串。详见 docs/DECISIONS.md D18。",
   "model": "jev-1.13.0",
   "endpoint": "https://api.typesafe.ai/v1/systemone",

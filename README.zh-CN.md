@@ -123,9 +123,9 @@ node bin/guard.mjs key status     # 当前哪个来源在生效、密钥多长(�
 }
 ```
 
-`cordis.patch.yml` 把插件插到 `tools/pre-execute` 上,**所有可调参数都在那里**(也可以写在 `config.json` 里,优先级 `patch > config.json > 内置默认`)。
+`cordis.patch.yml` 把插件插到 `tools/pre-execute` 上,**所有可调参数都在那里**(也可以写在 `config.json` 里 —— 它在**包外**,默认 `~/.jev-guard/config.json`,或用 `JEV_GUARD_CONFIG` 指定;优先级 `patch > config.json > 内置默认`)。
 
-**密钥**三种来源,优先级从高到低:DSH 凭据层(`ctx.credentials`,轮换后无需重启)→ 环境变量 `TYPESAFE_API_KEY` → **你自己在包根建的** `secrets.json`(`{"TYPESAFE_API_KEY": "apikey_..."}`)。该文件写在 `.gitignore` 里,**刻意不入仓库、也不进发布包**,没人会替你带一份 —— 前两种来源才是首选。`node bin/guard.mjs key set` 会替你写这个文件(权限 0600),DSH 适配器也读它。密钥从不被打印,写入日志前会掩码。
+**密钥**三种来源,优先级从高到低:DSH 凭据层(`ctx.credentials`,轮换后无需重启)→ 环境变量 `TYPESAFE_API_KEY` → **你自己建的** `secrets.json`(默认 `~/.jev-guard/secrets.json`,`{"TYPESAFE_API_KEY": "apikey_..."}`)。该文件**刻意不入仓库、也不进发布包**,没人会替你带一份 —— 前两种来源才是首选。放包外正是为了让它活过更新:`npm i` / `dsh plugin update` 会换掉整个包目录,放在里面的那份会被一起清掉。`node bin/guard.mjs key set` 会替你写这个文件(权限 0600),DSH 适配器也读它。密钥从不被打印,写入日志前会掩码。
 
 **装好后立刻验一次**(别看"没报错"):
 

@@ -17,9 +17,11 @@
 
 1. 让密钥可被解析到,二选一:
    - **推荐**:放进 DSH 的凭据层(`ctx.credentials`,轮换后无需重启);或
-   - 在包里建 `secrets.json`,内容 `{"TYPESAFE_API_KEY": "apikey_..."}`。
+   - 建 `secrets.json`(默认 `~/.jev-guard/secrets.json`),内容 `{"TYPESAFE_API_KEY": "apikey_..."}`。
      **不要**把密钥贴进任何 AI 对话 —— 让 AI 从这个文件读。
-2. 想改阈值/降级策略/语言就 `cp config.example.json config.json` 再改。
+2. 想改阈值/降级策略/语言就 `cp config.example.json ~/.jev-guard/config.json` 再改。
+   (这两个文件**故意放在包外**:`npm i` / `dsh plugin update` 是整包替换,放在包里的设置下次更新就没了。
+   包根遗留的 `config.json` / `secrets.json` 仍会被读到,只是兜底;`JEV_GUARD_CONFIG` / `JEV_GUARD_SECRETS` 可指定显式路径。)
    文案有中英两份,`lang` 默认 `'auto'`(跟系统 locale);**`promptLang` 别动** —— 它是判定参数,
    默认中文正是阈值 0.5/0.7 的标定语言(`docs/MEASUREMENTS.md` §14)。
 3. 跑一次 `node bin/guard.mjs judge 'pnpm test'` 确认能联网判定(输出里 `source` 应为 `jev`)。
