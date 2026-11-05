@@ -113,7 +113,7 @@ notice 是 `role:'user'` 消息,所以它**会进入模型上下文** —— 这
 |---|---|---|
 | 1 | `ctx.credentials.resolve(ref)` | DSH 自己的凭据存储(`~/.dsh/.credentials.yaml`);轮换无需重启 |
 | 2 | 进程环境变量 | 由 `apiKeyEnv` 命名的那个变量 |
-| 3 | `apiKeyFile`(默认包根 `secrets.json`) | `guard key set` 写的就是它;相对路径按**包根**解析,与 cwd 无关 —— 与 CLI 同一条规则 |
+| 3 | `apiKeyFile`(默认 `~/.jev-guard/secrets.json`) | `guard key set` 写的就是它;相对路径按**包根**解析,与 cwd 无关 —— 与 CLI 同一条规则。默认值在包外,更新不会清掉;`JEV_GUARD_SECRETS` 可改路径 |
 
 第三层让"用 CLI 录入密钥"对新装用户成为实话 —— 他们既没有凭据层条目,也没有环境变量。值永不打印、永不进日志。
 

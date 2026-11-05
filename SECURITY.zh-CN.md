@@ -20,7 +20,7 @@
 
 ## 凭据
 
-密钥按「DSH 凭据层 → 环境变量 → 你自己在包根建的 `secrets.json`」三级解析,并且**永不打印**;写进审计日志之前先做掩码。`node bin/guard.mjs key status` 报的是哪一级解析到了、值有多长,不是值本身。
+密钥按「DSH 凭据层 → 环境变量 → 你自己建的 `secrets.json`(默认 `~/.jev-guard/secrets.json`,或 `$JEV_GUARD_HOME/secrets.json`,或用 `JEV_GUARD_SECRETS` 指定)」三级解析,并且**永不打印**;写进审计日志之前先做掩码。`node bin/guard.mjs key status` 报的是哪一级解析到了、值有多长,不是值本身。
 
 ## 失败一律放行(有意为之)
 

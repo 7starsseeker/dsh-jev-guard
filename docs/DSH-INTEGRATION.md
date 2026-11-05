@@ -120,7 +120,7 @@ and the reason it fires per state transition rather than per step: each one cost
 |---|---|---|
 | 1 | `ctx.credentials.resolve(ref)` | DSH's own credential store (`~/.dsh/.credentials.yaml`); a rotation needs no restart |
 | 2 | the process environment | the variable named by `apiKeyEnv` |
-| 3 | `apiKeyFile` (default `secrets.json` in the package root) | what `guard key set` writes; a relative path resolves against the **package root**, independent of cwd — the same rule the CLI uses |
+| 3 | `apiKeyFile` (default `~/.jev-guard/secrets.json`) | what `guard key set` writes; a relative path resolves against the **package root**, independent of cwd — the same rule the CLI uses. The default is outside the package so an update cannot wipe it; `JEV_GUARD_SECRETS` overrides the path |
 
 The third layer is what makes "record your key with the CLI" true for a fresh install, which has neither a credential-layer entry
 nor an environment variable. The value is never printed and never logged.

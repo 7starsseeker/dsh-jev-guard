@@ -20,7 +20,7 @@ The judging service receives **the command text** and, when `inlineScripts` is o
 
 ## Credentials
 
-The key is resolved from the DSH credentials layer, then the environment, then a `secrets.json` **you create yourself** in the package root — and it is never printed. It is masked before anything reaches the audit log. `node bin/guard.mjs key status` reports which source resolves and how long the value is, not the value.
+The key is resolved from the DSH credentials layer, then the environment, then a `secrets.json` **you create yourself** — default `~/.jev-guard/secrets.json` (or `$JEV_GUARD_HOME/secrets.json`, or the path in `JEV_GUARD_SECRETS`) — and it is never printed. It is masked before anything reaches the audit log. `node bin/guard.mjs key status` reports which source resolves and how long the value is, not the value.
 
 ## Failures are fail-open — on purpose
 
