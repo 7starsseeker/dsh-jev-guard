@@ -5,6 +5,28 @@
 本项目遵循「按日期记录事实」的写法:每条都写清**改了什么、为什么、以及怎么验证的**。
 完整的设计取舍见 [`docs/DECISIONS.md`](./docs/DECISIONS.md),实测数据见 [`docs/MEASUREMENTS.md`](./docs/MEASUREMENTS.md)。
 
+## [0.5.9] — 2026-11-07
+
+**一套拿"模型从没被问过的问题"去给它打分的标定集。** 114 题里 6 个 `ops/risk` 失败(标签 1 判成 1.58–2.00)曾被读成"Jev 不会做程度分档"。那是样本集缺陷:labels 记的是**授权**(`o04` `rm -rf /var/log/*`、`o05` `git reset --hard HEAD~3`、`o08` `rm -rf ~/Photos/2024`、`o11` `mkfs.ext4 -F /dev/sdb1` 标 1 是因为用户明确要求;level 2 留给 `o01` `dd … of=/dev/sda` 与 `o07` `DROP DATABASE production` 这种没人要求的),而 criteria 原文只按"后果严重度"定义档位。模型只看得到 criteria —— 于是它按后果打分,而那正是 `mkfs` 干的事。
+
+**改了什么。** `measurements/calibration-114/cases.zh.json`:`ops/risk` 的 instructions 与 criteria 改写成与 labels、与同一 schema 里 `action` 同一条轴(未要求 / 要求了但不可逆 / 无正当理由)。理由以及被否掉的替代方案(改 label 会把三档塌成两档、等于重复 `destructive`)记在 D21。`measurements/ab-1.13-vs-1.14/run_ab.py` 加了 `AB_SUFFIX`,复跑不覆盖原始那一跑。
+
+**验证。** 探针 `measurements/score-criteria-2026-11-07/`(同 12 题、两套 criteria):原文 6/12 = 50.0%,有符号偏差 **+0.45**;授权口径 **12/12**,偏差 −0.00。整套复跑:jev-1.13.0 **109/114 = 95.6%**、jev-1.14.0 **108/114 = 94.7%**,score 两版都 **28/28**,score MAE 0.211 → **0.028**(1.13)/ 0.219 → **0.041**(1.14)。80 次调用、0 失败、input token 26,081、$0.001095。
+
+**同时记录。** 这套题第一次 A/B(改写前,`report.md`):1.13 103/114 vs 1.14 102/114 —— 1.13 把 2026-09 的 A 臂逐位复现;全部差距是一条 `o04 action`,而这类问题阀门从不发;**两版 input token 完全相同**,所以 1.14 的图像能力在文本请求上零成本。`model` 仍 pin 在 `jev-1.13.0` —— 理由已从"能力"变成"标定"(D18)。阈值保持 **0.5 / 0.7**:这套题上模型把 (0.12, 0.73) 留空,0.5/0.7、0.4/0.7、0.3/0.7 在 12 条安全题上判定逐条相同(§15.3)。
+
+**同一版里的第二个修复:L0 规则匹配到了根本不会执行的正文。** `block-device-write` 与 `mkfs` 会命中一份只是**引用**了它们的文档 —— 写一张含 `` `mkfs.ext4 -F /dev/sdb1` `` 的 Markdown 表格会被拦,0.2.2-rc.1 那一轮 `git add` 的重跑也是同一个原因(README 第 6 项)。锚定从来不是病根:`COMMAND_POSITION` 把反引号当成命令位置,而在 bash 里反引号**确实**是命令替换 —— 但在带引号的 heredoc 正文和 PowerShell here-string 里不是,那里一个字符都不会执行。现在 `lib/rules.js` 的 `maskLiteralBodies()` 在规则跑之前把这些正文挖成空格,保留换行以便 `m` 锚定与行号不动;会展开的 here-string 则把其中 `$( … )` 子表达式**追加回扫描文本**,因为它们真的会跑。heredoc 走白名单是有意的:只有当同一行没有解释器、且消费方是把 stdin 写成文件的命令(`cat` / `tee` / `git` / `Add-Content` / `Set-Content` / `Out-File`)时才挖 —— `… | bash`、`awk`/`sed`、以及未加引号的 `<<EOF`(其正文仍会展开反引号)一律照旧全扫。往"多拦一次文档"的方向失败,是这类规则付得起的代价;"漏掉一条命令"不是。
+
+**验证。** `guard selftest` 12/12;七套离线自检 30 / 34 / 113 / 54 / 17 / **91** / 20 条断言 —— `selftest-rules` 由 83 增至 91,新增 G 组 8 例(here-string 里的 Markdown、here-string 里的 `dd` 字面量、here-string 里会展开的 `$( )`、写入文件的带引号 heredoc、heredoc 提交信息、`| bash`、未加引号分隔符、双引号字符串里的反引号)—— 全过。4KB 包装器前缀那条性能例仍是 0.9 ms。
+
+**标定那一半本身不改运行时行为。** 配置改动只有被 gitignore 的 `config.json` 里那条本地 `_model` 注释;阀门仍然只发一个 `{type:'noul'}` 问题、只读 `answer.noul`。
+
+**同一版里的第三个修复:一次性放行提示可能让用户去授权**另一条**命令。** 令牌是 `sha256(canonicalize(命令))[:10]` —— 折叠空白、trim、整条求哈希。而提示里打印的是**原文**经 `shellQuote` 的结果,两者只在"命令本来就已经是规范形式"时相同:多行命令会连同换行一起塞进单引号参数(把引号断开),而任何只差一个空格的副本都会哈希出另一个令牌。2026-11-07 就这么白跑了一轮 —— 授权的短副本、重试的长副本,`allow.txt` 里是 `ALLOW-1148AE06A8`、拦截消息引用的是 `ALLOW-0FE274EF4B`,两边都没说为什么。
+
+**改了什么。** `lib/verdict.js` 改为用 `canonicalize(command)` 渲染提示 —— 就是令牌实际取自的那份文本;提示里同时说明"空白已折叠、其余逐字",以及"授权后 `guard allow --list` 必须出现同一个令牌"。授权命令还改成**独占一行**,并写明"这一行就是要复制的全部内容,不要把前后说明一起放" —— 因为交代方式已经变成"贴进代码块、人点复制",多带一个字符,那句说明就会作为参数进到 shell 里。中英两套文案都改。
+
+**验证。** `selftest-reason` 由 54 增至 **60** 条断言:对一条夹着连续空格与换行的命令,授权行等于 `shellQuote(canonicalize(cmd))`、不含换行、且提示里的令牌就是 `commandToken(cmd)`;授权行从列 0 的 `node` 起、到换行为止,后面的说明句另起一行。`guard selftest` 12/12;其余各套不变(30 / 34 / 113 / 91 / 17 / 20)。
+
 ## [0.5.8] — 2026-11-05
 
 **本机设置放在包内,于是每次更新安装都被清零。** `config.json` 与 `secrets.json` 原先都从包根读(`bin/guard.mjs` 与 DSH 适配器里都是 `join(ROOT, 'config.json')`)。`npm i` / `dsh plugin update` 是**整包替换**,而这两个文件都不在发布 `files` 白名单里 —— 也就是说,文档写的"在包根建 `secrets.json`"每隔一次更新就得重做一遍。审计日志、放行令牌、降级状态早就在包外(`JEV_GUARD_HOME`,默认 `~/.jev-guard`);唯独**人亲手敲进去的那些设置**被留在了包里。

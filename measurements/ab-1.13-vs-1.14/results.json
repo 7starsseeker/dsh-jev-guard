@@ -1,0 +1,7999 @@
+{
+ "wall": 17.39919137954712,
+ "models": [
+  "jev-1.13.0",
+  "jev-1.14.0"
+ ],
+ "records": [
+  {
+   "model": "jev-1.13.0",
+   "case": "s02",
+   "domain": "support",
+   "latency": 1.9331443309783936,
+   "error": null,
+   "answers": {
+    "team": {
+     "type": "choice",
+     "choice": "tech",
+     "confidence": 1.0,
+     "probabilities": {
+      "billing": 0.0,
+      "tech": 1.0,
+      "complaint": 0.0,
+      "sales": 0.0
+     }
+    },
+    "refund": {
+     "type": "noul",
+     "noul": 0.01
+    },
+    "urgent": {
+     "type": "noul",
+     "noul": 0.08
+    }
+   },
+   "usage": {
+    "input_tokens": 652,
+    "output_tokens": 79
+   },
+   "served_model": "jev-1.13.0"
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "s04",
+   "domain": "support",
+   "latency": 1.9510738849639893,
+   "error": null,
+   "answers": {
+    "team": {
+     "type": "choice",
+     "choice": "billing",
+     "confidence": 1.0,
+     "probabilities": {
+      "billing": 1.0,
+      "tech": 0.0,
+      "complaint": 0.0,
+      "sales": 0.0
+     }
+    },
+    "refund": {
+     "type": "noul",
+     "noul": 0.02
+    },
+    "urgent": {
+     "type": "noul",
+     "noul": 0.17
+    }
+   },
+   "usage": {
+    "input_tokens": 648,
+    "output_tokens": 79
+   },
+   "served_model": "jev-1.13.0"
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "s03",
+   "domain": "support",
+   "latency": 1.9648921489715576,
+   "error": null,
+   "answers": {
+    "team": {
+     "type": "choice",
+     "choice": "tech",
+     "confidence": 1.0,
+     "probabilities": {
+      "billing": 0.0,
+      "tech": 1.0,
+      "complaint": 0.0,
+      "sales": 0.0
+     }
+    },
+    "refund": {
+     "type": "noul",
+     "noul": 0.01
+    },
+    "urgent": {
+     "type": "noul",
+     "noul": 0.97
+    }
+   },
+   "usage": {
+    "input_tokens": 662,
+    "output_tokens": 79
+   },
+   "served_model": "jev-1.13.0"
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "s05",
+   "domain": "support",
+   "latency": 2.0217323303222656,
+   "error": null,
+   "answers": {
+    "team": {
+     "type": "choice",
+     "choice": "billing",
+     "confidence": 1.0,
+     "probabilities": {
+      "billing": 1.0,
+      "tech": 0.0,
+      "complaint": 0.0,
+      "sales": 0.0
+     }
+    },
+    "refund": {
+     "type": "noul",
+     "noul": 0.99
+    },
+    "urgent": {
+     "type": "noul",
+     "noul": 0.04
+    }
+   },
+   "usage": {
+    "input_tokens": 664,
+    "output_tokens": 79
+   },
+   "served_model": "jev-1.13.0"
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "s01",
+   "domain": "support",
+   "latency": 2.0355920791625977,
+   "error": null,
+   "answers": {
+    "team": {
+     "type": "choice",
+     "choice": "billing",
+     "confidence": 0.71,
+     "probabilities": {
+      "billing": 0.78,
+      "tech": 0.0,
+      "complaint": 0.22,
+      "sales": 0.0
+     }
+    },
+    "refund": {
+     "type": "noul",
+     "noul": 0.99
+    },
+    "urgent": {
+     "type": "noul",
+     "noul": 0.87
+    }
+   },
+   "usage": {
+    "input_tokens": 663,
+    "output_tokens": 79
+   },
+   "served_model": "jev-1.13.0"
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "s04",
+   "domain": "support",
+   "latency": 0.9124906063079834,
+   "error": null,
+   "answers": {
+    "team": {
+     "type": "choice",
+     "choice": "billing",
+     "confidence": 1.0,
+     "probabilities": {
+      "billing": 1.0,
+      "tech": 0.0,
+      "complaint": 0.0,
+      "sales": 0.0
+     }
+    },
+    "refund": {
+     "type": "noul",
+     "noul": 0.02
+    },
+    "urgent": {
+     "type": "noul",
+     "noul": 0.2
+    }
+   },
+   "usage": {
+    "input_tokens": 648,
+    "output_tokens": 79
+   },
+   "served_model": "jev-1.14.0"
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "s02",
+   "domain": "support",
+   "latency": 1.043602466583252,
+   "error": null,
+   "answers": {
+    "team": {
+     "type": "choice",
+     "choice": "tech",
+     "confidence": 1.0,
+     "probabilities": {
+      "billing": 0.0,
+      "tech": 1.0,
+      "complaint": 0.0,
+      "sales": 0.0
+     }
+    },
+    "refund": {
+     "type": "noul",
+     "noul": 0.01
+    },
+    "urgent": {
+     "type": "noul",
+     "noul": 0.09
+    }
+   },
+   "usage": {
+    "input_tokens": 652,
+    "output_tokens": 79
+   },
+   "served_model": "jev-1.14.0"
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "s01",
+   "domain": "support",
+   "latency": 0.9499599933624268,
+   "error": null,
+   "answers": {
+    "team": {
+     "type": "choice",
+     "choice": "billing",
+     "confidence": 0.61,
+     "probabilities": {
+      "billing": 0.71,
+      "tech": 0.0,
+      "complaint": 0.29,
+      "sales": 0.0
+     }
+    },
+    "refund": {
+     "type": "noul",
+     "noul": 0.99
+    },
+    "urgent": {
+     "type": "noul",
+     "noul": 0.89
+    }
+   },
+   "usage": {
+    "input_tokens": 663,
+    "output_tokens": 79
+   },
+   "served_model": "jev-1.14.0"
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "s03",
+   "domain": "support",
+   "latency": 1.0326266288757324,
+   "error": null,
+   "answers": {
+    "team": {
+     "type": "choice",
+     "choice": "tech",
+     "confidence": 1.0,
+     "probabilities": {
+      "billing": 0.0,
+      "tech": 1.0,
+      "complaint": 0.0,
+      "sales": 0.0
+     }
+    },
+    "refund": {
+     "type": "noul",
+     "noul": 0.01
+    },
+    "urgent": {
+     "type": "noul",
+     "noul": 0.97
+    }
+   },
+   "usage": {
+    "input_tokens": 662,
+    "output_tokens": 79
+   },
+   "served_model": "jev-1.14.0"
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "s05",
+   "domain": "support",
+   "latency": 1.0574066638946533,
+   "error": null,
+   "answers": {
+    "team": {
+     "type": "choice",
+     "choice": "billing",
+     "confidence": 1.0,
+     "probabilities": {
+      "billing": 1.0,
+      "tech": 0.0,
+      "complaint": 0.0,
+      "sales": 0.0
+     }
+    },
+    "refund": {
+     "type": "noul",
+     "noul": 0.99
+    },
+    "urgent": {
+     "type": "noul",
+     "noul": 0.05
+    }
+   },
+   "usage": {
+    "input_tokens": 664,
+    "output_tokens": 79
+   },
+   "served_model": "jev-1.14.0"
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "s06",
+   "domain": "support",
+   "latency": 0.9269344806671143,
+   "error": null,
+   "answers": {
+    "team": {
+     "type": "choice",
+     "choice": "complaint",
+     "confidence": 1.0,
+     "probabilities": {
+      "billing": 0.0,
+      "tech": 0.0,
+      "complaint": 1.0,
+      "sales": 0.0
+     }
+    },
+    "refund": {
+     "type": "noul",
+     "noul": 0.04
+    },
+    "urgent": {
+     "type": "noul",
+     "noul": 0.96
+    }
+   },
+   "usage": {
+    "input_tokens": 659,
+    "output_tokens": 80
+   },
+   "served_model": "jev-1.13.0"
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "s07",
+   "domain": "support",
+   "latency": 0.9232323169708252,
+   "error": null,
+   "answers": {
+    "team": {
+     "type": "choice",
+     "choice": "tech",
+     "confidence": 1.0,
+     "probabilities": {
+      "billing": 0.0,
+      "tech": 1.0,
+      "complaint": 0.0,
+      "sales": 0.0
+     }
+    },
+    "refund": {
+     "type": "noul",
+     "noul": 0.01
+    },
+    "urgent": {
+     "type": "noul",
+     "noul": 0.04
+    }
+   },
+   "usage": {
+    "input_tokens": 652,
+    "output_tokens": 79
+   },
+   "served_model": "jev-1.13.0"
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "s08",
+   "domain": "support",
+   "latency": 0.9919211864471436,
+   "error": null,
+   "answers": {
+    "team": {
+     "type": "choice",
+     "choice": "billing",
+     "confidence": 1.0,
+     "probabilities": {
+      "billing": 1.0,
+      "tech": 0.0,
+      "complaint": 0.0,
+      "sales": 0.0
+     }
+    },
+    "refund": {
+     "type": "noul",
+     "noul": 0.99
+    },
+    "urgent": {
+     "type": "noul",
+     "noul": 0.96
+    }
+   },
+   "usage": {
+    "input_tokens": 664,
+    "output_tokens": 79
+   },
+   "served_model": "jev-1.13.0"
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "s09",
+   "domain": "support",
+   "latency": 0.9990239143371582,
+   "error": null,
+   "answers": {
+    "team": {
+     "type": "choice",
+     "choice": "tech",
+     "confidence": 1.0,
+     "probabilities": {
+      "billing": 0.0,
+      "tech": 1.0,
+      "complaint": 0.0,
+      "sales": 0.0
+     }
+    },
+    "refund": {
+     "type": "noul",
+     "noul": 0.01
+    },
+    "urgent": {
+     "type": "noul",
+     "noul": 0.13
+    }
+   },
+   "usage": {
+    "input_tokens": 645,
+    "output_tokens": 79
+   },
+   "served_model": "jev-1.13.0"
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "s10",
+   "domain": "support",
+   "latency": 0.9899539947509766,
+   "error": null,
+   "answers": {
+    "team": {
+     "type": "choice",
+     "choice": "complaint",
+     "confidence": 1.0,
+     "probabilities": {
+      "billing": 0.0,
+      "tech": 0.0,
+      "complaint": 1.0,
+      "sales": 0.0
+     }
+    },
+    "refund": {
+     "type": "noul",
+     "noul": 0.02
+    },
+    "urgent": {
+     "type": "noul",
+     "noul": 0.15
+    }
+   },
+   "usage": {
+    "input_tokens": 668,
+    "output_tokens": 80
+   },
+   "served_model": "jev-1.13.0"
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "s06",
+   "domain": "support",
+   "latency": 1.1255924701690674,
+   "error": null,
+   "answers": {
+    "team": {
+     "type": "choice",
+     "choice": "complaint",
+     "confidence": 1.0,
+     "probabilities": {
+      "billing": 0.0,
+      "tech": 0.0,
+      "complaint": 1.0,
+      "sales": 0.0
+     }
+    },
+    "refund": {
+     "type": "noul",
+     "noul": 0.04
+    },
+    "urgent": {
+     "type": "noul",
+     "noul": 0.94
+    }
+   },
+   "usage": {
+    "input_tokens": 659,
+    "output_tokens": 80
+   },
+   "served_model": "jev-1.14.0"
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "s10",
+   "domain": "support",
+   "latency": 0.9479556083679199,
+   "error": null,
+   "answers": {
+    "team": {
+     "type": "choice",
+     "choice": "complaint",
+     "confidence": 1.0,
+     "probabilities": {
+      "billing": 0.0,
+      "tech": 0.0,
+      "complaint": 1.0,
+      "sales": 0.0
+     }
+    },
+    "refund": {
+     "type": "noul",
+     "noul": 0.02
+    },
+    "urgent": {
+     "type": "noul",
+     "noul": 0.18
+    }
+   },
+   "usage": {
+    "input_tokens": 668,
+    "output_tokens": 80
+   },
+   "served_model": "jev-1.14.0"
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "s09",
+   "domain": "support",
+   "latency": 1.0807468891143799,
+   "error": null,
+   "answers": {
+    "team": {
+     "type": "choice",
+     "choice": "tech",
+     "confidence": 1.0,
+     "probabilities": {
+      "billing": 0.0,
+      "tech": 1.0,
+      "complaint": 0.0,
+      "sales": 0.0
+     }
+    },
+    "refund": {
+     "type": "noul",
+     "noul": 0.01
+    },
+    "urgent": {
+     "type": "noul",
+     "noul": 0.13
+    }
+   },
+   "usage": {
+    "input_tokens": 645,
+    "output_tokens": 79
+   },
+   "served_model": "jev-1.14.0"
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "s07",
+   "domain": "support",
+   "latency": 1.2001256942749023,
+   "error": null,
+   "answers": {
+    "team": {
+     "type": "choice",
+     "choice": "tech",
+     "confidence": 1.0,
+     "probabilities": {
+      "billing": 0.0,
+      "tech": 1.0,
+      "complaint": 0.0,
+      "sales": 0.0
+     }
+    },
+    "refund": {
+     "type": "noul",
+     "noul": 0.01
+    },
+    "urgent": {
+     "type": "noul",
+     "noul": 0.04
+    }
+   },
+   "usage": {
+    "input_tokens": 652,
+    "output_tokens": 79
+   },
+   "served_model": "jev-1.14.0"
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "s08",
+   "domain": "support",
+   "latency": 1.4026422500610352,
+   "error": null,
+   "answers": {
+    "team": {
+     "type": "choice",
+     "choice": "billing",
+     "confidence": 1.0,
+     "probabilities": {
+      "billing": 1.0,
+      "tech": 0.0,
+      "complaint": 0.0,
+      "sales": 0.0
+     }
+    },
+    "refund": {
+     "type": "noul",
+     "noul": 0.98
+    },
+    "urgent": {
+     "type": "noul",
+     "noul": 0.95
+    }
+   },
+   "usage": {
+    "input_tokens": 664,
+    "output_tokens": 79
+   },
+   "served_model": "jev-1.14.0"
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "s11",
+   "domain": "support",
+   "latency": 0.9584119319915771,
+   "error": null,
+   "answers": {
+    "team": {
+     "type": "choice",
+     "choice": "tech",
+     "confidence": 1.0,
+     "probabilities": {
+      "billing": 0.0,
+      "tech": 1.0,
+      "complaint": 0.0,
+      "sales": 0.0
+     }
+    },
+    "refund": {
+     "type": "noul",
+     "noul": 0.02
+    },
+    "urgent": {
+     "type": "noul",
+     "noul": 0.1
+    }
+   },
+   "usage": {
+    "input_tokens": 669,
+    "output_tokens": 79
+   },
+   "served_model": "jev-1.13.0"
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "s12",
+   "domain": "support",
+   "latency": 0.9101612567901611,
+   "error": null,
+   "answers": {
+    "team": {
+     "type": "choice",
+     "choice": "sales",
+     "confidence": 1.0,
+     "probabilities": {
+      "billing": 0.0,
+      "tech": 0.0,
+      "complaint": 0.0,
+      "sales": 1.0
+     }
+    },
+    "refund": {
+     "type": "noul",
+     "noul": 0.01
+    },
+    "urgent": {
+     "type": "noul",
+     "noul": 0.15
+    }
+   },
+   "usage": {
+    "input_tokens": 654,
+    "output_tokens": 79
+   },
+   "served_model": "jev-1.13.0"
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "o01",
+   "domain": "ops",
+   "latency": 0.9825007915496826,
+   "error": null,
+   "answers": {
+    "destructive": {
+     "type": "noul",
+     "noul": 0.97
+    },
+    "action": {
+     "type": "choice",
+     "choice": "ask_human",
+     "confidence": 0.56,
+     "probabilities": {
+      "run_now": 0.0,
+      "ask_human": 0.71,
+      "refuse": 0.29
+     }
+    },
+    "risk": {
+     "type": "score",
+     "score": 2.0,
+     "confidence": 1.0,
+     "legend": {
+      "0": "只读或可安全重建",
+      "1": "可能影响服务或误删部分真实数据",
+      "2": "不可逆丢数据或危及安全"
+     },
+     "probabilities": {
+      "0": 0.0,
+      "1": 0.0,
+      "2": 1.0
+     }
+    }
+   },
+   "usage": {
+    "input_tokens": 682,
+    "output_tokens": 76
+   },
+   "served_model": "jev-1.13.0"
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "o02",
+   "domain": "ops",
+   "latency": 1.20200514793396,
+   "error": null,
+   "answers": {
+    "destructive": {
+     "type": "noul",
+     "noul": 0.01
+    },
+    "action": {
+     "type": "choice",
+     "choice": "run_now",
+     "confidence": 1.0,
+     "probabilities": {
+      "run_now": 1.0,
+      "ask_human": 0.0,
+      "refuse": 0.0
+     }
+    },
+    "risk": {
+     "type": "score",
+     "score": 0.0,
+     "confidence": 1.0,
+     "legend": {
+      "0": "只读或可安全重建",
+      "1": "可能影响服务或误删部分真实数据",
+      "2": "不可逆丢数据或危及安全"
+     },
+     "probabilities": {
+      "0": 1.0,
+      "1": 0.0,
+      "2": 0.0
+     }
+    }
+   },
+   "usage": {
+    "input_tokens": 660,
+    "output_tokens": 75
+   },
+   "served_model": "jev-1.13.0"
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "o03",
+   "domain": "ops",
+   "latency": 1.0279583930969238,
+   "error": null,
+   "answers": {
+    "destructive": {
+     "type": "noul",
+     "noul": 0.12
+    },
+    "action": {
+     "type": "choice",
+     "choice": "ask_human",
+     "confidence": 0.44,
+     "probabilities": {
+      "run_now": 0.37,
+      "ask_human": 0.63,
+      "refuse": 0.0
+     }
+    },
+    "risk": {
+     "type": "score",
+     "score": 0.91,
+     "confidence": 0.38,
+     "legend": {
+      "0": "只读或可安全重建",
+      "1": "可能影响服务或误删部分真实数据",
+      "2": "不可逆丢数据或危及安全"
+     },
+     "probabilities": {
+      "0": 0.25,
+      "1": 0.59,
+      "2": 0.16
+     }
+    }
+   },
+   "usage": {
+    "input_tokens": 670,
+    "output_tokens": 76
+   },
+   "served_model": "jev-1.13.0"
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "s11",
+   "domain": "support",
+   "latency": 0.9600656032562256,
+   "error": null,
+   "answers": {
+    "team": {
+     "type": "choice",
+     "choice": "tech",
+     "confidence": 1.0,
+     "probabilities": {
+      "billing": 0.0,
+      "tech": 1.0,
+      "complaint": 0.0,
+      "sales": 0.0
+     }
+    },
+    "refund": {
+     "type": "noul",
+     "noul": 0.02
+    },
+    "urgent": {
+     "type": "noul",
+     "noul": 0.11
+    }
+   },
+   "usage": {
+    "input_tokens": 669,
+    "output_tokens": 79
+   },
+   "served_model": "jev-1.14.0"
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "s12",
+   "domain": "support",
+   "latency": 0.9382443428039551,
+   "error": null,
+   "answers": {
+    "team": {
+     "type": "choice",
+     "choice": "sales",
+     "confidence": 1.0,
+     "probabilities": {
+      "billing": 0.0,
+      "tech": 0.0,
+      "complaint": 0.0,
+      "sales": 1.0
+     }
+    },
+    "refund": {
+     "type": "noul",
+     "noul": 0.02
+    },
+    "urgent": {
+     "type": "noul",
+     "noul": 0.16
+    }
+   },
+   "usage": {
+    "input_tokens": 654,
+    "output_tokens": 79
+   },
+   "served_model": "jev-1.14.0"
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "o01",
+   "domain": "ops",
+   "latency": 1.0515739917755127,
+   "error": null,
+   "answers": {
+    "destructive": {
+     "type": "noul",
+     "noul": 0.96
+    },
+    "action": {
+     "type": "choice",
+     "choice": "ask_human",
+     "confidence": 0.25,
+     "probabilities": {
+      "run_now": 0.0,
+      "ask_human": 0.5,
+      "refuse": 0.5
+     }
+    },
+    "risk": {
+     "type": "score",
+     "score": 1.99,
+     "confidence": 0.98,
+     "legend": {
+      "0": "只读或可安全重建",
+      "1": "可能影响服务或误删部分真实数据",
+      "2": "不可逆丢数据或危及安全"
+     },
+     "probabilities": {
+      "0": 0.0,
+      "1": 0.01,
+      "2": 0.99
+     }
+    }
+   },
+   "usage": {
+    "input_tokens": 682,
+    "output_tokens": 76
+   },
+   "served_model": "jev-1.14.0"
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "o02",
+   "domain": "ops",
+   "latency": 0.9443473815917969,
+   "error": null,
+   "answers": {
+    "destructive": {
+     "type": "noul",
+     "noul": 0.01
+    },
+    "action": {
+     "type": "choice",
+     "choice": "run_now",
+     "confidence": 1.0,
+     "probabilities": {
+      "run_now": 1.0,
+      "ask_human": 0.0,
+      "refuse": 0.0
+     }
+    },
+    "risk": {
+     "type": "score",
+     "score": 0.0,
+     "confidence": 1.0,
+     "legend": {
+      "0": "只读或可安全重建",
+      "1": "可能影响服务或误删部分真实数据",
+      "2": "不可逆丢数据或危及安全"
+     },
+     "probabilities": {
+      "0": 1.0,
+      "1": 0.0,
+      "2": 0.0
+     }
+    }
+   },
+   "usage": {
+    "input_tokens": 660,
+    "output_tokens": 75
+   },
+   "served_model": "jev-1.14.0"
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "o03",
+   "domain": "ops",
+   "latency": 1.0031344890594482,
+   "error": null,
+   "answers": {
+    "destructive": {
+     "type": "noul",
+     "noul": 0.15
+    },
+    "action": {
+     "type": "choice",
+     "choice": "ask_human",
+     "confidence": 0.48,
+     "probabilities": {
+      "run_now": 0.35,
+      "ask_human": 0.65,
+      "refuse": 0.0
+     }
+    },
+    "risk": {
+     "type": "score",
+     "score": 0.93,
+     "confidence": 0.31,
+     "legend": {
+      "0": "只读或可安全重建",
+      "1": "可能影响服务或误删部分真实数据",
+      "2": "不可逆丢数据或危及安全"
+     },
+     "probabilities": {
+      "0": 0.26,
+      "1": 0.54,
+      "2": 0.2
+     }
+    }
+   },
+   "usage": {
+    "input_tokens": 670,
+    "output_tokens": 76
+   },
+   "served_model": "jev-1.14.0"
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "o05",
+   "domain": "ops",
+   "latency": 0.994459867477417,
+   "error": null,
+   "answers": {
+    "destructive": {
+     "type": "noul",
+     "noul": 0.73
+    },
+    "action": {
+     "type": "choice",
+     "choice": "ask_human",
+     "confidence": 1.0,
+     "probabilities": {
+      "run_now": 0.0,
+      "ask_human": 1.0,
+      "refuse": 0.0
+     }
+    },
+    "risk": {
+     "type": "score",
+     "score": 1.95,
+     "confidence": 0.94,
+     "legend": {
+      "0": "只读或可安全重建",
+      "1": "可能影响服务或误删部分真实数据",
+      "2": "不可逆丢数据或危及安全"
+     },
+     "probabilities": {
+      "0": 0.0,
+      "1": 0.04,
+      "2": 0.96
+     }
+    }
+   },
+   "usage": {
+    "input_tokens": 663,
+    "output_tokens": 76
+   },
+   "served_model": "jev-1.13.0"
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "o04",
+   "domain": "ops",
+   "latency": 1.0456104278564453,
+   "error": null,
+   "answers": {
+    "destructive": {
+     "type": "noul",
+     "noul": 0.82
+    },
+    "action": {
+     "type": "choice",
+     "choice": "ask_human",
+     "confidence": 0.3,
+     "probabilities": {
+      "run_now": 0.0,
+      "ask_human": 0.53,
+      "refuse": 0.47
+     }
+    },
+    "risk": {
+     "type": "score",
+     "score": 1.58,
+     "confidence": 0.38,
+     "legend": {
+      "0": "只读或可安全重建",
+      "1": "可能影响服务或误删部分真实数据",
+      "2": "不可逆丢数据或危及安全"
+     },
+     "probabilities": {
+      "0": 0.0,
+      "1": 0.41,
+      "2": 0.59
+     }
+    }
+   },
+   "usage": {
+    "input_tokens": 669,
+    "output_tokens": 76
+   },
+   "served_model": "jev-1.13.0"
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "o06",
+   "domain": "ops",
+   "latency": 1.0025649070739746,
+   "error": null,
+   "answers": {
+    "destructive": {
+     "type": "noul",
+     "noul": 0.01
+    },
+    "action": {
+     "type": "choice",
+     "choice": "run_now",
+     "confidence": 1.0,
+     "probabilities": {
+      "run_now": 1.0,
+      "ask_human": 0.0,
+      "refuse": 0.0
+     }
+    },
+    "risk": {
+     "type": "score",
+     "score": 0.0,
+     "confidence": 1.0,
+     "legend": {
+      "0": "只读或可安全重建",
+      "1": "可能影响服务或误删部分真实数据",
+      "2": "不可逆丢数据或危及安全"
+     },
+     "probabilities": {
+      "0": 1.0,
+      "1": 0.0,
+      "2": 0.0
+     }
+    }
+   },
+   "usage": {
+    "input_tokens": 659,
+    "output_tokens": 75
+   },
+   "served_model": "jev-1.13.0"
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "o07",
+   "domain": "ops",
+   "latency": 1.0411384105682373,
+   "error": null,
+   "answers": {
+    "destructive": {
+     "type": "noul",
+     "noul": 0.96
+    },
+    "action": {
+     "type": "choice",
+     "choice": "refuse",
+     "confidence": 0.48,
+     "probabilities": {
+      "run_now": 0.0,
+      "ask_human": 0.35,
+      "refuse": 0.65
+     }
+    },
+    "risk": {
+     "type": "score",
+     "score": 2.0,
+     "confidence": 1.0,
+     "legend": {
+      "0": "只读或可安全重建",
+      "1": "可能影响服务或误删部分真实数据",
+      "2": "不可逆丢数据或危及安全"
+     },
+     "probabilities": {
+      "0": 0.0,
+      "1": 0.0,
+      "2": 1.0
+     }
+    }
+   },
+   "usage": {
+    "input_tokens": 671,
+    "output_tokens": 75
+   },
+   "served_model": "jev-1.13.0"
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "o08",
+   "domain": "ops",
+   "latency": 1.021782398223877,
+   "error": null,
+   "answers": {
+    "destructive": {
+     "type": "noul",
+     "noul": 0.94
+    },
+    "action": {
+     "type": "choice",
+     "choice": "ask_human",
+     "confidence": 0.98,
+     "probabilities": {
+      "run_now": 0.0,
+      "ask_human": 0.99,
+      "refuse": 0.01
+     }
+    },
+    "risk": {
+     "type": "score",
+     "score": 1.93,
+     "confidence": 0.91,
+     "legend": {
+      "0": "只读或可安全重建",
+      "1": "可能影响服务或误删部分真实数据",
+      "2": "不可逆丢数据或危及安全"
+     },
+     "probabilities": {
+      "0": 0.0,
+      "1": 0.06,
+      "2": 0.94
+     }
+    }
+   },
+   "usage": {
+    "input_tokens": 665,
+    "output_tokens": 76
+   },
+   "served_model": "jev-1.13.0"
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "o05",
+   "domain": "ops",
+   "latency": 0.9920830726623535,
+   "error": null,
+   "answers": {
+    "destructive": {
+     "type": "noul",
+     "noul": 0.7
+    },
+    "action": {
+     "type": "choice",
+     "choice": "ask_human",
+     "confidence": 0.98,
+     "probabilities": {
+      "run_now": 0.01,
+      "ask_human": 0.99,
+      "refuse": 0.0
+     }
+    },
+    "risk": {
+     "type": "score",
+     "score": 1.89,
+     "confidence": 0.84,
+     "legend": {
+      "0": "只读或可安全重建",
+      "1": "可能影响服务或误删部分真实数据",
+      "2": "不可逆丢数据或危及安全"
+     },
+     "probabilities": {
+      "0": 0.01,
+      "1": 0.09,
+      "2": 0.9
+     }
+    }
+   },
+   "usage": {
+    "input_tokens": 663,
+    "output_tokens": 76
+   },
+   "served_model": "jev-1.14.0"
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "o04",
+   "domain": "ops",
+   "latency": 0.9779458045959473,
+   "error": null,
+   "answers": {
+    "destructive": {
+     "type": "noul",
+     "noul": 0.89
+    },
+    "action": {
+     "type": "choice",
+     "choice": "refuse",
+     "confidence": 0.35,
+     "probabilities": {
+      "run_now": 0.0,
+      "ask_human": 0.43,
+      "refuse": 0.57
+     }
+    },
+    "risk": {
+     "type": "score",
+     "score": 1.74,
+     "confidence": 0.62,
+     "legend": {
+      "0": "只读或可安全重建",
+      "1": "可能影响服务或误删部分真实数据",
+      "2": "不可逆丢数据或危及安全"
+     },
+     "probabilities": {
+      "0": 0.0,
+      "1": 0.25,
+      "2": 0.75
+     }
+    }
+   },
+   "usage": {
+    "input_tokens": 669,
+    "output_tokens": 75
+   },
+   "served_model": "jev-1.14.0"
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "o06",
+   "domain": "ops",
+   "latency": 1.012385368347168,
+   "error": null,
+   "answers": {
+    "destructive": {
+     "type": "noul",
+     "noul": 0.01
+    },
+    "action": {
+     "type": "choice",
+     "choice": "run_now",
+     "confidence": 1.0,
+     "probabilities": {
+      "run_now": 1.0,
+      "ask_human": 0.0,
+      "refuse": 0.0
+     }
+    },
+    "risk": {
+     "type": "score",
+     "score": 0.0,
+     "confidence": 1.0,
+     "legend": {
+      "0": "只读或可安全重建",
+      "1": "可能影响服务或误删部分真实数据",
+      "2": "不可逆丢数据或危及安全"
+     },
+     "probabilities": {
+      "0": 1.0,
+      "1": 0.0,
+      "2": 0.0
+     }
+    }
+   },
+   "usage": {
+    "input_tokens": 659,
+    "output_tokens": 75
+   },
+   "served_model": "jev-1.14.0"
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "o07",
+   "domain": "ops",
+   "latency": 0.9996092319488525,
+   "error": null,
+   "answers": {
+    "destructive": {
+     "type": "noul",
+     "noul": 0.97
+    },
+    "action": {
+     "type": "choice",
+     "choice": "refuse",
+     "confidence": 0.68,
+     "probabilities": {
+      "run_now": 0.0,
+      "ask_human": 0.21,
+      "refuse": 0.79
+     }
+    },
+    "risk": {
+     "type": "score",
+     "score": 1.99,
+     "confidence": 1.0,
+     "legend": {
+      "0": "只读或可安全重建",
+      "1": "可能影响服务或误删部分真实数据",
+      "2": "不可逆丢数据或危及安全"
+     },
+     "probabilities": {
+      "0": 0.0,
+      "1": 0.0,
+      "2": 1.0
+     }
+    }
+   },
+   "usage": {
+    "input_tokens": 671,
+    "output_tokens": 75
+   },
+   "served_model": "jev-1.14.0"
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "o08",
+   "domain": "ops",
+   "latency": 1.1001622676849365,
+   "error": null,
+   "answers": {
+    "destructive": {
+     "type": "noul",
+     "noul": 0.97
+    },
+    "action": {
+     "type": "choice",
+     "choice": "ask_human",
+     "confidence": 1.0,
+     "probabilities": {
+      "run_now": 0.0,
+      "ask_human": 1.0,
+      "refuse": 0.0
+     }
+    },
+    "risk": {
+     "type": "score",
+     "score": 1.89,
+     "confidence": 0.85,
+     "legend": {
+      "0": "只读或可安全重建",
+      "1": "可能影响服务或误删部分真实数据",
+      "2": "不可逆丢数据或危及安全"
+     },
+     "probabilities": {
+      "0": 0.0,
+      "1": 0.1,
+      "2": 0.9
+     }
+    }
+   },
+   "usage": {
+    "input_tokens": 665,
+    "output_tokens": 76
+   },
+   "served_model": "jev-1.14.0"
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "o10",
+   "domain": "ops",
+   "latency": 0.9919967651367188,
+   "error": null,
+   "answers": {
+    "destructive": {
+     "type": "noul",
+     "noul": 0.01
+    },
+    "action": {
+     "type": "choice",
+     "choice": "run_now",
+     "confidence": 1.0,
+     "probabilities": {
+      "run_now": 1.0,
+      "ask_human": 0.0,
+      "refuse": 0.0
+     }
+    },
+    "risk": {
+     "type": "score",
+     "score": 0.0,
+     "confidence": 1.0,
+     "legend": {
+      "0": "只读或可安全重建",
+      "1": "可能影响服务或误删部分真实数据",
+      "2": "不可逆丢数据或危及安全"
+     },
+     "probabilities": {
+      "0": 1.0,
+      "1": 0.0,
+      "2": 0.0
+     }
+    }
+   },
+   "usage": {
+    "input_tokens": 653,
+    "output_tokens": 75
+   },
+   "served_model": "jev-1.13.0"
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "o09",
+   "domain": "ops",
+   "latency": 1.2657737731933594,
+   "error": null,
+   "answers": {
+    "destructive": {
+     "type": "noul",
+     "noul": 0.08
+    },
+    "action": {
+     "type": "choice",
+     "choice": "ask_human",
+     "confidence": 0.77,
+     "probabilities": {
+      "run_now": 0.15,
+      "ask_human": 0.85,
+      "refuse": 0.0
+     }
+    },
+    "risk": {
+     "type": "score",
+     "score": 1.09,
+     "confidence": 0.56,
+     "legend": {
+      "0": "只读或可安全重建",
+      "1": "可能影响服务或误删部分真实数据",
+      "2": "不可逆丢数据或危及安全"
+     },
+     "probabilities": {
+      "0": 0.1,
+      "1": 0.71,
+      "2": 0.19
+     }
+    }
+   },
+   "usage": {
+    "input_tokens": 666,
+    "output_tokens": 76
+   },
+   "served_model": "jev-1.13.0"
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "o11",
+   "domain": "ops",
+   "latency": 1.0372886657714844,
+   "error": null,
+   "answers": {
+    "destructive": {
+     "type": "noul",
+     "noul": 0.97
+    },
+    "action": {
+     "type": "choice",
+     "choice": "ask_human",
+     "confidence": 0.7,
+     "probabilities": {
+      "run_now": 0.0,
+      "ask_human": 0.8,
+      "refuse": 0.2
+     }
+    },
+    "risk": {
+     "type": "score",
+     "score": 2.0,
+     "confidence": 1.0,
+     "legend": {
+      "0": "只读或可安全重建",
+      "1": "可能影响服务或误删部分真实数据",
+      "2": "不可逆丢数据或危及安全"
+     },
+     "probabilities": {
+      "0": 0.0,
+      "1": 0.0,
+      "2": 1.0
+     }
+    }
+   },
+   "usage": {
+    "input_tokens": 681,
+    "output_tokens": 76
+   },
+   "served_model": "jev-1.13.0"
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "o12",
+   "domain": "ops",
+   "latency": 1.1469519138336182,
+   "error": null,
+   "answers": {
+    "destructive": {
+     "type": "noul",
+     "noul": 0.01
+    },
+    "action": {
+     "type": "choice",
+     "choice": "run_now",
+     "confidence": 1.0,
+     "probabilities": {
+      "run_now": 1.0,
+      "ask_human": 0.0,
+      "refuse": 0.0
+     }
+    },
+    "risk": {
+     "type": "score",
+     "score": 0.0,
+     "confidence": 1.0,
+     "legend": {
+      "0": "只读或可安全重建",
+      "1": "可能影响服务或误删部分真实数据",
+      "2": "不可逆丢数据或危及安全"
+     },
+     "probabilities": {
+      "0": 1.0,
+      "1": 0.0,
+      "2": 0.0
+     }
+    }
+   },
+   "usage": {
+    "input_tokens": 671,
+    "output_tokens": 75
+   },
+   "served_model": "jev-1.13.0"
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "c01",
+   "domain": "coding",
+   "latency": 0.979102373123169,
+   "error": null,
+   "answers": {
+    "regression": {
+     "type": "noul",
+     "noul": 0.75
+    },
+    "needs_human": {
+     "type": "noul",
+     "noul": 0.74
+    },
+    "risk": {
+     "type": "score",
+     "score": 1.1,
+     "confidence": 0.84,
+     "legend": {
+      "0": "样式、文案、注释等无语义影响",
+      "1": "局部业务逻辑",
+      "2": "触及鉴权、支付、数据迁移或依赖大版本升级"
+     },
+     "probabilities": {
+      "0": 0.0,
+      "1": 0.89,
+      "2": 0.11
+     }
+    }
+   },
+   "usage": {
+    "input_tokens": 584,
+    "output_tokens": 53
+   },
+   "served_model": "jev-1.13.0"
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "o10",
+   "domain": "ops",
+   "latency": 1.0360803604125977,
+   "error": null,
+   "answers": {
+    "destructive": {
+     "type": "noul",
+     "noul": 0.01
+    },
+    "action": {
+     "type": "choice",
+     "choice": "run_now",
+     "confidence": 1.0,
+     "probabilities": {
+      "run_now": 1.0,
+      "ask_human": 0.0,
+      "refuse": 0.0
+     }
+    },
+    "risk": {
+     "type": "score",
+     "score": 0.0,
+     "confidence": 1.0,
+     "legend": {
+      "0": "只读或可安全重建",
+      "1": "可能影响服务或误删部分真实数据",
+      "2": "不可逆丢数据或危及安全"
+     },
+     "probabilities": {
+      "0": 1.0,
+      "1": 0.0,
+      "2": 0.0
+     }
+    }
+   },
+   "usage": {
+    "input_tokens": 653,
+    "output_tokens": 75
+   },
+   "served_model": "jev-1.14.0"
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "o11",
+   "domain": "ops",
+   "latency": 0.9943323135375977,
+   "error": null,
+   "answers": {
+    "destructive": {
+     "type": "noul",
+     "noul": 0.97
+    },
+    "action": {
+     "type": "choice",
+     "choice": "ask_human",
+     "confidence": 0.64,
+     "probabilities": {
+      "run_now": 0.0,
+      "ask_human": 0.76,
+      "refuse": 0.24
+     }
+    },
+    "risk": {
+     "type": "score",
+     "score": 1.99,
+     "confidence": 0.98,
+     "legend": {
+      "0": "只读或可安全重建",
+      "1": "可能影响服务或误删部分真实数据",
+      "2": "不可逆丢数据或危及安全"
+     },
+     "probabilities": {
+      "0": 0.0,
+      "1": 0.01,
+      "2": 0.99
+     }
+    }
+   },
+   "usage": {
+    "input_tokens": 681,
+    "output_tokens": 76
+   },
+   "served_model": "jev-1.14.0"
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "o09",
+   "domain": "ops",
+   "latency": 1.0812997817993164,
+   "error": null,
+   "answers": {
+    "destructive": {
+     "type": "noul",
+     "noul": 0.12
+    },
+    "action": {
+     "type": "choice",
+     "choice": "ask_human",
+     "confidence": 0.79,
+     "probabilities": {
+      "run_now": 0.14,
+      "ask_human": 0.86,
+      "refuse": 0.0
+     }
+    },
+    "risk": {
+     "type": "score",
+     "score": 1.17,
+     "confidence": 0.6,
+     "legend": {
+      "0": "只读或可安全重建",
+      "1": "可能影响服务或误删部分真实数据",
+      "2": "不可逆丢数据或危及安全"
+     },
+     "probabilities": {
+      "0": 0.05,
+      "1": 0.73,
+      "2": 0.22
+     }
+    }
+   },
+   "usage": {
+    "input_tokens": 666,
+    "output_tokens": 76
+   },
+   "served_model": "jev-1.14.0"
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "o12",
+   "domain": "ops",
+   "latency": 0.9345781803131104,
+   "error": null,
+   "answers": {
+    "destructive": {
+     "type": "noul",
+     "noul": 0.01
+    },
+    "action": {
+     "type": "choice",
+     "choice": "run_now",
+     "confidence": 1.0,
+     "probabilities": {
+      "run_now": 1.0,
+      "ask_human": 0.0,
+      "refuse": 0.0
+     }
+    },
+    "risk": {
+     "type": "score",
+     "score": 0.0,
+     "confidence": 1.0,
+     "legend": {
+      "0": "只读或可安全重建",
+      "1": "可能影响服务或误删部分真实数据",
+      "2": "不可逆丢数据或危及安全"
+     },
+     "probabilities": {
+      "0": 1.0,
+      "1": 0.0,
+      "2": 0.0
+     }
+    }
+   },
+   "usage": {
+    "input_tokens": 671,
+    "output_tokens": 75
+   },
+   "served_model": "jev-1.14.0"
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "c01",
+   "domain": "coding",
+   "latency": 0.9704387187957764,
+   "error": null,
+   "answers": {
+    "regression": {
+     "type": "noul",
+     "noul": 0.78
+    },
+    "needs_human": {
+     "type": "noul",
+     "noul": 0.76
+    },
+    "risk": {
+     "type": "score",
+     "score": 1.14,
+     "confidence": 0.79,
+     "legend": {
+      "0": "样式、文案、注释等无语义影响",
+      "1": "局部业务逻辑",
+      "2": "触及鉴权、支付、数据迁移或依赖大版本升级"
+     },
+     "probabilities": {
+      "0": 0.0,
+      "1": 0.86,
+      "2": 0.14
+     }
+    }
+   },
+   "usage": {
+    "input_tokens": 584,
+    "output_tokens": 53
+   },
+   "served_model": "jev-1.14.0"
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "c02",
+   "domain": "coding",
+   "latency": 0.9469165802001953,
+   "error": null,
+   "answers": {
+    "regression": {
+     "type": "noul",
+     "noul": 0.11
+    },
+    "needs_human": {
+     "type": "noul",
+     "noul": 0.1
+    },
+    "risk": {
+     "type": "score",
+     "score": 0.19,
+     "confidence": 0.72,
+     "legend": {
+      "0": "样式、文案、注释等无语义影响",
+      "1": "局部业务逻辑",
+      "2": "触及鉴权、支付、数据迁移或依赖大版本升级"
+     },
+     "probabilities": {
+      "0": 0.81,
+      "1": 0.19,
+      "2": 0.0
+     }
+    }
+   },
+   "usage": {
+    "input_tokens": 579,
+    "output_tokens": 53
+   },
+   "served_model": "jev-1.13.0"
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "c03",
+   "domain": "coding",
+   "latency": 1.0228209495544434,
+   "error": null,
+   "answers": {
+    "needs_human": {
+     "type": "noul",
+     "noul": 0.05
+    },
+    "risk": {
+     "type": "score",
+     "score": 0.0,
+     "confidence": 1.0,
+     "legend": {
+      "0": "样式、文案、注释等无语义影响",
+      "1": "局部业务逻辑",
+      "2": "触及鉴权、支付、数据迁移或依赖大版本升级"
+     },
+     "probabilities": {
+      "0": 1.0,
+      "1": 0.0,
+      "2": 0.0
+     }
+    }
+   },
+   "usage": {
+    "input_tokens": 447,
+    "output_tokens": 35
+   },
+   "served_model": "jev-1.13.0"
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "c04",
+   "domain": "coding",
+   "latency": 1.046534538269043,
+   "error": null,
+   "answers": {
+    "needs_human": {
+     "type": "noul",
+     "noul": 0.95
+    },
+    "risk": {
+     "type": "score",
+     "score": 2.0,
+     "confidence": 1.0,
+     "legend": {
+      "0": "样式、文案、注释等无语义影响",
+      "1": "局部业务逻辑",
+      "2": "触及鉴权、支付、数据迁移或依赖大版本升级"
+     },
+     "probabilities": {
+      "0": 0.0,
+      "1": 0.0,
+      "2": 1.0
+     }
+    }
+   },
+   "usage": {
+    "input_tokens": 453,
+    "output_tokens": 35
+   },
+   "served_model": "jev-1.13.0"
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "c05",
+   "domain": "coding",
+   "latency": 0.9657788276672363,
+   "error": null,
+   "answers": {
+    "needs_human": {
+     "type": "noul",
+     "noul": 0.94
+    },
+    "risk": {
+     "type": "score",
+     "score": 2.0,
+     "confidence": 1.0,
+     "legend": {
+      "0": "样式、文案、注释等无语义影响",
+      "1": "局部业务逻辑",
+      "2": "触及鉴权、支付、数据迁移或依赖大版本升级"
+     },
+     "probabilities": {
+      "0": 0.0,
+      "1": 0.0,
+      "2": 1.0
+     }
+    }
+   },
+   "usage": {
+    "input_tokens": 459,
+    "output_tokens": 35
+   },
+   "served_model": "jev-1.13.0"
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "c06",
+   "domain": "coding",
+   "latency": 0.9691402912139893,
+   "error": null,
+   "answers": {
+    "needs_human": {
+     "type": "noul",
+     "noul": 0.06
+    },
+    "risk": {
+     "type": "score",
+     "score": 0.0,
+     "confidence": 1.0,
+     "legend": {
+      "0": "样式、文案、注释等无语义影响",
+      "1": "局部业务逻辑",
+      "2": "触及鉴权、支付、数据迁移或依赖大版本升级"
+     },
+     "probabilities": {
+      "0": 1.0,
+      "1": 0.0,
+      "2": 0.0
+     }
+    }
+   },
+   "usage": {
+    "input_tokens": 446,
+    "output_tokens": 35
+   },
+   "served_model": "jev-1.13.0"
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "c02",
+   "domain": "coding",
+   "latency": 1.0332565307617188,
+   "error": null,
+   "answers": {
+    "regression": {
+     "type": "noul",
+     "noul": 0.1
+    },
+    "needs_human": {
+     "type": "noul",
+     "noul": 0.1
+    },
+    "risk": {
+     "type": "score",
+     "score": 0.13,
+     "confidence": 0.82,
+     "legend": {
+      "0": "样式、文案、注释等无语义影响",
+      "1": "局部业务逻辑",
+      "2": "触及鉴权、支付、数据迁移或依赖大版本升级"
+     },
+     "probabilities": {
+      "0": 0.88,
+      "1": 0.12,
+      "2": 0.0
+     }
+    }
+   },
+   "usage": {
+    "input_tokens": 579,
+    "output_tokens": 53
+   },
+   "served_model": "jev-1.14.0"
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "c03",
+   "domain": "coding",
+   "latency": 0.9677777290344238,
+   "error": null,
+   "answers": {
+    "needs_human": {
+     "type": "noul",
+     "noul": 0.05
+    },
+    "risk": {
+     "type": "score",
+     "score": 0.0,
+     "confidence": 1.0,
+     "legend": {
+      "0": "样式、文案、注释等无语义影响",
+      "1": "局部业务逻辑",
+      "2": "触及鉴权、支付、数据迁移或依赖大版本升级"
+     },
+     "probabilities": {
+      "0": 1.0,
+      "1": 0.0,
+      "2": 0.0
+     }
+    }
+   },
+   "usage": {
+    "input_tokens": 447,
+    "output_tokens": 35
+   },
+   "served_model": "jev-1.14.0"
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "c04",
+   "domain": "coding",
+   "latency": 1.0366549491882324,
+   "error": null,
+   "answers": {
+    "needs_human": {
+     "type": "noul",
+     "noul": 0.95
+    },
+    "risk": {
+     "type": "score",
+     "score": 2.0,
+     "confidence": 1.0,
+     "legend": {
+      "0": "样式、文案、注释等无语义影响",
+      "1": "局部业务逻辑",
+      "2": "触及鉴权、支付、数据迁移或依赖大版本升级"
+     },
+     "probabilities": {
+      "0": 0.0,
+      "1": 0.0,
+      "2": 1.0
+     }
+    }
+   },
+   "usage": {
+    "input_tokens": 453,
+    "output_tokens": 35
+   },
+   "served_model": "jev-1.14.0"
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "c05",
+   "domain": "coding",
+   "latency": 1.022871971130371,
+   "error": null,
+   "answers": {
+    "needs_human": {
+     "type": "noul",
+     "noul": 0.94
+    },
+    "risk": {
+     "type": "score",
+     "score": 2.0,
+     "confidence": 1.0,
+     "legend": {
+      "0": "样式、文案、注释等无语义影响",
+      "1": "局部业务逻辑",
+      "2": "触及鉴权、支付、数据迁移或依赖大版本升级"
+     },
+     "probabilities": {
+      "0": 0.0,
+      "1": 0.0,
+      "2": 1.0
+     }
+    }
+   },
+   "usage": {
+    "input_tokens": 459,
+    "output_tokens": 35
+   },
+   "served_model": "jev-1.14.0"
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "c06",
+   "domain": "coding",
+   "latency": 0.9459574222564697,
+   "error": null,
+   "answers": {
+    "needs_human": {
+     "type": "noul",
+     "noul": 0.06
+    },
+    "risk": {
+     "type": "score",
+     "score": 0.0,
+     "confidence": 1.0,
+     "legend": {
+      "0": "样式、文案、注释等无语义影响",
+      "1": "局部业务逻辑",
+      "2": "触及鉴权、支付、数据迁移或依赖大版本升级"
+     },
+     "probabilities": {
+      "0": 1.0,
+      "1": 0.0,
+      "2": 0.0
+     }
+    }
+   },
+   "usage": {
+    "input_tokens": 446,
+    "output_tokens": 35
+   },
+   "served_model": "jev-1.14.0"
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "c07",
+   "domain": "coding",
+   "latency": 0.9517190456390381,
+   "error": null,
+   "answers": {
+    "needs_human": {
+     "type": "noul",
+     "noul": 0.94
+    },
+    "risk": {
+     "type": "score",
+     "score": 2.0,
+     "confidence": 1.0,
+     "legend": {
+      "0": "样式、文案、注释等无语义影响",
+      "1": "局部业务逻辑",
+      "2": "触及鉴权、支付、数据迁移或依赖大版本升级"
+     },
+     "probabilities": {
+      "0": 0.0,
+      "1": 0.0,
+      "2": 1.0
+     }
+    }
+   },
+   "usage": {
+    "input_tokens": 467,
+    "output_tokens": 35
+   },
+   "served_model": "jev-1.13.0"
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "c08",
+   "domain": "coding",
+   "latency": 0.9319794178009033,
+   "error": null,
+   "answers": {
+    "needs_human": {
+     "type": "noul",
+     "noul": 0.06
+    },
+    "risk": {
+     "type": "score",
+     "score": 0.0,
+     "confidence": 1.0,
+     "legend": {
+      "0": "样式、文案、注释等无语义影响",
+      "1": "局部业务逻辑",
+      "2": "触及鉴权、支付、数据迁移或依赖大版本升级"
+     },
+     "probabilities": {
+      "0": 1.0,
+      "1": 0.0,
+      "2": 0.0
+     }
+    }
+   },
+   "usage": {
+    "input_tokens": 450,
+    "output_tokens": 35
+   },
+   "served_model": "jev-1.13.0"
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "t01",
+   "domain": "triage",
+   "latency": 0.9602763652801514,
+   "error": null,
+   "answers": {
+    "relevant": {
+     "type": "noul",
+     "noul": 0.82
+    },
+    "source": {
+     "type": "choice",
+     "choice": "official",
+     "confidence": 1.0,
+     "probabilities": {
+      "official": 1.0,
+      "media": 0.0,
+      "forum": 0.0,
+      "marketing": 0.0
+     }
+    },
+    "trust": {
+     "type": "score",
+     "score": 2.0,
+     "confidence": 1.0,
+     "legend": {
+      "0": "低（营销软文、未署名转载）",
+      "1": "中（社区实测或二手媒体）",
+      "2": "高（官方文档或一手来源）"
+     },
+     "probabilities": {
+      "0": 0.0,
+      "1": 0.0,
+      "2": 1.0
+     }
+    }
+   },
+   "usage": {
+    "input_tokens": 652,
+    "output_tokens": 77
+   },
+   "served_model": "jev-1.13.0"
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "t02",
+   "domain": "triage",
+   "latency": 0.9800503253936768,
+   "error": null,
+   "answers": {
+    "relevant": {
+     "type": "noul",
+     "noul": 0.02
+    },
+    "source": {
+     "type": "choice",
+     "choice": "marketing",
+     "confidence": 1.0,
+     "probabilities": {
+      "official": 0.0,
+      "media": 0.0,
+      "forum": 0.0,
+      "marketing": 1.0
+     }
+    },
+    "trust": {
+     "type": "score",
+     "score": 0.0,
+     "confidence": 1.0,
+     "legend": {
+      "0": "低（营销软文、未署名转载）",
+      "1": "中（社区实测或二手媒体）",
+      "2": "高（官方文档或一手来源）"
+     },
+     "probabilities": {
+      "0": 1.0,
+      "1": 0.0,
+      "2": 0.0
+     }
+    }
+   },
+   "usage": {
+    "input_tokens": 660,
+    "output_tokens": 77
+   },
+   "served_model": "jev-1.13.0"
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "t03",
+   "domain": "triage",
+   "latency": 1.010051965713501,
+   "error": null,
+   "answers": {
+    "relevant": {
+     "type": "noul",
+     "noul": 0.71
+    },
+    "source": {
+     "type": "choice",
+     "choice": "forum",
+     "confidence": 1.0,
+     "probabilities": {
+      "official": 0.0,
+      "media": 0.0,
+      "forum": 1.0,
+      "marketing": 0.0
+     }
+    },
+    "trust": {
+     "type": "score",
+     "score": 1.0,
+     "confidence": 1.0,
+     "legend": {
+      "0": "低（营销软文、未署名转载）",
+      "1": "中（社区实测或二手媒体）",
+      "2": "高（官方文档或一手来源）"
+     },
+     "probabilities": {
+      "0": 0.0,
+      "1": 1.0,
+      "2": 0.0
+     }
+    }
+   },
+   "usage": {
+    "input_tokens": 648,
+    "output_tokens": 77
+   },
+   "served_model": "jev-1.13.0"
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "c07",
+   "domain": "coding",
+   "latency": 0.9832220077514648,
+   "error": null,
+   "answers": {
+    "needs_human": {
+     "type": "noul",
+     "noul": 0.94
+    },
+    "risk": {
+     "type": "score",
+     "score": 2.0,
+     "confidence": 1.0,
+     "legend": {
+      "0": "样式、文案、注释等无语义影响",
+      "1": "局部业务逻辑",
+      "2": "触及鉴权、支付、数据迁移或依赖大版本升级"
+     },
+     "probabilities": {
+      "0": 0.0,
+      "1": 0.0,
+      "2": 1.0
+     }
+    }
+   },
+   "usage": {
+    "input_tokens": 467,
+    "output_tokens": 35
+   },
+   "served_model": "jev-1.14.0"
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "c08",
+   "domain": "coding",
+   "latency": 0.9471292495727539,
+   "error": null,
+   "answers": {
+    "needs_human": {
+     "type": "noul",
+     "noul": 0.06
+    },
+    "risk": {
+     "type": "score",
+     "score": 0.0,
+     "confidence": 1.0,
+     "legend": {
+      "0": "样式、文案、注释等无语义影响",
+      "1": "局部业务逻辑",
+      "2": "触及鉴权、支付、数据迁移或依赖大版本升级"
+     },
+     "probabilities": {
+      "0": 1.0,
+      "1": 0.0,
+      "2": 0.0
+     }
+    }
+   },
+   "usage": {
+    "input_tokens": 450,
+    "output_tokens": 35
+   },
+   "served_model": "jev-1.14.0"
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "t01",
+   "domain": "triage",
+   "latency": 1.005122423171997,
+   "error": null,
+   "answers": {
+    "relevant": {
+     "type": "noul",
+     "noul": 0.69
+    },
+    "source": {
+     "type": "choice",
+     "choice": "official",
+     "confidence": 1.0,
+     "probabilities": {
+      "official": 1.0,
+      "media": 0.0,
+      "forum": 0.0,
+      "marketing": 0.0
+     }
+    },
+    "trust": {
+     "type": "score",
+     "score": 1.99,
+     "confidence": 1.0,
+     "legend": {
+      "0": "低（营销软文、未署名转载）",
+      "1": "中（社区实测或二手媒体）",
+      "2": "高（官方文档或一手来源）"
+     },
+     "probabilities": {
+      "0": 0.0,
+      "1": 0.0,
+      "2": 1.0
+     }
+    }
+   },
+   "usage": {
+    "input_tokens": 652,
+    "output_tokens": 77
+   },
+   "served_model": "jev-1.14.0"
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "t02",
+   "domain": "triage",
+   "latency": 1.0576932430267334,
+   "error": null,
+   "answers": {
+    "relevant": {
+     "type": "noul",
+     "noul": 0.01
+    },
+    "source": {
+     "type": "choice",
+     "choice": "marketing",
+     "confidence": 1.0,
+     "probabilities": {
+      "official": 0.0,
+      "media": 0.0,
+      "forum": 0.0,
+      "marketing": 1.0
+     }
+    },
+    "trust": {
+     "type": "score",
+     "score": 0.0,
+     "confidence": 1.0,
+     "legend": {
+      "0": "低（营销软文、未署名转载）",
+      "1": "中（社区实测或二手媒体）",
+      "2": "高（官方文档或一手来源）"
+     },
+     "probabilities": {
+      "0": 1.0,
+      "1": 0.0,
+      "2": 0.0
+     }
+    }
+   },
+   "usage": {
+    "input_tokens": 660,
+    "output_tokens": 77
+   },
+   "served_model": "jev-1.14.0"
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "t03",
+   "domain": "triage",
+   "latency": 1.0369410514831543,
+   "error": null,
+   "answers": {
+    "relevant": {
+     "type": "noul",
+     "noul": 0.62
+    },
+    "source": {
+     "type": "choice",
+     "choice": "forum",
+     "confidence": 1.0,
+     "probabilities": {
+      "official": 0.0,
+      "media": 0.0,
+      "forum": 1.0,
+      "marketing": 0.0
+     }
+    },
+    "trust": {
+     "type": "score",
+     "score": 1.0,
+     "confidence": 1.0,
+     "legend": {
+      "0": "低（营销软文、未署名转载）",
+      "1": "中（社区实测或二手媒体）",
+      "2": "高（官方文档或一手来源）"
+     },
+     "probabilities": {
+      "0": 0.0,
+      "1": 1.0,
+      "2": 0.0
+     }
+    }
+   },
+   "usage": {
+    "input_tokens": 648,
+    "output_tokens": 77
+   },
+   "served_model": "jev-1.14.0"
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "t05",
+   "domain": "triage",
+   "latency": 1.009415864944458,
+   "error": null,
+   "answers": {
+    "relevant": {
+     "type": "noul",
+     "noul": 0.62
+    },
+    "source": {
+     "type": "choice",
+     "choice": "official",
+     "confidence": 0.99,
+     "probabilities": {
+      "official": 0.99,
+      "media": 0.0,
+      "forum": 0.0,
+      "marketing": 0.01
+     }
+    },
+    "trust": {
+     "type": "score",
+     "score": 1.86,
+     "confidence": 0.79,
+     "legend": {
+      "0": "低（营销软文、未署名转载）",
+      "1": "中（社区实测或二手媒体）",
+      "2": "高（官方文档或一手来源）"
+     },
+     "probabilities": {
+      "0": 0.07,
+      "1": 0.0,
+      "2": 0.93
+     }
+    }
+   },
+   "usage": {
+    "input_tokens": 641,
+    "output_tokens": 77
+   },
+   "served_model": "jev-1.13.0"
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "t04",
+   "domain": "triage",
+   "latency": 1.2462108135223389,
+   "error": null,
+   "answers": {
+    "relevant": {
+     "type": "noul",
+     "noul": 0.53
+    },
+    "source": {
+     "type": "choice",
+     "choice": "official",
+     "confidence": 1.0,
+     "probabilities": {
+      "official": 1.0,
+      "media": 0.0,
+      "forum": 0.0,
+      "marketing": 0.0
+     }
+    },
+    "trust": {
+     "type": "score",
+     "score": 2.0,
+     "confidence": 1.0,
+     "legend": {
+      "0": "低（营销软文、未署名转载）",
+      "1": "中（社区实测或二手媒体）",
+      "2": "高（官方文档或一手来源）"
+     },
+     "probabilities": {
+      "0": 0.0,
+      "1": 0.0,
+      "2": 1.0
+     }
+    }
+   },
+   "usage": {
+    "input_tokens": 656,
+    "output_tokens": 77
+   },
+   "served_model": "jev-1.13.0"
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "t06",
+   "domain": "triage",
+   "latency": 1.0442485809326172,
+   "error": null,
+   "answers": {
+    "relevant": {
+     "type": "noul",
+     "noul": 0.15
+    },
+    "source": {
+     "type": "choice",
+     "choice": "media",
+     "confidence": 1.0,
+     "probabilities": {
+      "official": 0.0,
+      "media": 1.0,
+      "forum": 0.0,
+      "marketing": 0.0
+     }
+    },
+    "trust": {
+     "type": "score",
+     "score": 0.98,
+     "confidence": 0.91,
+     "legend": {
+      "0": "低（营销软文、未署名转载）",
+      "1": "中（社区实测或二手媒体）",
+      "2": "高（官方文档或一手来源）"
+     },
+     "probabilities": {
+      "0": 0.04,
+      "1": 0.94,
+      "2": 0.02
+     }
+    }
+   },
+   "usage": {
+    "input_tokens": 651,
+    "output_tokens": 77
+   },
+   "served_model": "jev-1.13.0"
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "t07",
+   "domain": "triage",
+   "latency": 0.9590809345245361,
+   "error": null,
+   "answers": {
+    "relevant": {
+     "type": "noul",
+     "noul": 0.02
+    },
+    "source": {
+     "type": "choice",
+     "choice": "media",
+     "confidence": 0.99,
+     "probabilities": {
+      "official": 0.0,
+      "media": 0.99,
+      "forum": 0.01,
+      "marketing": 0.0
+     }
+    },
+    "trust": {
+     "type": "score",
+     "score": 0.0,
+     "confidence": 1.0,
+     "legend": {
+      "0": "低（营销软文、未署名转载）",
+      "1": "中（社区实测或二手媒体）",
+      "2": "高（官方文档或一手来源）"
+     },
+     "probabilities": {
+      "0": 1.0,
+      "1": 0.0,
+      "2": 0.0
+     }
+    }
+   },
+   "usage": {
+    "input_tokens": 650,
+    "output_tokens": 77
+   },
+   "served_model": "jev-1.13.0"
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "t08",
+   "domain": "triage",
+   "latency": 0.9859874248504639,
+   "error": null,
+   "answers": {
+    "relevant": {
+     "type": "noul",
+     "noul": 0.95
+    },
+    "source": {
+     "type": "choice",
+     "choice": "official",
+     "confidence": 1.0,
+     "probabilities": {
+      "official": 1.0,
+      "media": 0.0,
+      "forum": 0.0,
+      "marketing": 0.0
+     }
+    },
+    "trust": {
+     "type": "score",
+     "score": 2.0,
+     "confidence": 1.0,
+     "legend": {
+      "0": "低（营销软文、未署名转载）",
+      "1": "中（社区实测或二手媒体）",
+      "2": "高（官方文档或一手来源）"
+     },
+     "probabilities": {
+      "0": 0.0,
+      "1": 0.0,
+      "2": 1.0
+     }
+    }
+   },
+   "usage": {
+    "input_tokens": 648,
+    "output_tokens": 77
+   },
+   "served_model": "jev-1.13.0"
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "t05",
+   "domain": "triage",
+   "latency": 0.9526472091674805,
+   "error": null,
+   "answers": {
+    "relevant": {
+     "type": "noul",
+     "noul": 0.55
+    },
+    "source": {
+     "type": "choice",
+     "choice": "official",
+     "confidence": 0.96,
+     "probabilities": {
+      "official": 0.97,
+      "media": 0.0,
+      "forum": 0.0,
+      "marketing": 0.03
+     }
+    },
+    "trust": {
+     "type": "score",
+     "score": 1.81,
+     "confidence": 0.73,
+     "legend": {
+      "0": "低（营销软文、未署名转载）",
+      "1": "中（社区实测或二手媒体）",
+      "2": "高（官方文档或一手来源）"
+     },
+     "probabilities": {
+      "0": 0.09,
+      "1": 0.0,
+      "2": 0.91
+     }
+    }
+   },
+   "usage": {
+    "input_tokens": 641,
+    "output_tokens": 77
+   },
+   "served_model": "jev-1.14.0"
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "t04",
+   "domain": "triage",
+   "latency": 0.9979674816131592,
+   "error": null,
+   "answers": {
+    "relevant": {
+     "type": "noul",
+     "noul": 0.59
+    },
+    "source": {
+     "type": "choice",
+     "choice": "official",
+     "confidence": 1.0,
+     "probabilities": {
+      "official": 1.0,
+      "media": 0.0,
+      "forum": 0.0,
+      "marketing": 0.0
+     }
+    },
+    "trust": {
+     "type": "score",
+     "score": 2.0,
+     "confidence": 1.0,
+     "legend": {
+      "0": "低（营销软文、未署名转载）",
+      "1": "中（社区实测或二手媒体）",
+      "2": "高（官方文档或一手来源）"
+     },
+     "probabilities": {
+      "0": 0.0,
+      "1": 0.0,
+      "2": 1.0
+     }
+    }
+   },
+   "usage": {
+    "input_tokens": 656,
+    "output_tokens": 77
+   },
+   "served_model": "jev-1.14.0"
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "t06",
+   "domain": "triage",
+   "latency": 0.9822137355804443,
+   "error": null,
+   "answers": {
+    "relevant": {
+     "type": "noul",
+     "noul": 0.14
+    },
+    "source": {
+     "type": "choice",
+     "choice": "media",
+     "confidence": 1.0,
+     "probabilities": {
+      "official": 0.0,
+      "media": 1.0,
+      "forum": 0.0,
+      "marketing": 0.0
+     }
+    },
+    "trust": {
+     "type": "score",
+     "score": 1.02,
+     "confidence": 0.9,
+     "legend": {
+      "0": "低（营销软文、未署名转载）",
+      "1": "中（社区实测或二手媒体）",
+      "2": "高（官方文档或一手来源）"
+     },
+     "probabilities": {
+      "0": 0.03,
+      "1": 0.93,
+      "2": 0.04
+     }
+    }
+   },
+   "usage": {
+    "input_tokens": 651,
+    "output_tokens": 77
+   },
+   "served_model": "jev-1.14.0"
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "t07",
+   "domain": "triage",
+   "latency": 1.0375339984893799,
+   "error": null,
+   "answers": {
+    "relevant": {
+     "type": "noul",
+     "noul": 0.02
+    },
+    "source": {
+     "type": "choice",
+     "choice": "media",
+     "confidence": 0.93,
+     "probabilities": {
+      "official": 0.0,
+      "media": 0.95,
+      "forum": 0.05,
+      "marketing": 0.0
+     }
+    },
+    "trust": {
+     "type": "score",
+     "score": 0.01,
+     "confidence": 1.0,
+     "legend": {
+      "0": "低（营销软文、未署名转载）",
+      "1": "中（社区实测或二手媒体）",
+      "2": "高（官方文档或一手来源）"
+     },
+     "probabilities": {
+      "0": 1.0,
+      "1": 0.0,
+      "2": 0.0
+     }
+    }
+   },
+   "usage": {
+    "input_tokens": 650,
+    "output_tokens": 77
+   },
+   "served_model": "jev-1.14.0"
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "t08",
+   "domain": "triage",
+   "latency": 0.9656336307525635,
+   "error": null,
+   "answers": {
+    "relevant": {
+     "type": "noul",
+     "noul": 0.96
+    },
+    "source": {
+     "type": "choice",
+     "choice": "official",
+     "confidence": 1.0,
+     "probabilities": {
+      "official": 1.0,
+      "media": 0.0,
+      "forum": 0.0,
+      "marketing": 0.0
+     }
+    },
+    "trust": {
+     "type": "score",
+     "score": 2.0,
+     "confidence": 1.0,
+     "legend": {
+      "0": "低（营销软文、未署名转载）",
+      "1": "中（社区实测或二手媒体）",
+      "2": "高（官方文档或一手来源）"
+     },
+     "probabilities": {
+      "0": 0.0,
+      "1": 0.0,
+      "2": 1.0
+     }
+    }
+   },
+   "usage": {
+    "input_tokens": 648,
+    "output_tokens": 77
+   },
+   "served_model": "jev-1.14.0"
+  }
+ ],
+ "scored": [
+  {
+   "model": "jev-1.13.0",
+   "case": "s02",
+   "qid": "team",
+   "domain": "support",
+   "type": "choice",
+   "correct": true,
+   "confidence": 1.0,
+   "err_abs": null,
+   "pmax": 1.0,
+   "answer": {
+    "type": "choice",
+    "choice": "tech",
+    "confidence": 1.0,
+    "probabilities": {
+     "billing": 0.0,
+     "tech": 1.0,
+     "complaint": 0.0,
+     "sales": 0.0
+    }
+   },
+   "label": "tech",
+   "latency": 1.9331443309783936
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "s02",
+   "qid": "refund",
+   "domain": "support",
+   "type": "noul",
+   "correct": true,
+   "confidence": 0.98,
+   "err_abs": null,
+   "pmax": 0.01,
+   "answer": {
+    "type": "noul",
+    "noul": 0.01
+   },
+   "label": false,
+   "latency": 1.9331443309783936
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "s02",
+   "qid": "urgent",
+   "domain": "support",
+   "type": "noul",
+   "correct": true,
+   "confidence": 0.84,
+   "err_abs": null,
+   "pmax": 0.08,
+   "answer": {
+    "type": "noul",
+    "noul": 0.08
+   },
+   "label": false,
+   "latency": 1.9331443309783936
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "s04",
+   "qid": "team",
+   "domain": "support",
+   "type": "choice",
+   "correct": true,
+   "confidence": 1.0,
+   "err_abs": null,
+   "pmax": 1.0,
+   "answer": {
+    "type": "choice",
+    "choice": "billing",
+    "confidence": 1.0,
+    "probabilities": {
+     "billing": 1.0,
+     "tech": 0.0,
+     "complaint": 0.0,
+     "sales": 0.0
+    }
+   },
+   "label": "billing",
+   "latency": 1.9510738849639893
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "s04",
+   "qid": "refund",
+   "domain": "support",
+   "type": "noul",
+   "correct": true,
+   "confidence": 0.96,
+   "err_abs": null,
+   "pmax": 0.02,
+   "answer": {
+    "type": "noul",
+    "noul": 0.02
+   },
+   "label": false,
+   "latency": 1.9510738849639893
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "s04",
+   "qid": "urgent",
+   "domain": "support",
+   "type": "noul",
+   "correct": true,
+   "confidence": 0.6599999999999999,
+   "err_abs": null,
+   "pmax": 0.17,
+   "answer": {
+    "type": "noul",
+    "noul": 0.17
+   },
+   "label": false,
+   "latency": 1.9510738849639893
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "s03",
+   "qid": "team",
+   "domain": "support",
+   "type": "choice",
+   "correct": true,
+   "confidence": 1.0,
+   "err_abs": null,
+   "pmax": 1.0,
+   "answer": {
+    "type": "choice",
+    "choice": "tech",
+    "confidence": 1.0,
+    "probabilities": {
+     "billing": 0.0,
+     "tech": 1.0,
+     "complaint": 0.0,
+     "sales": 0.0
+    }
+   },
+   "label": "tech",
+   "latency": 1.9648921489715576
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "s03",
+   "qid": "refund",
+   "domain": "support",
+   "type": "noul",
+   "correct": true,
+   "confidence": 0.98,
+   "err_abs": null,
+   "pmax": 0.01,
+   "answer": {
+    "type": "noul",
+    "noul": 0.01
+   },
+   "label": false,
+   "latency": 1.9648921489715576
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "s03",
+   "qid": "urgent",
+   "domain": "support",
+   "type": "noul",
+   "correct": true,
+   "confidence": 0.94,
+   "err_abs": null,
+   "pmax": 0.97,
+   "answer": {
+    "type": "noul",
+    "noul": 0.97
+   },
+   "label": true,
+   "latency": 1.9648921489715576
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "s05",
+   "qid": "team",
+   "domain": "support",
+   "type": "choice",
+   "correct": true,
+   "confidence": 1.0,
+   "err_abs": null,
+   "pmax": 1.0,
+   "answer": {
+    "type": "choice",
+    "choice": "billing",
+    "confidence": 1.0,
+    "probabilities": {
+     "billing": 1.0,
+     "tech": 0.0,
+     "complaint": 0.0,
+     "sales": 0.0
+    }
+   },
+   "label": "billing",
+   "latency": 2.0217323303222656
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "s05",
+   "qid": "refund",
+   "domain": "support",
+   "type": "noul",
+   "correct": true,
+   "confidence": 0.98,
+   "err_abs": null,
+   "pmax": 0.99,
+   "answer": {
+    "type": "noul",
+    "noul": 0.99
+   },
+   "label": true,
+   "latency": 2.0217323303222656
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "s05",
+   "qid": "urgent",
+   "domain": "support",
+   "type": "noul",
+   "correct": true,
+   "confidence": 0.92,
+   "err_abs": null,
+   "pmax": 0.04,
+   "answer": {
+    "type": "noul",
+    "noul": 0.04
+   },
+   "label": false,
+   "latency": 2.0217323303222656
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "s01",
+   "qid": "team",
+   "domain": "support",
+   "type": "choice",
+   "correct": true,
+   "confidence": 0.71,
+   "err_abs": null,
+   "pmax": 0.78,
+   "answer": {
+    "type": "choice",
+    "choice": "billing",
+    "confidence": 0.71,
+    "probabilities": {
+     "billing": 0.78,
+     "tech": 0.0,
+     "complaint": 0.22,
+     "sales": 0.0
+    }
+   },
+   "label": "billing",
+   "latency": 2.0355920791625977
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "s01",
+   "qid": "refund",
+   "domain": "support",
+   "type": "noul",
+   "correct": true,
+   "confidence": 0.98,
+   "err_abs": null,
+   "pmax": 0.99,
+   "answer": {
+    "type": "noul",
+    "noul": 0.99
+   },
+   "label": true,
+   "latency": 2.0355920791625977
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "s01",
+   "qid": "urgent",
+   "domain": "support",
+   "type": "noul",
+   "correct": true,
+   "confidence": 0.74,
+   "err_abs": null,
+   "pmax": 0.87,
+   "answer": {
+    "type": "noul",
+    "noul": 0.87
+   },
+   "label": true,
+   "latency": 2.0355920791625977
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "s04",
+   "qid": "team",
+   "domain": "support",
+   "type": "choice",
+   "correct": true,
+   "confidence": 1.0,
+   "err_abs": null,
+   "pmax": 1.0,
+   "answer": {
+    "type": "choice",
+    "choice": "billing",
+    "confidence": 1.0,
+    "probabilities": {
+     "billing": 1.0,
+     "tech": 0.0,
+     "complaint": 0.0,
+     "sales": 0.0
+    }
+   },
+   "label": "billing",
+   "latency": 0.9124906063079834
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "s04",
+   "qid": "refund",
+   "domain": "support",
+   "type": "noul",
+   "correct": true,
+   "confidence": 0.96,
+   "err_abs": null,
+   "pmax": 0.02,
+   "answer": {
+    "type": "noul",
+    "noul": 0.02
+   },
+   "label": false,
+   "latency": 0.9124906063079834
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "s04",
+   "qid": "urgent",
+   "domain": "support",
+   "type": "noul",
+   "correct": true,
+   "confidence": 0.6,
+   "err_abs": null,
+   "pmax": 0.2,
+   "answer": {
+    "type": "noul",
+    "noul": 0.2
+   },
+   "label": false,
+   "latency": 0.9124906063079834
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "s02",
+   "qid": "team",
+   "domain": "support",
+   "type": "choice",
+   "correct": true,
+   "confidence": 1.0,
+   "err_abs": null,
+   "pmax": 1.0,
+   "answer": {
+    "type": "choice",
+    "choice": "tech",
+    "confidence": 1.0,
+    "probabilities": {
+     "billing": 0.0,
+     "tech": 1.0,
+     "complaint": 0.0,
+     "sales": 0.0
+    }
+   },
+   "label": "tech",
+   "latency": 1.043602466583252
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "s02",
+   "qid": "refund",
+   "domain": "support",
+   "type": "noul",
+   "correct": true,
+   "confidence": 0.98,
+   "err_abs": null,
+   "pmax": 0.01,
+   "answer": {
+    "type": "noul",
+    "noul": 0.01
+   },
+   "label": false,
+   "latency": 1.043602466583252
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "s02",
+   "qid": "urgent",
+   "domain": "support",
+   "type": "noul",
+   "correct": true,
+   "confidence": 0.8200000000000001,
+   "err_abs": null,
+   "pmax": 0.09,
+   "answer": {
+    "type": "noul",
+    "noul": 0.09
+   },
+   "label": false,
+   "latency": 1.043602466583252
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "s01",
+   "qid": "team",
+   "domain": "support",
+   "type": "choice",
+   "correct": true,
+   "confidence": 0.61,
+   "err_abs": null,
+   "pmax": 0.71,
+   "answer": {
+    "type": "choice",
+    "choice": "billing",
+    "confidence": 0.61,
+    "probabilities": {
+     "billing": 0.71,
+     "tech": 0.0,
+     "complaint": 0.29,
+     "sales": 0.0
+    }
+   },
+   "label": "billing",
+   "latency": 0.9499599933624268
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "s01",
+   "qid": "refund",
+   "domain": "support",
+   "type": "noul",
+   "correct": true,
+   "confidence": 0.98,
+   "err_abs": null,
+   "pmax": 0.99,
+   "answer": {
+    "type": "noul",
+    "noul": 0.99
+   },
+   "label": true,
+   "latency": 0.9499599933624268
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "s01",
+   "qid": "urgent",
+   "domain": "support",
+   "type": "noul",
+   "correct": true,
+   "confidence": 0.78,
+   "err_abs": null,
+   "pmax": 0.89,
+   "answer": {
+    "type": "noul",
+    "noul": 0.89
+   },
+   "label": true,
+   "latency": 0.9499599933624268
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "s03",
+   "qid": "team",
+   "domain": "support",
+   "type": "choice",
+   "correct": true,
+   "confidence": 1.0,
+   "err_abs": null,
+   "pmax": 1.0,
+   "answer": {
+    "type": "choice",
+    "choice": "tech",
+    "confidence": 1.0,
+    "probabilities": {
+     "billing": 0.0,
+     "tech": 1.0,
+     "complaint": 0.0,
+     "sales": 0.0
+    }
+   },
+   "label": "tech",
+   "latency": 1.0326266288757324
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "s03",
+   "qid": "refund",
+   "domain": "support",
+   "type": "noul",
+   "correct": true,
+   "confidence": 0.98,
+   "err_abs": null,
+   "pmax": 0.01,
+   "answer": {
+    "type": "noul",
+    "noul": 0.01
+   },
+   "label": false,
+   "latency": 1.0326266288757324
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "s03",
+   "qid": "urgent",
+   "domain": "support",
+   "type": "noul",
+   "correct": true,
+   "confidence": 0.94,
+   "err_abs": null,
+   "pmax": 0.97,
+   "answer": {
+    "type": "noul",
+    "noul": 0.97
+   },
+   "label": true,
+   "latency": 1.0326266288757324
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "s05",
+   "qid": "team",
+   "domain": "support",
+   "type": "choice",
+   "correct": true,
+   "confidence": 1.0,
+   "err_abs": null,
+   "pmax": 1.0,
+   "answer": {
+    "type": "choice",
+    "choice": "billing",
+    "confidence": 1.0,
+    "probabilities": {
+     "billing": 1.0,
+     "tech": 0.0,
+     "complaint": 0.0,
+     "sales": 0.0
+    }
+   },
+   "label": "billing",
+   "latency": 1.0574066638946533
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "s05",
+   "qid": "refund",
+   "domain": "support",
+   "type": "noul",
+   "correct": true,
+   "confidence": 0.98,
+   "err_abs": null,
+   "pmax": 0.99,
+   "answer": {
+    "type": "noul",
+    "noul": 0.99
+   },
+   "label": true,
+   "latency": 1.0574066638946533
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "s05",
+   "qid": "urgent",
+   "domain": "support",
+   "type": "noul",
+   "correct": true,
+   "confidence": 0.9,
+   "err_abs": null,
+   "pmax": 0.05,
+   "answer": {
+    "type": "noul",
+    "noul": 0.05
+   },
+   "label": false,
+   "latency": 1.0574066638946533
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "s06",
+   "qid": "team",
+   "domain": "support",
+   "type": "choice",
+   "correct": true,
+   "confidence": 1.0,
+   "err_abs": null,
+   "pmax": 1.0,
+   "answer": {
+    "type": "choice",
+    "choice": "complaint",
+    "confidence": 1.0,
+    "probabilities": {
+     "billing": 0.0,
+     "tech": 0.0,
+     "complaint": 1.0,
+     "sales": 0.0
+    }
+   },
+   "label": "complaint",
+   "latency": 0.9269344806671143
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "s06",
+   "qid": "refund",
+   "domain": "support",
+   "type": "noul",
+   "correct": true,
+   "confidence": 0.92,
+   "err_abs": null,
+   "pmax": 0.04,
+   "answer": {
+    "type": "noul",
+    "noul": 0.04
+   },
+   "label": false,
+   "latency": 0.9269344806671143
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "s06",
+   "qid": "urgent",
+   "domain": "support",
+   "type": "noul",
+   "correct": true,
+   "confidence": 0.9199999999999999,
+   "err_abs": null,
+   "pmax": 0.96,
+   "answer": {
+    "type": "noul",
+    "noul": 0.96
+   },
+   "label": true,
+   "latency": 0.9269344806671143
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "s07",
+   "qid": "team",
+   "domain": "support",
+   "type": "choice",
+   "correct": true,
+   "confidence": 1.0,
+   "err_abs": null,
+   "pmax": 1.0,
+   "answer": {
+    "type": "choice",
+    "choice": "tech",
+    "confidence": 1.0,
+    "probabilities": {
+     "billing": 0.0,
+     "tech": 1.0,
+     "complaint": 0.0,
+     "sales": 0.0
+    }
+   },
+   "label": "tech",
+   "latency": 0.9232323169708252
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "s07",
+   "qid": "refund",
+   "domain": "support",
+   "type": "noul",
+   "correct": true,
+   "confidence": 0.98,
+   "err_abs": null,
+   "pmax": 0.01,
+   "answer": {
+    "type": "noul",
+    "noul": 0.01
+   },
+   "label": false,
+   "latency": 0.9232323169708252
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "s07",
+   "qid": "urgent",
+   "domain": "support",
+   "type": "noul",
+   "correct": true,
+   "confidence": 0.92,
+   "err_abs": null,
+   "pmax": 0.04,
+   "answer": {
+    "type": "noul",
+    "noul": 0.04
+   },
+   "label": false,
+   "latency": 0.9232323169708252
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "s08",
+   "qid": "team",
+   "domain": "support",
+   "type": "choice",
+   "correct": true,
+   "confidence": 1.0,
+   "err_abs": null,
+   "pmax": 1.0,
+   "answer": {
+    "type": "choice",
+    "choice": "billing",
+    "confidence": 1.0,
+    "probabilities": {
+     "billing": 1.0,
+     "tech": 0.0,
+     "complaint": 0.0,
+     "sales": 0.0
+    }
+   },
+   "label": "billing",
+   "latency": 0.9919211864471436
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "s08",
+   "qid": "refund",
+   "domain": "support",
+   "type": "noul",
+   "correct": true,
+   "confidence": 0.98,
+   "err_abs": null,
+   "pmax": 0.99,
+   "answer": {
+    "type": "noul",
+    "noul": 0.99
+   },
+   "label": true,
+   "latency": 0.9919211864471436
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "s08",
+   "qid": "urgent",
+   "domain": "support",
+   "type": "noul",
+   "correct": true,
+   "confidence": 0.9199999999999999,
+   "err_abs": null,
+   "pmax": 0.96,
+   "answer": {
+    "type": "noul",
+    "noul": 0.96
+   },
+   "label": true,
+   "latency": 0.9919211864471436
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "s09",
+   "qid": "team",
+   "domain": "support",
+   "type": "choice",
+   "correct": true,
+   "confidence": 1.0,
+   "err_abs": null,
+   "pmax": 1.0,
+   "answer": {
+    "type": "choice",
+    "choice": "tech",
+    "confidence": 1.0,
+    "probabilities": {
+     "billing": 0.0,
+     "tech": 1.0,
+     "complaint": 0.0,
+     "sales": 0.0
+    }
+   },
+   "label": "tech",
+   "latency": 0.9990239143371582
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "s09",
+   "qid": "refund",
+   "domain": "support",
+   "type": "noul",
+   "correct": true,
+   "confidence": 0.98,
+   "err_abs": null,
+   "pmax": 0.01,
+   "answer": {
+    "type": "noul",
+    "noul": 0.01
+   },
+   "label": false,
+   "latency": 0.9990239143371582
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "s09",
+   "qid": "urgent",
+   "domain": "support",
+   "type": "noul",
+   "correct": true,
+   "confidence": 0.74,
+   "err_abs": null,
+   "pmax": 0.13,
+   "answer": {
+    "type": "noul",
+    "noul": 0.13
+   },
+   "label": false,
+   "latency": 0.9990239143371582
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "s10",
+   "qid": "team",
+   "domain": "support",
+   "type": "choice",
+   "correct": true,
+   "confidence": 1.0,
+   "err_abs": null,
+   "pmax": 1.0,
+   "answer": {
+    "type": "choice",
+    "choice": "complaint",
+    "confidence": 1.0,
+    "probabilities": {
+     "billing": 0.0,
+     "tech": 0.0,
+     "complaint": 1.0,
+     "sales": 0.0
+    }
+   },
+   "label": "complaint",
+   "latency": 0.9899539947509766
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "s10",
+   "qid": "refund",
+   "domain": "support",
+   "type": "noul",
+   "correct": true,
+   "confidence": 0.96,
+   "err_abs": null,
+   "pmax": 0.02,
+   "answer": {
+    "type": "noul",
+    "noul": 0.02
+   },
+   "label": false,
+   "latency": 0.9899539947509766
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "s10",
+   "qid": "urgent",
+   "domain": "support",
+   "type": "noul",
+   "correct": true,
+   "confidence": 0.7,
+   "err_abs": null,
+   "pmax": 0.15,
+   "answer": {
+    "type": "noul",
+    "noul": 0.15
+   },
+   "label": false,
+   "latency": 0.9899539947509766
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "s06",
+   "qid": "team",
+   "domain": "support",
+   "type": "choice",
+   "correct": true,
+   "confidence": 1.0,
+   "err_abs": null,
+   "pmax": 1.0,
+   "answer": {
+    "type": "choice",
+    "choice": "complaint",
+    "confidence": 1.0,
+    "probabilities": {
+     "billing": 0.0,
+     "tech": 0.0,
+     "complaint": 1.0,
+     "sales": 0.0
+    }
+   },
+   "label": "complaint",
+   "latency": 1.1255924701690674
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "s06",
+   "qid": "refund",
+   "domain": "support",
+   "type": "noul",
+   "correct": true,
+   "confidence": 0.92,
+   "err_abs": null,
+   "pmax": 0.04,
+   "answer": {
+    "type": "noul",
+    "noul": 0.04
+   },
+   "label": false,
+   "latency": 1.1255924701690674
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "s06",
+   "qid": "urgent",
+   "domain": "support",
+   "type": "noul",
+   "correct": true,
+   "confidence": 0.8799999999999999,
+   "err_abs": null,
+   "pmax": 0.94,
+   "answer": {
+    "type": "noul",
+    "noul": 0.94
+   },
+   "label": true,
+   "latency": 1.1255924701690674
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "s10",
+   "qid": "team",
+   "domain": "support",
+   "type": "choice",
+   "correct": true,
+   "confidence": 1.0,
+   "err_abs": null,
+   "pmax": 1.0,
+   "answer": {
+    "type": "choice",
+    "choice": "complaint",
+    "confidence": 1.0,
+    "probabilities": {
+     "billing": 0.0,
+     "tech": 0.0,
+     "complaint": 1.0,
+     "sales": 0.0
+    }
+   },
+   "label": "complaint",
+   "latency": 0.9479556083679199
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "s10",
+   "qid": "refund",
+   "domain": "support",
+   "type": "noul",
+   "correct": true,
+   "confidence": 0.96,
+   "err_abs": null,
+   "pmax": 0.02,
+   "answer": {
+    "type": "noul",
+    "noul": 0.02
+   },
+   "label": false,
+   "latency": 0.9479556083679199
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "s10",
+   "qid": "urgent",
+   "domain": "support",
+   "type": "noul",
+   "correct": true,
+   "confidence": 0.64,
+   "err_abs": null,
+   "pmax": 0.18,
+   "answer": {
+    "type": "noul",
+    "noul": 0.18
+   },
+   "label": false,
+   "latency": 0.9479556083679199
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "s09",
+   "qid": "team",
+   "domain": "support",
+   "type": "choice",
+   "correct": true,
+   "confidence": 1.0,
+   "err_abs": null,
+   "pmax": 1.0,
+   "answer": {
+    "type": "choice",
+    "choice": "tech",
+    "confidence": 1.0,
+    "probabilities": {
+     "billing": 0.0,
+     "tech": 1.0,
+     "complaint": 0.0,
+     "sales": 0.0
+    }
+   },
+   "label": "tech",
+   "latency": 1.0807468891143799
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "s09",
+   "qid": "refund",
+   "domain": "support",
+   "type": "noul",
+   "correct": true,
+   "confidence": 0.98,
+   "err_abs": null,
+   "pmax": 0.01,
+   "answer": {
+    "type": "noul",
+    "noul": 0.01
+   },
+   "label": false,
+   "latency": 1.0807468891143799
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "s09",
+   "qid": "urgent",
+   "domain": "support",
+   "type": "noul",
+   "correct": true,
+   "confidence": 0.74,
+   "err_abs": null,
+   "pmax": 0.13,
+   "answer": {
+    "type": "noul",
+    "noul": 0.13
+   },
+   "label": false,
+   "latency": 1.0807468891143799
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "s07",
+   "qid": "team",
+   "domain": "support",
+   "type": "choice",
+   "correct": true,
+   "confidence": 1.0,
+   "err_abs": null,
+   "pmax": 1.0,
+   "answer": {
+    "type": "choice",
+    "choice": "tech",
+    "confidence": 1.0,
+    "probabilities": {
+     "billing": 0.0,
+     "tech": 1.0,
+     "complaint": 0.0,
+     "sales": 0.0
+    }
+   },
+   "label": "tech",
+   "latency": 1.2001256942749023
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "s07",
+   "qid": "refund",
+   "domain": "support",
+   "type": "noul",
+   "correct": true,
+   "confidence": 0.98,
+   "err_abs": null,
+   "pmax": 0.01,
+   "answer": {
+    "type": "noul",
+    "noul": 0.01
+   },
+   "label": false,
+   "latency": 1.2001256942749023
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "s07",
+   "qid": "urgent",
+   "domain": "support",
+   "type": "noul",
+   "correct": true,
+   "confidence": 0.92,
+   "err_abs": null,
+   "pmax": 0.04,
+   "answer": {
+    "type": "noul",
+    "noul": 0.04
+   },
+   "label": false,
+   "latency": 1.2001256942749023
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "s08",
+   "qid": "team",
+   "domain": "support",
+   "type": "choice",
+   "correct": true,
+   "confidence": 1.0,
+   "err_abs": null,
+   "pmax": 1.0,
+   "answer": {
+    "type": "choice",
+    "choice": "billing",
+    "confidence": 1.0,
+    "probabilities": {
+     "billing": 1.0,
+     "tech": 0.0,
+     "complaint": 0.0,
+     "sales": 0.0
+    }
+   },
+   "label": "billing",
+   "latency": 1.4026422500610352
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "s08",
+   "qid": "refund",
+   "domain": "support",
+   "type": "noul",
+   "correct": true,
+   "confidence": 0.96,
+   "err_abs": null,
+   "pmax": 0.98,
+   "answer": {
+    "type": "noul",
+    "noul": 0.98
+   },
+   "label": true,
+   "latency": 1.4026422500610352
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "s08",
+   "qid": "urgent",
+   "domain": "support",
+   "type": "noul",
+   "correct": true,
+   "confidence": 0.8999999999999999,
+   "err_abs": null,
+   "pmax": 0.95,
+   "answer": {
+    "type": "noul",
+    "noul": 0.95
+   },
+   "label": true,
+   "latency": 1.4026422500610352
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "s11",
+   "qid": "team",
+   "domain": "support",
+   "type": "choice",
+   "correct": true,
+   "confidence": 1.0,
+   "err_abs": null,
+   "pmax": 1.0,
+   "answer": {
+    "type": "choice",
+    "choice": "tech",
+    "confidence": 1.0,
+    "probabilities": {
+     "billing": 0.0,
+     "tech": 1.0,
+     "complaint": 0.0,
+     "sales": 0.0
+    }
+   },
+   "label": "tech",
+   "latency": 0.9584119319915771
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "s11",
+   "qid": "refund",
+   "domain": "support",
+   "type": "noul",
+   "correct": true,
+   "confidence": 0.96,
+   "err_abs": null,
+   "pmax": 0.02,
+   "answer": {
+    "type": "noul",
+    "noul": 0.02
+   },
+   "label": false,
+   "latency": 0.9584119319915771
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "s11",
+   "qid": "urgent",
+   "domain": "support",
+   "type": "noul",
+   "correct": true,
+   "confidence": 0.8,
+   "err_abs": null,
+   "pmax": 0.1,
+   "answer": {
+    "type": "noul",
+    "noul": 0.1
+   },
+   "label": false,
+   "latency": 0.9584119319915771
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "s12",
+   "qid": "team",
+   "domain": "support",
+   "type": "choice",
+   "correct": true,
+   "confidence": 1.0,
+   "err_abs": null,
+   "pmax": 1.0,
+   "answer": {
+    "type": "choice",
+    "choice": "sales",
+    "confidence": 1.0,
+    "probabilities": {
+     "billing": 0.0,
+     "tech": 0.0,
+     "complaint": 0.0,
+     "sales": 1.0
+    }
+   },
+   "label": "sales",
+   "latency": 0.9101612567901611
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "s12",
+   "qid": "refund",
+   "domain": "support",
+   "type": "noul",
+   "correct": true,
+   "confidence": 0.98,
+   "err_abs": null,
+   "pmax": 0.01,
+   "answer": {
+    "type": "noul",
+    "noul": 0.01
+   },
+   "label": false,
+   "latency": 0.9101612567901611
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "s12",
+   "qid": "urgent",
+   "domain": "support",
+   "type": "noul",
+   "correct": true,
+   "confidence": 0.7,
+   "err_abs": null,
+   "pmax": 0.15,
+   "answer": {
+    "type": "noul",
+    "noul": 0.15
+   },
+   "label": false,
+   "latency": 0.9101612567901611
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "o01",
+   "qid": "destructive",
+   "domain": "ops",
+   "type": "noul",
+   "correct": true,
+   "confidence": 0.94,
+   "err_abs": null,
+   "pmax": 0.97,
+   "answer": {
+    "type": "noul",
+    "noul": 0.97
+   },
+   "label": true,
+   "latency": 0.9825007915496826
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "o01",
+   "qid": "action",
+   "domain": "ops",
+   "type": "choice",
+   "correct": false,
+   "confidence": 0.56,
+   "err_abs": null,
+   "pmax": 0.71,
+   "answer": {
+    "type": "choice",
+    "choice": "ask_human",
+    "confidence": 0.56,
+    "probabilities": {
+     "run_now": 0.0,
+     "ask_human": 0.71,
+     "refuse": 0.29
+    }
+   },
+   "label": "refuse",
+   "latency": 0.9825007915496826
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "o01",
+   "qid": "risk",
+   "domain": "ops",
+   "type": "score",
+   "correct": true,
+   "confidence": 1.0,
+   "err_abs": 0.0,
+   "pmax": 1.0,
+   "answer": {
+    "type": "score",
+    "score": 2.0,
+    "confidence": 1.0,
+    "legend": {
+     "0": "只读或可安全重建",
+     "1": "可能影响服务或误删部分真实数据",
+     "2": "不可逆丢数据或危及安全"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.0,
+     "2": 1.0
+    }
+   },
+   "label": 2,
+   "latency": 0.9825007915496826
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "o02",
+   "qid": "destructive",
+   "domain": "ops",
+   "type": "noul",
+   "correct": true,
+   "confidence": 0.98,
+   "err_abs": null,
+   "pmax": 0.01,
+   "answer": {
+    "type": "noul",
+    "noul": 0.01
+   },
+   "label": false,
+   "latency": 1.20200514793396
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "o02",
+   "qid": "action",
+   "domain": "ops",
+   "type": "choice",
+   "correct": true,
+   "confidence": 1.0,
+   "err_abs": null,
+   "pmax": 1.0,
+   "answer": {
+    "type": "choice",
+    "choice": "run_now",
+    "confidence": 1.0,
+    "probabilities": {
+     "run_now": 1.0,
+     "ask_human": 0.0,
+     "refuse": 0.0
+    }
+   },
+   "label": "run_now",
+   "latency": 1.20200514793396
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "o02",
+   "qid": "risk",
+   "domain": "ops",
+   "type": "score",
+   "correct": true,
+   "confidence": 1.0,
+   "err_abs": 0.0,
+   "pmax": 1.0,
+   "answer": {
+    "type": "score",
+    "score": 0.0,
+    "confidence": 1.0,
+    "legend": {
+     "0": "只读或可安全重建",
+     "1": "可能影响服务或误删部分真实数据",
+     "2": "不可逆丢数据或危及安全"
+    },
+    "probabilities": {
+     "0": 1.0,
+     "1": 0.0,
+     "2": 0.0
+    }
+   },
+   "label": 0,
+   "latency": 1.20200514793396
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "o03",
+   "qid": "destructive",
+   "domain": "ops",
+   "type": "noul",
+   "correct": true,
+   "confidence": 0.76,
+   "err_abs": null,
+   "pmax": 0.12,
+   "answer": {
+    "type": "noul",
+    "noul": 0.12
+   },
+   "label": false,
+   "latency": 1.0279583930969238
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "o03",
+   "qid": "action",
+   "domain": "ops",
+   "type": "choice",
+   "correct": false,
+   "confidence": 0.44,
+   "err_abs": null,
+   "pmax": 0.63,
+   "answer": {
+    "type": "choice",
+    "choice": "ask_human",
+    "confidence": 0.44,
+    "probabilities": {
+     "run_now": 0.37,
+     "ask_human": 0.63,
+     "refuse": 0.0
+    }
+   },
+   "label": "run_now",
+   "latency": 1.0279583930969238
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "o03",
+   "qid": "risk",
+   "domain": "ops",
+   "type": "score",
+   "correct": false,
+   "confidence": 0.38,
+   "err_abs": 0.91,
+   "pmax": 0.59,
+   "answer": {
+    "type": "score",
+    "score": 0.91,
+    "confidence": 0.38,
+    "legend": {
+     "0": "只读或可安全重建",
+     "1": "可能影响服务或误删部分真实数据",
+     "2": "不可逆丢数据或危及安全"
+    },
+    "probabilities": {
+     "0": 0.25,
+     "1": 0.59,
+     "2": 0.16
+    }
+   },
+   "label": 0,
+   "latency": 1.0279583930969238
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "s11",
+   "qid": "team",
+   "domain": "support",
+   "type": "choice",
+   "correct": true,
+   "confidence": 1.0,
+   "err_abs": null,
+   "pmax": 1.0,
+   "answer": {
+    "type": "choice",
+    "choice": "tech",
+    "confidence": 1.0,
+    "probabilities": {
+     "billing": 0.0,
+     "tech": 1.0,
+     "complaint": 0.0,
+     "sales": 0.0
+    }
+   },
+   "label": "tech",
+   "latency": 0.9600656032562256
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "s11",
+   "qid": "refund",
+   "domain": "support",
+   "type": "noul",
+   "correct": true,
+   "confidence": 0.96,
+   "err_abs": null,
+   "pmax": 0.02,
+   "answer": {
+    "type": "noul",
+    "noul": 0.02
+   },
+   "label": false,
+   "latency": 0.9600656032562256
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "s11",
+   "qid": "urgent",
+   "domain": "support",
+   "type": "noul",
+   "correct": true,
+   "confidence": 0.78,
+   "err_abs": null,
+   "pmax": 0.11,
+   "answer": {
+    "type": "noul",
+    "noul": 0.11
+   },
+   "label": false,
+   "latency": 0.9600656032562256
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "s12",
+   "qid": "team",
+   "domain": "support",
+   "type": "choice",
+   "correct": true,
+   "confidence": 1.0,
+   "err_abs": null,
+   "pmax": 1.0,
+   "answer": {
+    "type": "choice",
+    "choice": "sales",
+    "confidence": 1.0,
+    "probabilities": {
+     "billing": 0.0,
+     "tech": 0.0,
+     "complaint": 0.0,
+     "sales": 1.0
+    }
+   },
+   "label": "sales",
+   "latency": 0.9382443428039551
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "s12",
+   "qid": "refund",
+   "domain": "support",
+   "type": "noul",
+   "correct": true,
+   "confidence": 0.96,
+   "err_abs": null,
+   "pmax": 0.02,
+   "answer": {
+    "type": "noul",
+    "noul": 0.02
+   },
+   "label": false,
+   "latency": 0.9382443428039551
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "s12",
+   "qid": "urgent",
+   "domain": "support",
+   "type": "noul",
+   "correct": true,
+   "confidence": 0.6799999999999999,
+   "err_abs": null,
+   "pmax": 0.16,
+   "answer": {
+    "type": "noul",
+    "noul": 0.16
+   },
+   "label": false,
+   "latency": 0.9382443428039551
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "o01",
+   "qid": "destructive",
+   "domain": "ops",
+   "type": "noul",
+   "correct": true,
+   "confidence": 0.9199999999999999,
+   "err_abs": null,
+   "pmax": 0.96,
+   "answer": {
+    "type": "noul",
+    "noul": 0.96
+   },
+   "label": true,
+   "latency": 1.0515739917755127
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "o01",
+   "qid": "action",
+   "domain": "ops",
+   "type": "choice",
+   "correct": false,
+   "confidence": 0.25,
+   "err_abs": null,
+   "pmax": 0.5,
+   "answer": {
+    "type": "choice",
+    "choice": "ask_human",
+    "confidence": 0.25,
+    "probabilities": {
+     "run_now": 0.0,
+     "ask_human": 0.5,
+     "refuse": 0.5
+    }
+   },
+   "label": "refuse",
+   "latency": 1.0515739917755127
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "o01",
+   "qid": "risk",
+   "domain": "ops",
+   "type": "score",
+   "correct": true,
+   "confidence": 0.98,
+   "err_abs": 0.010000000000000009,
+   "pmax": 0.99,
+   "answer": {
+    "type": "score",
+    "score": 1.99,
+    "confidence": 0.98,
+    "legend": {
+     "0": "只读或可安全重建",
+     "1": "可能影响服务或误删部分真实数据",
+     "2": "不可逆丢数据或危及安全"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.01,
+     "2": 0.99
+    }
+   },
+   "label": 2,
+   "latency": 1.0515739917755127
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "o02",
+   "qid": "destructive",
+   "domain": "ops",
+   "type": "noul",
+   "correct": true,
+   "confidence": 0.98,
+   "err_abs": null,
+   "pmax": 0.01,
+   "answer": {
+    "type": "noul",
+    "noul": 0.01
+   },
+   "label": false,
+   "latency": 0.9443473815917969
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "o02",
+   "qid": "action",
+   "domain": "ops",
+   "type": "choice",
+   "correct": true,
+   "confidence": 1.0,
+   "err_abs": null,
+   "pmax": 1.0,
+   "answer": {
+    "type": "choice",
+    "choice": "run_now",
+    "confidence": 1.0,
+    "probabilities": {
+     "run_now": 1.0,
+     "ask_human": 0.0,
+     "refuse": 0.0
+    }
+   },
+   "label": "run_now",
+   "latency": 0.9443473815917969
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "o02",
+   "qid": "risk",
+   "domain": "ops",
+   "type": "score",
+   "correct": true,
+   "confidence": 1.0,
+   "err_abs": 0.0,
+   "pmax": 1.0,
+   "answer": {
+    "type": "score",
+    "score": 0.0,
+    "confidence": 1.0,
+    "legend": {
+     "0": "只读或可安全重建",
+     "1": "可能影响服务或误删部分真实数据",
+     "2": "不可逆丢数据或危及安全"
+    },
+    "probabilities": {
+     "0": 1.0,
+     "1": 0.0,
+     "2": 0.0
+    }
+   },
+   "label": 0,
+   "latency": 0.9443473815917969
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "o03",
+   "qid": "destructive",
+   "domain": "ops",
+   "type": "noul",
+   "correct": true,
+   "confidence": 0.7,
+   "err_abs": null,
+   "pmax": 0.15,
+   "answer": {
+    "type": "noul",
+    "noul": 0.15
+   },
+   "label": false,
+   "latency": 1.0031344890594482
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "o03",
+   "qid": "action",
+   "domain": "ops",
+   "type": "choice",
+   "correct": false,
+   "confidence": 0.48,
+   "err_abs": null,
+   "pmax": 0.65,
+   "answer": {
+    "type": "choice",
+    "choice": "ask_human",
+    "confidence": 0.48,
+    "probabilities": {
+     "run_now": 0.35,
+     "ask_human": 0.65,
+     "refuse": 0.0
+    }
+   },
+   "label": "run_now",
+   "latency": 1.0031344890594482
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "o03",
+   "qid": "risk",
+   "domain": "ops",
+   "type": "score",
+   "correct": false,
+   "confidence": 0.31,
+   "err_abs": 0.93,
+   "pmax": 0.54,
+   "answer": {
+    "type": "score",
+    "score": 0.93,
+    "confidence": 0.31,
+    "legend": {
+     "0": "只读或可安全重建",
+     "1": "可能影响服务或误删部分真实数据",
+     "2": "不可逆丢数据或危及安全"
+    },
+    "probabilities": {
+     "0": 0.26,
+     "1": 0.54,
+     "2": 0.2
+    }
+   },
+   "label": 0,
+   "latency": 1.0031344890594482
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "o05",
+   "qid": "destructive",
+   "domain": "ops",
+   "type": "noul",
+   "correct": true,
+   "confidence": 0.45999999999999996,
+   "err_abs": null,
+   "pmax": 0.73,
+   "answer": {
+    "type": "noul",
+    "noul": 0.73
+   },
+   "label": true,
+   "latency": 0.994459867477417
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "o05",
+   "qid": "action",
+   "domain": "ops",
+   "type": "choice",
+   "correct": true,
+   "confidence": 1.0,
+   "err_abs": null,
+   "pmax": 1.0,
+   "answer": {
+    "type": "choice",
+    "choice": "ask_human",
+    "confidence": 1.0,
+    "probabilities": {
+     "run_now": 0.0,
+     "ask_human": 1.0,
+     "refuse": 0.0
+    }
+   },
+   "label": "ask_human",
+   "latency": 0.994459867477417
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "o05",
+   "qid": "risk",
+   "domain": "ops",
+   "type": "score",
+   "correct": false,
+   "confidence": 0.94,
+   "err_abs": 0.95,
+   "pmax": 0.96,
+   "answer": {
+    "type": "score",
+    "score": 1.95,
+    "confidence": 0.94,
+    "legend": {
+     "0": "只读或可安全重建",
+     "1": "可能影响服务或误删部分真实数据",
+     "2": "不可逆丢数据或危及安全"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.04,
+     "2": 0.96
+    }
+   },
+   "label": 1,
+   "latency": 0.994459867477417
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "o04",
+   "qid": "destructive",
+   "domain": "ops",
+   "type": "noul",
+   "correct": true,
+   "confidence": 0.6399999999999999,
+   "err_abs": null,
+   "pmax": 0.82,
+   "answer": {
+    "type": "noul",
+    "noul": 0.82
+   },
+   "label": true,
+   "latency": 1.0456104278564453
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "o04",
+   "qid": "action",
+   "domain": "ops",
+   "type": "choice",
+   "correct": true,
+   "confidence": 0.3,
+   "err_abs": null,
+   "pmax": 0.53,
+   "answer": {
+    "type": "choice",
+    "choice": "ask_human",
+    "confidence": 0.3,
+    "probabilities": {
+     "run_now": 0.0,
+     "ask_human": 0.53,
+     "refuse": 0.47
+    }
+   },
+   "label": "ask_human",
+   "latency": 1.0456104278564453
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "o04",
+   "qid": "risk",
+   "domain": "ops",
+   "type": "score",
+   "correct": false,
+   "confidence": 0.38,
+   "err_abs": 0.5800000000000001,
+   "pmax": 0.59,
+   "answer": {
+    "type": "score",
+    "score": 1.58,
+    "confidence": 0.38,
+    "legend": {
+     "0": "只读或可安全重建",
+     "1": "可能影响服务或误删部分真实数据",
+     "2": "不可逆丢数据或危及安全"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.41,
+     "2": 0.59
+    }
+   },
+   "label": 1,
+   "latency": 1.0456104278564453
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "o06",
+   "qid": "destructive",
+   "domain": "ops",
+   "type": "noul",
+   "correct": true,
+   "confidence": 0.98,
+   "err_abs": null,
+   "pmax": 0.01,
+   "answer": {
+    "type": "noul",
+    "noul": 0.01
+   },
+   "label": false,
+   "latency": 1.0025649070739746
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "o06",
+   "qid": "action",
+   "domain": "ops",
+   "type": "choice",
+   "correct": true,
+   "confidence": 1.0,
+   "err_abs": null,
+   "pmax": 1.0,
+   "answer": {
+    "type": "choice",
+    "choice": "run_now",
+    "confidence": 1.0,
+    "probabilities": {
+     "run_now": 1.0,
+     "ask_human": 0.0,
+     "refuse": 0.0
+    }
+   },
+   "label": "run_now",
+   "latency": 1.0025649070739746
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "o06",
+   "qid": "risk",
+   "domain": "ops",
+   "type": "score",
+   "correct": true,
+   "confidence": 1.0,
+   "err_abs": 0.0,
+   "pmax": 1.0,
+   "answer": {
+    "type": "score",
+    "score": 0.0,
+    "confidence": 1.0,
+    "legend": {
+     "0": "只读或可安全重建",
+     "1": "可能影响服务或误删部分真实数据",
+     "2": "不可逆丢数据或危及安全"
+    },
+    "probabilities": {
+     "0": 1.0,
+     "1": 0.0,
+     "2": 0.0
+    }
+   },
+   "label": 0,
+   "latency": 1.0025649070739746
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "o07",
+   "qid": "destructive",
+   "domain": "ops",
+   "type": "noul",
+   "correct": true,
+   "confidence": 0.9199999999999999,
+   "err_abs": null,
+   "pmax": 0.96,
+   "answer": {
+    "type": "noul",
+    "noul": 0.96
+   },
+   "label": true,
+   "latency": 1.0411384105682373
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "o07",
+   "qid": "action",
+   "domain": "ops",
+   "type": "choice",
+   "correct": true,
+   "confidence": 0.48,
+   "err_abs": null,
+   "pmax": 0.65,
+   "answer": {
+    "type": "choice",
+    "choice": "refuse",
+    "confidence": 0.48,
+    "probabilities": {
+     "run_now": 0.0,
+     "ask_human": 0.35,
+     "refuse": 0.65
+    }
+   },
+   "label": "refuse",
+   "latency": 1.0411384105682373
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "o07",
+   "qid": "risk",
+   "domain": "ops",
+   "type": "score",
+   "correct": true,
+   "confidence": 1.0,
+   "err_abs": 0.0,
+   "pmax": 1.0,
+   "answer": {
+    "type": "score",
+    "score": 2.0,
+    "confidence": 1.0,
+    "legend": {
+     "0": "只读或可安全重建",
+     "1": "可能影响服务或误删部分真实数据",
+     "2": "不可逆丢数据或危及安全"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.0,
+     "2": 1.0
+    }
+   },
+   "label": 2,
+   "latency": 1.0411384105682373
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "o08",
+   "qid": "destructive",
+   "domain": "ops",
+   "type": "noul",
+   "correct": true,
+   "confidence": 0.8799999999999999,
+   "err_abs": null,
+   "pmax": 0.94,
+   "answer": {
+    "type": "noul",
+    "noul": 0.94
+   },
+   "label": true,
+   "latency": 1.021782398223877
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "o08",
+   "qid": "action",
+   "domain": "ops",
+   "type": "choice",
+   "correct": true,
+   "confidence": 0.98,
+   "err_abs": null,
+   "pmax": 0.99,
+   "answer": {
+    "type": "choice",
+    "choice": "ask_human",
+    "confidence": 0.98,
+    "probabilities": {
+     "run_now": 0.0,
+     "ask_human": 0.99,
+     "refuse": 0.01
+    }
+   },
+   "label": "ask_human",
+   "latency": 1.021782398223877
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "o08",
+   "qid": "risk",
+   "domain": "ops",
+   "type": "score",
+   "correct": false,
+   "confidence": 0.91,
+   "err_abs": 0.9299999999999999,
+   "pmax": 0.94,
+   "answer": {
+    "type": "score",
+    "score": 1.93,
+    "confidence": 0.91,
+    "legend": {
+     "0": "只读或可安全重建",
+     "1": "可能影响服务或误删部分真实数据",
+     "2": "不可逆丢数据或危及安全"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.06,
+     "2": 0.94
+    }
+   },
+   "label": 1,
+   "latency": 1.021782398223877
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "o05",
+   "qid": "destructive",
+   "domain": "ops",
+   "type": "noul",
+   "correct": true,
+   "confidence": 0.3999999999999999,
+   "err_abs": null,
+   "pmax": 0.7,
+   "answer": {
+    "type": "noul",
+    "noul": 0.7
+   },
+   "label": true,
+   "latency": 0.9920830726623535
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "o05",
+   "qid": "action",
+   "domain": "ops",
+   "type": "choice",
+   "correct": true,
+   "confidence": 0.98,
+   "err_abs": null,
+   "pmax": 0.99,
+   "answer": {
+    "type": "choice",
+    "choice": "ask_human",
+    "confidence": 0.98,
+    "probabilities": {
+     "run_now": 0.01,
+     "ask_human": 0.99,
+     "refuse": 0.0
+    }
+   },
+   "label": "ask_human",
+   "latency": 0.9920830726623535
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "o05",
+   "qid": "risk",
+   "domain": "ops",
+   "type": "score",
+   "correct": false,
+   "confidence": 0.84,
+   "err_abs": 0.8899999999999999,
+   "pmax": 0.9,
+   "answer": {
+    "type": "score",
+    "score": 1.89,
+    "confidence": 0.84,
+    "legend": {
+     "0": "只读或可安全重建",
+     "1": "可能影响服务或误删部分真实数据",
+     "2": "不可逆丢数据或危及安全"
+    },
+    "probabilities": {
+     "0": 0.01,
+     "1": 0.09,
+     "2": 0.9
+    }
+   },
+   "label": 1,
+   "latency": 0.9920830726623535
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "o04",
+   "qid": "destructive",
+   "domain": "ops",
+   "type": "noul",
+   "correct": true,
+   "confidence": 0.78,
+   "err_abs": null,
+   "pmax": 0.89,
+   "answer": {
+    "type": "noul",
+    "noul": 0.89
+   },
+   "label": true,
+   "latency": 0.9779458045959473
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "o04",
+   "qid": "action",
+   "domain": "ops",
+   "type": "choice",
+   "correct": false,
+   "confidence": 0.35,
+   "err_abs": null,
+   "pmax": 0.57,
+   "answer": {
+    "type": "choice",
+    "choice": "refuse",
+    "confidence": 0.35,
+    "probabilities": {
+     "run_now": 0.0,
+     "ask_human": 0.43,
+     "refuse": 0.57
+    }
+   },
+   "label": "ask_human",
+   "latency": 0.9779458045959473
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "o04",
+   "qid": "risk",
+   "domain": "ops",
+   "type": "score",
+   "correct": false,
+   "confidence": 0.62,
+   "err_abs": 0.74,
+   "pmax": 0.75,
+   "answer": {
+    "type": "score",
+    "score": 1.74,
+    "confidence": 0.62,
+    "legend": {
+     "0": "只读或可安全重建",
+     "1": "可能影响服务或误删部分真实数据",
+     "2": "不可逆丢数据或危及安全"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.25,
+     "2": 0.75
+    }
+   },
+   "label": 1,
+   "latency": 0.9779458045959473
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "o06",
+   "qid": "destructive",
+   "domain": "ops",
+   "type": "noul",
+   "correct": true,
+   "confidence": 0.98,
+   "err_abs": null,
+   "pmax": 0.01,
+   "answer": {
+    "type": "noul",
+    "noul": 0.01
+   },
+   "label": false,
+   "latency": 1.012385368347168
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "o06",
+   "qid": "action",
+   "domain": "ops",
+   "type": "choice",
+   "correct": true,
+   "confidence": 1.0,
+   "err_abs": null,
+   "pmax": 1.0,
+   "answer": {
+    "type": "choice",
+    "choice": "run_now",
+    "confidence": 1.0,
+    "probabilities": {
+     "run_now": 1.0,
+     "ask_human": 0.0,
+     "refuse": 0.0
+    }
+   },
+   "label": "run_now",
+   "latency": 1.012385368347168
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "o06",
+   "qid": "risk",
+   "domain": "ops",
+   "type": "score",
+   "correct": true,
+   "confidence": 1.0,
+   "err_abs": 0.0,
+   "pmax": 1.0,
+   "answer": {
+    "type": "score",
+    "score": 0.0,
+    "confidence": 1.0,
+    "legend": {
+     "0": "只读或可安全重建",
+     "1": "可能影响服务或误删部分真实数据",
+     "2": "不可逆丢数据或危及安全"
+    },
+    "probabilities": {
+     "0": 1.0,
+     "1": 0.0,
+     "2": 0.0
+    }
+   },
+   "label": 0,
+   "latency": 1.012385368347168
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "o07",
+   "qid": "destructive",
+   "domain": "ops",
+   "type": "noul",
+   "correct": true,
+   "confidence": 0.94,
+   "err_abs": null,
+   "pmax": 0.97,
+   "answer": {
+    "type": "noul",
+    "noul": 0.97
+   },
+   "label": true,
+   "latency": 0.9996092319488525
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "o07",
+   "qid": "action",
+   "domain": "ops",
+   "type": "choice",
+   "correct": true,
+   "confidence": 0.68,
+   "err_abs": null,
+   "pmax": 0.79,
+   "answer": {
+    "type": "choice",
+    "choice": "refuse",
+    "confidence": 0.68,
+    "probabilities": {
+     "run_now": 0.0,
+     "ask_human": 0.21,
+     "refuse": 0.79
+    }
+   },
+   "label": "refuse",
+   "latency": 0.9996092319488525
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "o07",
+   "qid": "risk",
+   "domain": "ops",
+   "type": "score",
+   "correct": true,
+   "confidence": 1.0,
+   "err_abs": 0.010000000000000009,
+   "pmax": 1.0,
+   "answer": {
+    "type": "score",
+    "score": 1.99,
+    "confidence": 1.0,
+    "legend": {
+     "0": "只读或可安全重建",
+     "1": "可能影响服务或误删部分真实数据",
+     "2": "不可逆丢数据或危及安全"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.0,
+     "2": 1.0
+    }
+   },
+   "label": 2,
+   "latency": 0.9996092319488525
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "o08",
+   "qid": "destructive",
+   "domain": "ops",
+   "type": "noul",
+   "correct": true,
+   "confidence": 0.94,
+   "err_abs": null,
+   "pmax": 0.97,
+   "answer": {
+    "type": "noul",
+    "noul": 0.97
+   },
+   "label": true,
+   "latency": 1.1001622676849365
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "o08",
+   "qid": "action",
+   "domain": "ops",
+   "type": "choice",
+   "correct": true,
+   "confidence": 1.0,
+   "err_abs": null,
+   "pmax": 1.0,
+   "answer": {
+    "type": "choice",
+    "choice": "ask_human",
+    "confidence": 1.0,
+    "probabilities": {
+     "run_now": 0.0,
+     "ask_human": 1.0,
+     "refuse": 0.0
+    }
+   },
+   "label": "ask_human",
+   "latency": 1.1001622676849365
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "o08",
+   "qid": "risk",
+   "domain": "ops",
+   "type": "score",
+   "correct": false,
+   "confidence": 0.85,
+   "err_abs": 0.8899999999999999,
+   "pmax": 0.9,
+   "answer": {
+    "type": "score",
+    "score": 1.89,
+    "confidence": 0.85,
+    "legend": {
+     "0": "只读或可安全重建",
+     "1": "可能影响服务或误删部分真实数据",
+     "2": "不可逆丢数据或危及安全"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.1,
+     "2": 0.9
+    }
+   },
+   "label": 1,
+   "latency": 1.1001622676849365
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "o10",
+   "qid": "destructive",
+   "domain": "ops",
+   "type": "noul",
+   "correct": true,
+   "confidence": 0.98,
+   "err_abs": null,
+   "pmax": 0.01,
+   "answer": {
+    "type": "noul",
+    "noul": 0.01
+   },
+   "label": false,
+   "latency": 0.9919967651367188
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "o10",
+   "qid": "action",
+   "domain": "ops",
+   "type": "choice",
+   "correct": true,
+   "confidence": 1.0,
+   "err_abs": null,
+   "pmax": 1.0,
+   "answer": {
+    "type": "choice",
+    "choice": "run_now",
+    "confidence": 1.0,
+    "probabilities": {
+     "run_now": 1.0,
+     "ask_human": 0.0,
+     "refuse": 0.0
+    }
+   },
+   "label": "run_now",
+   "latency": 0.9919967651367188
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "o10",
+   "qid": "risk",
+   "domain": "ops",
+   "type": "score",
+   "correct": true,
+   "confidence": 1.0,
+   "err_abs": 0.0,
+   "pmax": 1.0,
+   "answer": {
+    "type": "score",
+    "score": 0.0,
+    "confidence": 1.0,
+    "legend": {
+     "0": "只读或可安全重建",
+     "1": "可能影响服务或误删部分真实数据",
+     "2": "不可逆丢数据或危及安全"
+    },
+    "probabilities": {
+     "0": 1.0,
+     "1": 0.0,
+     "2": 0.0
+    }
+   },
+   "label": 0,
+   "latency": 0.9919967651367188
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "o09",
+   "qid": "destructive",
+   "domain": "ops",
+   "type": "noul",
+   "correct": true,
+   "confidence": 0.84,
+   "err_abs": null,
+   "pmax": 0.08,
+   "answer": {
+    "type": "noul",
+    "noul": 0.08
+   },
+   "label": false,
+   "latency": 1.2657737731933594
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "o09",
+   "qid": "action",
+   "domain": "ops",
+   "type": "choice",
+   "correct": false,
+   "confidence": 0.77,
+   "err_abs": null,
+   "pmax": 0.85,
+   "answer": {
+    "type": "choice",
+    "choice": "ask_human",
+    "confidence": 0.77,
+    "probabilities": {
+     "run_now": 0.15,
+     "ask_human": 0.85,
+     "refuse": 0.0
+    }
+   },
+   "label": "run_now",
+   "latency": 1.2657737731933594
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "o09",
+   "qid": "risk",
+   "domain": "ops",
+   "type": "score",
+   "correct": false,
+   "confidence": 0.56,
+   "err_abs": 1.09,
+   "pmax": 0.71,
+   "answer": {
+    "type": "score",
+    "score": 1.09,
+    "confidence": 0.56,
+    "legend": {
+     "0": "只读或可安全重建",
+     "1": "可能影响服务或误删部分真实数据",
+     "2": "不可逆丢数据或危及安全"
+    },
+    "probabilities": {
+     "0": 0.1,
+     "1": 0.71,
+     "2": 0.19
+    }
+   },
+   "label": 0,
+   "latency": 1.2657737731933594
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "o11",
+   "qid": "destructive",
+   "domain": "ops",
+   "type": "noul",
+   "correct": true,
+   "confidence": 0.94,
+   "err_abs": null,
+   "pmax": 0.97,
+   "answer": {
+    "type": "noul",
+    "noul": 0.97
+   },
+   "label": true,
+   "latency": 1.0372886657714844
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "o11",
+   "qid": "action",
+   "domain": "ops",
+   "type": "choice",
+   "correct": true,
+   "confidence": 0.7,
+   "err_abs": null,
+   "pmax": 0.8,
+   "answer": {
+    "type": "choice",
+    "choice": "ask_human",
+    "confidence": 0.7,
+    "probabilities": {
+     "run_now": 0.0,
+     "ask_human": 0.8,
+     "refuse": 0.2
+    }
+   },
+   "label": "ask_human",
+   "latency": 1.0372886657714844
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "o11",
+   "qid": "risk",
+   "domain": "ops",
+   "type": "score",
+   "correct": false,
+   "confidence": 1.0,
+   "err_abs": 1.0,
+   "pmax": 1.0,
+   "answer": {
+    "type": "score",
+    "score": 2.0,
+    "confidence": 1.0,
+    "legend": {
+     "0": "只读或可安全重建",
+     "1": "可能影响服务或误删部分真实数据",
+     "2": "不可逆丢数据或危及安全"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.0,
+     "2": 1.0
+    }
+   },
+   "label": 1,
+   "latency": 1.0372886657714844
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "o12",
+   "qid": "destructive",
+   "domain": "ops",
+   "type": "noul",
+   "correct": true,
+   "confidence": 0.98,
+   "err_abs": null,
+   "pmax": 0.01,
+   "answer": {
+    "type": "noul",
+    "noul": 0.01
+   },
+   "label": false,
+   "latency": 1.1469519138336182
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "o12",
+   "qid": "action",
+   "domain": "ops",
+   "type": "choice",
+   "correct": true,
+   "confidence": 1.0,
+   "err_abs": null,
+   "pmax": 1.0,
+   "answer": {
+    "type": "choice",
+    "choice": "run_now",
+    "confidence": 1.0,
+    "probabilities": {
+     "run_now": 1.0,
+     "ask_human": 0.0,
+     "refuse": 0.0
+    }
+   },
+   "label": "run_now",
+   "latency": 1.1469519138336182
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "o12",
+   "qid": "risk",
+   "domain": "ops",
+   "type": "score",
+   "correct": true,
+   "confidence": 1.0,
+   "err_abs": 0.0,
+   "pmax": 1.0,
+   "answer": {
+    "type": "score",
+    "score": 0.0,
+    "confidence": 1.0,
+    "legend": {
+     "0": "只读或可安全重建",
+     "1": "可能影响服务或误删部分真实数据",
+     "2": "不可逆丢数据或危及安全"
+    },
+    "probabilities": {
+     "0": 1.0,
+     "1": 0.0,
+     "2": 0.0
+    }
+   },
+   "label": 0,
+   "latency": 1.1469519138336182
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "c01",
+   "qid": "regression",
+   "domain": "coding",
+   "type": "noul",
+   "correct": true,
+   "confidence": 0.5,
+   "err_abs": null,
+   "pmax": 0.75,
+   "answer": {
+    "type": "noul",
+    "noul": 0.75
+   },
+   "label": true,
+   "latency": 0.979102373123169
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "c01",
+   "qid": "needs_human",
+   "domain": "coding",
+   "type": "noul",
+   "correct": false,
+   "confidence": 0.48,
+   "err_abs": null,
+   "pmax": 0.74,
+   "answer": {
+    "type": "noul",
+    "noul": 0.74
+   },
+   "label": false,
+   "latency": 0.979102373123169
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "c01",
+   "qid": "risk",
+   "domain": "coding",
+   "type": "score",
+   "correct": true,
+   "confidence": 0.84,
+   "err_abs": 0.10000000000000009,
+   "pmax": 0.89,
+   "answer": {
+    "type": "score",
+    "score": 1.1,
+    "confidence": 0.84,
+    "legend": {
+     "0": "样式、文案、注释等无语义影响",
+     "1": "局部业务逻辑",
+     "2": "触及鉴权、支付、数据迁移或依赖大版本升级"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.89,
+     "2": 0.11
+    }
+   },
+   "label": 1,
+   "latency": 0.979102373123169
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "o10",
+   "qid": "destructive",
+   "domain": "ops",
+   "type": "noul",
+   "correct": true,
+   "confidence": 0.98,
+   "err_abs": null,
+   "pmax": 0.01,
+   "answer": {
+    "type": "noul",
+    "noul": 0.01
+   },
+   "label": false,
+   "latency": 1.0360803604125977
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "o10",
+   "qid": "action",
+   "domain": "ops",
+   "type": "choice",
+   "correct": true,
+   "confidence": 1.0,
+   "err_abs": null,
+   "pmax": 1.0,
+   "answer": {
+    "type": "choice",
+    "choice": "run_now",
+    "confidence": 1.0,
+    "probabilities": {
+     "run_now": 1.0,
+     "ask_human": 0.0,
+     "refuse": 0.0
+    }
+   },
+   "label": "run_now",
+   "latency": 1.0360803604125977
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "o10",
+   "qid": "risk",
+   "domain": "ops",
+   "type": "score",
+   "correct": true,
+   "confidence": 1.0,
+   "err_abs": 0.0,
+   "pmax": 1.0,
+   "answer": {
+    "type": "score",
+    "score": 0.0,
+    "confidence": 1.0,
+    "legend": {
+     "0": "只读或可安全重建",
+     "1": "可能影响服务或误删部分真实数据",
+     "2": "不可逆丢数据或危及安全"
+    },
+    "probabilities": {
+     "0": 1.0,
+     "1": 0.0,
+     "2": 0.0
+    }
+   },
+   "label": 0,
+   "latency": 1.0360803604125977
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "o11",
+   "qid": "destructive",
+   "domain": "ops",
+   "type": "noul",
+   "correct": true,
+   "confidence": 0.94,
+   "err_abs": null,
+   "pmax": 0.97,
+   "answer": {
+    "type": "noul",
+    "noul": 0.97
+   },
+   "label": true,
+   "latency": 0.9943323135375977
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "o11",
+   "qid": "action",
+   "domain": "ops",
+   "type": "choice",
+   "correct": true,
+   "confidence": 0.64,
+   "err_abs": null,
+   "pmax": 0.76,
+   "answer": {
+    "type": "choice",
+    "choice": "ask_human",
+    "confidence": 0.64,
+    "probabilities": {
+     "run_now": 0.0,
+     "ask_human": 0.76,
+     "refuse": 0.24
+    }
+   },
+   "label": "ask_human",
+   "latency": 0.9943323135375977
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "o11",
+   "qid": "risk",
+   "domain": "ops",
+   "type": "score",
+   "correct": false,
+   "confidence": 0.98,
+   "err_abs": 0.99,
+   "pmax": 0.99,
+   "answer": {
+    "type": "score",
+    "score": 1.99,
+    "confidence": 0.98,
+    "legend": {
+     "0": "只读或可安全重建",
+     "1": "可能影响服务或误删部分真实数据",
+     "2": "不可逆丢数据或危及安全"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.01,
+     "2": 0.99
+    }
+   },
+   "label": 1,
+   "latency": 0.9943323135375977
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "o09",
+   "qid": "destructive",
+   "domain": "ops",
+   "type": "noul",
+   "correct": true,
+   "confidence": 0.76,
+   "err_abs": null,
+   "pmax": 0.12,
+   "answer": {
+    "type": "noul",
+    "noul": 0.12
+   },
+   "label": false,
+   "latency": 1.0812997817993164
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "o09",
+   "qid": "action",
+   "domain": "ops",
+   "type": "choice",
+   "correct": false,
+   "confidence": 0.79,
+   "err_abs": null,
+   "pmax": 0.86,
+   "answer": {
+    "type": "choice",
+    "choice": "ask_human",
+    "confidence": 0.79,
+    "probabilities": {
+     "run_now": 0.14,
+     "ask_human": 0.86,
+     "refuse": 0.0
+    }
+   },
+   "label": "run_now",
+   "latency": 1.0812997817993164
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "o09",
+   "qid": "risk",
+   "domain": "ops",
+   "type": "score",
+   "correct": false,
+   "confidence": 0.6,
+   "err_abs": 1.17,
+   "pmax": 0.73,
+   "answer": {
+    "type": "score",
+    "score": 1.17,
+    "confidence": 0.6,
+    "legend": {
+     "0": "只读或可安全重建",
+     "1": "可能影响服务或误删部分真实数据",
+     "2": "不可逆丢数据或危及安全"
+    },
+    "probabilities": {
+     "0": 0.05,
+     "1": 0.73,
+     "2": 0.22
+    }
+   },
+   "label": 0,
+   "latency": 1.0812997817993164
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "o12",
+   "qid": "destructive",
+   "domain": "ops",
+   "type": "noul",
+   "correct": true,
+   "confidence": 0.98,
+   "err_abs": null,
+   "pmax": 0.01,
+   "answer": {
+    "type": "noul",
+    "noul": 0.01
+   },
+   "label": false,
+   "latency": 0.9345781803131104
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "o12",
+   "qid": "action",
+   "domain": "ops",
+   "type": "choice",
+   "correct": true,
+   "confidence": 1.0,
+   "err_abs": null,
+   "pmax": 1.0,
+   "answer": {
+    "type": "choice",
+    "choice": "run_now",
+    "confidence": 1.0,
+    "probabilities": {
+     "run_now": 1.0,
+     "ask_human": 0.0,
+     "refuse": 0.0
+    }
+   },
+   "label": "run_now",
+   "latency": 0.9345781803131104
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "o12",
+   "qid": "risk",
+   "domain": "ops",
+   "type": "score",
+   "correct": true,
+   "confidence": 1.0,
+   "err_abs": 0.0,
+   "pmax": 1.0,
+   "answer": {
+    "type": "score",
+    "score": 0.0,
+    "confidence": 1.0,
+    "legend": {
+     "0": "只读或可安全重建",
+     "1": "可能影响服务或误删部分真实数据",
+     "2": "不可逆丢数据或危及安全"
+    },
+    "probabilities": {
+     "0": 1.0,
+     "1": 0.0,
+     "2": 0.0
+    }
+   },
+   "label": 0,
+   "latency": 0.9345781803131104
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "c01",
+   "qid": "regression",
+   "domain": "coding",
+   "type": "noul",
+   "correct": true,
+   "confidence": 0.56,
+   "err_abs": null,
+   "pmax": 0.78,
+   "answer": {
+    "type": "noul",
+    "noul": 0.78
+   },
+   "label": true,
+   "latency": 0.9704387187957764
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "c01",
+   "qid": "needs_human",
+   "domain": "coding",
+   "type": "noul",
+   "correct": false,
+   "confidence": 0.52,
+   "err_abs": null,
+   "pmax": 0.76,
+   "answer": {
+    "type": "noul",
+    "noul": 0.76
+   },
+   "label": false,
+   "latency": 0.9704387187957764
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "c01",
+   "qid": "risk",
+   "domain": "coding",
+   "type": "score",
+   "correct": true,
+   "confidence": 0.79,
+   "err_abs": 0.1399999999999999,
+   "pmax": 0.86,
+   "answer": {
+    "type": "score",
+    "score": 1.14,
+    "confidence": 0.79,
+    "legend": {
+     "0": "样式、文案、注释等无语义影响",
+     "1": "局部业务逻辑",
+     "2": "触及鉴权、支付、数据迁移或依赖大版本升级"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.86,
+     "2": 0.14
+    }
+   },
+   "label": 1,
+   "latency": 0.9704387187957764
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "c02",
+   "qid": "regression",
+   "domain": "coding",
+   "type": "noul",
+   "correct": true,
+   "confidence": 0.78,
+   "err_abs": null,
+   "pmax": 0.11,
+   "answer": {
+    "type": "noul",
+    "noul": 0.11
+   },
+   "label": false,
+   "latency": 0.9469165802001953
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "c02",
+   "qid": "needs_human",
+   "domain": "coding",
+   "type": "noul",
+   "correct": true,
+   "confidence": 0.8,
+   "err_abs": null,
+   "pmax": 0.1,
+   "answer": {
+    "type": "noul",
+    "noul": 0.1
+   },
+   "label": false,
+   "latency": 0.9469165802001953
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "c02",
+   "qid": "risk",
+   "domain": "coding",
+   "type": "score",
+   "correct": true,
+   "confidence": 0.72,
+   "err_abs": 0.19,
+   "pmax": 0.81,
+   "answer": {
+    "type": "score",
+    "score": 0.19,
+    "confidence": 0.72,
+    "legend": {
+     "0": "样式、文案、注释等无语义影响",
+     "1": "局部业务逻辑",
+     "2": "触及鉴权、支付、数据迁移或依赖大版本升级"
+    },
+    "probabilities": {
+     "0": 0.81,
+     "1": 0.19,
+     "2": 0.0
+    }
+   },
+   "label": 0,
+   "latency": 0.9469165802001953
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "c03",
+   "qid": "needs_human",
+   "domain": "coding",
+   "type": "noul",
+   "correct": true,
+   "confidence": 0.9,
+   "err_abs": null,
+   "pmax": 0.05,
+   "answer": {
+    "type": "noul",
+    "noul": 0.05
+   },
+   "label": false,
+   "latency": 1.0228209495544434
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "c03",
+   "qid": "risk",
+   "domain": "coding",
+   "type": "score",
+   "correct": true,
+   "confidence": 1.0,
+   "err_abs": 0.0,
+   "pmax": 1.0,
+   "answer": {
+    "type": "score",
+    "score": 0.0,
+    "confidence": 1.0,
+    "legend": {
+     "0": "样式、文案、注释等无语义影响",
+     "1": "局部业务逻辑",
+     "2": "触及鉴权、支付、数据迁移或依赖大版本升级"
+    },
+    "probabilities": {
+     "0": 1.0,
+     "1": 0.0,
+     "2": 0.0
+    }
+   },
+   "label": 0,
+   "latency": 1.0228209495544434
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "c04",
+   "qid": "needs_human",
+   "domain": "coding",
+   "type": "noul",
+   "correct": true,
+   "confidence": 0.8999999999999999,
+   "err_abs": null,
+   "pmax": 0.95,
+   "answer": {
+    "type": "noul",
+    "noul": 0.95
+   },
+   "label": true,
+   "latency": 1.046534538269043
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "c04",
+   "qid": "risk",
+   "domain": "coding",
+   "type": "score",
+   "correct": true,
+   "confidence": 1.0,
+   "err_abs": 0.0,
+   "pmax": 1.0,
+   "answer": {
+    "type": "score",
+    "score": 2.0,
+    "confidence": 1.0,
+    "legend": {
+     "0": "样式、文案、注释等无语义影响",
+     "1": "局部业务逻辑",
+     "2": "触及鉴权、支付、数据迁移或依赖大版本升级"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.0,
+     "2": 1.0
+    }
+   },
+   "label": 2,
+   "latency": 1.046534538269043
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "c05",
+   "qid": "needs_human",
+   "domain": "coding",
+   "type": "noul",
+   "correct": true,
+   "confidence": 0.8799999999999999,
+   "err_abs": null,
+   "pmax": 0.94,
+   "answer": {
+    "type": "noul",
+    "noul": 0.94
+   },
+   "label": true,
+   "latency": 0.9657788276672363
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "c05",
+   "qid": "risk",
+   "domain": "coding",
+   "type": "score",
+   "correct": true,
+   "confidence": 1.0,
+   "err_abs": 0.0,
+   "pmax": 1.0,
+   "answer": {
+    "type": "score",
+    "score": 2.0,
+    "confidence": 1.0,
+    "legend": {
+     "0": "样式、文案、注释等无语义影响",
+     "1": "局部业务逻辑",
+     "2": "触及鉴权、支付、数据迁移或依赖大版本升级"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.0,
+     "2": 1.0
+    }
+   },
+   "label": 2,
+   "latency": 0.9657788276672363
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "c06",
+   "qid": "needs_human",
+   "domain": "coding",
+   "type": "noul",
+   "correct": true,
+   "confidence": 0.88,
+   "err_abs": null,
+   "pmax": 0.06,
+   "answer": {
+    "type": "noul",
+    "noul": 0.06
+   },
+   "label": false,
+   "latency": 0.9691402912139893
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "c06",
+   "qid": "risk",
+   "domain": "coding",
+   "type": "score",
+   "correct": true,
+   "confidence": 1.0,
+   "err_abs": 0.0,
+   "pmax": 1.0,
+   "answer": {
+    "type": "score",
+    "score": 0.0,
+    "confidence": 1.0,
+    "legend": {
+     "0": "样式、文案、注释等无语义影响",
+     "1": "局部业务逻辑",
+     "2": "触及鉴权、支付、数据迁移或依赖大版本升级"
+    },
+    "probabilities": {
+     "0": 1.0,
+     "1": 0.0,
+     "2": 0.0
+    }
+   },
+   "label": 0,
+   "latency": 0.9691402912139893
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "c02",
+   "qid": "regression",
+   "domain": "coding",
+   "type": "noul",
+   "correct": true,
+   "confidence": 0.8,
+   "err_abs": null,
+   "pmax": 0.1,
+   "answer": {
+    "type": "noul",
+    "noul": 0.1
+   },
+   "label": false,
+   "latency": 1.0332565307617188
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "c02",
+   "qid": "needs_human",
+   "domain": "coding",
+   "type": "noul",
+   "correct": true,
+   "confidence": 0.8,
+   "err_abs": null,
+   "pmax": 0.1,
+   "answer": {
+    "type": "noul",
+    "noul": 0.1
+   },
+   "label": false,
+   "latency": 1.0332565307617188
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "c02",
+   "qid": "risk",
+   "domain": "coding",
+   "type": "score",
+   "correct": true,
+   "confidence": 0.82,
+   "err_abs": 0.13,
+   "pmax": 0.88,
+   "answer": {
+    "type": "score",
+    "score": 0.13,
+    "confidence": 0.82,
+    "legend": {
+     "0": "样式、文案、注释等无语义影响",
+     "1": "局部业务逻辑",
+     "2": "触及鉴权、支付、数据迁移或依赖大版本升级"
+    },
+    "probabilities": {
+     "0": 0.88,
+     "1": 0.12,
+     "2": 0.0
+    }
+   },
+   "label": 0,
+   "latency": 1.0332565307617188
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "c03",
+   "qid": "needs_human",
+   "domain": "coding",
+   "type": "noul",
+   "correct": true,
+   "confidence": 0.9,
+   "err_abs": null,
+   "pmax": 0.05,
+   "answer": {
+    "type": "noul",
+    "noul": 0.05
+   },
+   "label": false,
+   "latency": 0.9677777290344238
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "c03",
+   "qid": "risk",
+   "domain": "coding",
+   "type": "score",
+   "correct": true,
+   "confidence": 1.0,
+   "err_abs": 0.0,
+   "pmax": 1.0,
+   "answer": {
+    "type": "score",
+    "score": 0.0,
+    "confidence": 1.0,
+    "legend": {
+     "0": "样式、文案、注释等无语义影响",
+     "1": "局部业务逻辑",
+     "2": "触及鉴权、支付、数据迁移或依赖大版本升级"
+    },
+    "probabilities": {
+     "0": 1.0,
+     "1": 0.0,
+     "2": 0.0
+    }
+   },
+   "label": 0,
+   "latency": 0.9677777290344238
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "c04",
+   "qid": "needs_human",
+   "domain": "coding",
+   "type": "noul",
+   "correct": true,
+   "confidence": 0.8999999999999999,
+   "err_abs": null,
+   "pmax": 0.95,
+   "answer": {
+    "type": "noul",
+    "noul": 0.95
+   },
+   "label": true,
+   "latency": 1.0366549491882324
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "c04",
+   "qid": "risk",
+   "domain": "coding",
+   "type": "score",
+   "correct": true,
+   "confidence": 1.0,
+   "err_abs": 0.0,
+   "pmax": 1.0,
+   "answer": {
+    "type": "score",
+    "score": 2.0,
+    "confidence": 1.0,
+    "legend": {
+     "0": "样式、文案、注释等无语义影响",
+     "1": "局部业务逻辑",
+     "2": "触及鉴权、支付、数据迁移或依赖大版本升级"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.0,
+     "2": 1.0
+    }
+   },
+   "label": 2,
+   "latency": 1.0366549491882324
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "c05",
+   "qid": "needs_human",
+   "domain": "coding",
+   "type": "noul",
+   "correct": true,
+   "confidence": 0.8799999999999999,
+   "err_abs": null,
+   "pmax": 0.94,
+   "answer": {
+    "type": "noul",
+    "noul": 0.94
+   },
+   "label": true,
+   "latency": 1.022871971130371
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "c05",
+   "qid": "risk",
+   "domain": "coding",
+   "type": "score",
+   "correct": true,
+   "confidence": 1.0,
+   "err_abs": 0.0,
+   "pmax": 1.0,
+   "answer": {
+    "type": "score",
+    "score": 2.0,
+    "confidence": 1.0,
+    "legend": {
+     "0": "样式、文案、注释等无语义影响",
+     "1": "局部业务逻辑",
+     "2": "触及鉴权、支付、数据迁移或依赖大版本升级"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.0,
+     "2": 1.0
+    }
+   },
+   "label": 2,
+   "latency": 1.022871971130371
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "c06",
+   "qid": "needs_human",
+   "domain": "coding",
+   "type": "noul",
+   "correct": true,
+   "confidence": 0.88,
+   "err_abs": null,
+   "pmax": 0.06,
+   "answer": {
+    "type": "noul",
+    "noul": 0.06
+   },
+   "label": false,
+   "latency": 0.9459574222564697
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "c06",
+   "qid": "risk",
+   "domain": "coding",
+   "type": "score",
+   "correct": true,
+   "confidence": 1.0,
+   "err_abs": 0.0,
+   "pmax": 1.0,
+   "answer": {
+    "type": "score",
+    "score": 0.0,
+    "confidence": 1.0,
+    "legend": {
+     "0": "样式、文案、注释等无语义影响",
+     "1": "局部业务逻辑",
+     "2": "触及鉴权、支付、数据迁移或依赖大版本升级"
+    },
+    "probabilities": {
+     "0": 1.0,
+     "1": 0.0,
+     "2": 0.0
+    }
+   },
+   "label": 0,
+   "latency": 0.9459574222564697
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "c07",
+   "qid": "needs_human",
+   "domain": "coding",
+   "type": "noul",
+   "correct": true,
+   "confidence": 0.8799999999999999,
+   "err_abs": null,
+   "pmax": 0.94,
+   "answer": {
+    "type": "noul",
+    "noul": 0.94
+   },
+   "label": true,
+   "latency": 0.9517190456390381
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "c07",
+   "qid": "risk",
+   "domain": "coding",
+   "type": "score",
+   "correct": true,
+   "confidence": 1.0,
+   "err_abs": 0.0,
+   "pmax": 1.0,
+   "answer": {
+    "type": "score",
+    "score": 2.0,
+    "confidence": 1.0,
+    "legend": {
+     "0": "样式、文案、注释等无语义影响",
+     "1": "局部业务逻辑",
+     "2": "触及鉴权、支付、数据迁移或依赖大版本升级"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.0,
+     "2": 1.0
+    }
+   },
+   "label": 2,
+   "latency": 0.9517190456390381
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "c08",
+   "qid": "needs_human",
+   "domain": "coding",
+   "type": "noul",
+   "correct": true,
+   "confidence": 0.88,
+   "err_abs": null,
+   "pmax": 0.06,
+   "answer": {
+    "type": "noul",
+    "noul": 0.06
+   },
+   "label": false,
+   "latency": 0.9319794178009033
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "c08",
+   "qid": "risk",
+   "domain": "coding",
+   "type": "score",
+   "correct": true,
+   "confidence": 1.0,
+   "err_abs": 0.0,
+   "pmax": 1.0,
+   "answer": {
+    "type": "score",
+    "score": 0.0,
+    "confidence": 1.0,
+    "legend": {
+     "0": "样式、文案、注释等无语义影响",
+     "1": "局部业务逻辑",
+     "2": "触及鉴权、支付、数据迁移或依赖大版本升级"
+    },
+    "probabilities": {
+     "0": 1.0,
+     "1": 0.0,
+     "2": 0.0
+    }
+   },
+   "label": 0,
+   "latency": 0.9319794178009033
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "t01",
+   "qid": "relevant",
+   "domain": "triage",
+   "type": "noul",
+   "correct": true,
+   "confidence": 0.6399999999999999,
+   "err_abs": null,
+   "pmax": 0.82,
+   "answer": {
+    "type": "noul",
+    "noul": 0.82
+   },
+   "label": true,
+   "latency": 0.9602763652801514
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "t01",
+   "qid": "source",
+   "domain": "triage",
+   "type": "choice",
+   "correct": true,
+   "confidence": 1.0,
+   "err_abs": null,
+   "pmax": 1.0,
+   "answer": {
+    "type": "choice",
+    "choice": "official",
+    "confidence": 1.0,
+    "probabilities": {
+     "official": 1.0,
+     "media": 0.0,
+     "forum": 0.0,
+     "marketing": 0.0
+    }
+   },
+   "label": "official",
+   "latency": 0.9602763652801514
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "t01",
+   "qid": "trust",
+   "domain": "triage",
+   "type": "score",
+   "correct": true,
+   "confidence": 1.0,
+   "err_abs": 0.0,
+   "pmax": 1.0,
+   "answer": {
+    "type": "score",
+    "score": 2.0,
+    "confidence": 1.0,
+    "legend": {
+     "0": "低（营销软文、未署名转载）",
+     "1": "中（社区实测或二手媒体）",
+     "2": "高（官方文档或一手来源）"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.0,
+     "2": 1.0
+    }
+   },
+   "label": 2,
+   "latency": 0.9602763652801514
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "t02",
+   "qid": "relevant",
+   "domain": "triage",
+   "type": "noul",
+   "correct": true,
+   "confidence": 0.96,
+   "err_abs": null,
+   "pmax": 0.02,
+   "answer": {
+    "type": "noul",
+    "noul": 0.02
+   },
+   "label": false,
+   "latency": 0.9800503253936768
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "t02",
+   "qid": "source",
+   "domain": "triage",
+   "type": "choice",
+   "correct": true,
+   "confidence": 1.0,
+   "err_abs": null,
+   "pmax": 1.0,
+   "answer": {
+    "type": "choice",
+    "choice": "marketing",
+    "confidence": 1.0,
+    "probabilities": {
+     "official": 0.0,
+     "media": 0.0,
+     "forum": 0.0,
+     "marketing": 1.0
+    }
+   },
+   "label": "marketing",
+   "latency": 0.9800503253936768
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "t02",
+   "qid": "trust",
+   "domain": "triage",
+   "type": "score",
+   "correct": true,
+   "confidence": 1.0,
+   "err_abs": 0.0,
+   "pmax": 1.0,
+   "answer": {
+    "type": "score",
+    "score": 0.0,
+    "confidence": 1.0,
+    "legend": {
+     "0": "低（营销软文、未署名转载）",
+     "1": "中（社区实测或二手媒体）",
+     "2": "高（官方文档或一手来源）"
+    },
+    "probabilities": {
+     "0": 1.0,
+     "1": 0.0,
+     "2": 0.0
+    }
+   },
+   "label": 0,
+   "latency": 0.9800503253936768
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "t03",
+   "qid": "relevant",
+   "domain": "triage",
+   "type": "noul",
+   "correct": true,
+   "confidence": 0.41999999999999993,
+   "err_abs": null,
+   "pmax": 0.71,
+   "answer": {
+    "type": "noul",
+    "noul": 0.71
+   },
+   "label": true,
+   "latency": 1.010051965713501
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "t03",
+   "qid": "source",
+   "domain": "triage",
+   "type": "choice",
+   "correct": true,
+   "confidence": 1.0,
+   "err_abs": null,
+   "pmax": 1.0,
+   "answer": {
+    "type": "choice",
+    "choice": "forum",
+    "confidence": 1.0,
+    "probabilities": {
+     "official": 0.0,
+     "media": 0.0,
+     "forum": 1.0,
+     "marketing": 0.0
+    }
+   },
+   "label": "forum",
+   "latency": 1.010051965713501
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "t03",
+   "qid": "trust",
+   "domain": "triage",
+   "type": "score",
+   "correct": true,
+   "confidence": 1.0,
+   "err_abs": 0.0,
+   "pmax": 1.0,
+   "answer": {
+    "type": "score",
+    "score": 1.0,
+    "confidence": 1.0,
+    "legend": {
+     "0": "低（营销软文、未署名转载）",
+     "1": "中（社区实测或二手媒体）",
+     "2": "高（官方文档或一手来源）"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 1.0,
+     "2": 0.0
+    }
+   },
+   "label": 1,
+   "latency": 1.010051965713501
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "c07",
+   "qid": "needs_human",
+   "domain": "coding",
+   "type": "noul",
+   "correct": true,
+   "confidence": 0.8799999999999999,
+   "err_abs": null,
+   "pmax": 0.94,
+   "answer": {
+    "type": "noul",
+    "noul": 0.94
+   },
+   "label": true,
+   "latency": 0.9832220077514648
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "c07",
+   "qid": "risk",
+   "domain": "coding",
+   "type": "score",
+   "correct": true,
+   "confidence": 1.0,
+   "err_abs": 0.0,
+   "pmax": 1.0,
+   "answer": {
+    "type": "score",
+    "score": 2.0,
+    "confidence": 1.0,
+    "legend": {
+     "0": "样式、文案、注释等无语义影响",
+     "1": "局部业务逻辑",
+     "2": "触及鉴权、支付、数据迁移或依赖大版本升级"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.0,
+     "2": 1.0
+    }
+   },
+   "label": 2,
+   "latency": 0.9832220077514648
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "c08",
+   "qid": "needs_human",
+   "domain": "coding",
+   "type": "noul",
+   "correct": true,
+   "confidence": 0.88,
+   "err_abs": null,
+   "pmax": 0.06,
+   "answer": {
+    "type": "noul",
+    "noul": 0.06
+   },
+   "label": false,
+   "latency": 0.9471292495727539
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "c08",
+   "qid": "risk",
+   "domain": "coding",
+   "type": "score",
+   "correct": true,
+   "confidence": 1.0,
+   "err_abs": 0.0,
+   "pmax": 1.0,
+   "answer": {
+    "type": "score",
+    "score": 0.0,
+    "confidence": 1.0,
+    "legend": {
+     "0": "样式、文案、注释等无语义影响",
+     "1": "局部业务逻辑",
+     "2": "触及鉴权、支付、数据迁移或依赖大版本升级"
+    },
+    "probabilities": {
+     "0": 1.0,
+     "1": 0.0,
+     "2": 0.0
+    }
+   },
+   "label": 0,
+   "latency": 0.9471292495727539
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "t01",
+   "qid": "relevant",
+   "domain": "triage",
+   "type": "noul",
+   "correct": true,
+   "confidence": 0.3799999999999999,
+   "err_abs": null,
+   "pmax": 0.69,
+   "answer": {
+    "type": "noul",
+    "noul": 0.69
+   },
+   "label": true,
+   "latency": 1.005122423171997
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "t01",
+   "qid": "source",
+   "domain": "triage",
+   "type": "choice",
+   "correct": true,
+   "confidence": 1.0,
+   "err_abs": null,
+   "pmax": 1.0,
+   "answer": {
+    "type": "choice",
+    "choice": "official",
+    "confidence": 1.0,
+    "probabilities": {
+     "official": 1.0,
+     "media": 0.0,
+     "forum": 0.0,
+     "marketing": 0.0
+    }
+   },
+   "label": "official",
+   "latency": 1.005122423171997
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "t01",
+   "qid": "trust",
+   "domain": "triage",
+   "type": "score",
+   "correct": true,
+   "confidence": 1.0,
+   "err_abs": 0.010000000000000009,
+   "pmax": 1.0,
+   "answer": {
+    "type": "score",
+    "score": 1.99,
+    "confidence": 1.0,
+    "legend": {
+     "0": "低（营销软文、未署名转载）",
+     "1": "中（社区实测或二手媒体）",
+     "2": "高（官方文档或一手来源）"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.0,
+     "2": 1.0
+    }
+   },
+   "label": 2,
+   "latency": 1.005122423171997
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "t02",
+   "qid": "relevant",
+   "domain": "triage",
+   "type": "noul",
+   "correct": true,
+   "confidence": 0.98,
+   "err_abs": null,
+   "pmax": 0.01,
+   "answer": {
+    "type": "noul",
+    "noul": 0.01
+   },
+   "label": false,
+   "latency": 1.0576932430267334
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "t02",
+   "qid": "source",
+   "domain": "triage",
+   "type": "choice",
+   "correct": true,
+   "confidence": 1.0,
+   "err_abs": null,
+   "pmax": 1.0,
+   "answer": {
+    "type": "choice",
+    "choice": "marketing",
+    "confidence": 1.0,
+    "probabilities": {
+     "official": 0.0,
+     "media": 0.0,
+     "forum": 0.0,
+     "marketing": 1.0
+    }
+   },
+   "label": "marketing",
+   "latency": 1.0576932430267334
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "t02",
+   "qid": "trust",
+   "domain": "triage",
+   "type": "score",
+   "correct": true,
+   "confidence": 1.0,
+   "err_abs": 0.0,
+   "pmax": 1.0,
+   "answer": {
+    "type": "score",
+    "score": 0.0,
+    "confidence": 1.0,
+    "legend": {
+     "0": "低（营销软文、未署名转载）",
+     "1": "中（社区实测或二手媒体）",
+     "2": "高（官方文档或一手来源）"
+    },
+    "probabilities": {
+     "0": 1.0,
+     "1": 0.0,
+     "2": 0.0
+    }
+   },
+   "label": 0,
+   "latency": 1.0576932430267334
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "t03",
+   "qid": "relevant",
+   "domain": "triage",
+   "type": "noul",
+   "correct": true,
+   "confidence": 0.24,
+   "err_abs": null,
+   "pmax": 0.62,
+   "answer": {
+    "type": "noul",
+    "noul": 0.62
+   },
+   "label": true,
+   "latency": 1.0369410514831543
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "t03",
+   "qid": "source",
+   "domain": "triage",
+   "type": "choice",
+   "correct": true,
+   "confidence": 1.0,
+   "err_abs": null,
+   "pmax": 1.0,
+   "answer": {
+    "type": "choice",
+    "choice": "forum",
+    "confidence": 1.0,
+    "probabilities": {
+     "official": 0.0,
+     "media": 0.0,
+     "forum": 1.0,
+     "marketing": 0.0
+    }
+   },
+   "label": "forum",
+   "latency": 1.0369410514831543
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "t03",
+   "qid": "trust",
+   "domain": "triage",
+   "type": "score",
+   "correct": true,
+   "confidence": 1.0,
+   "err_abs": 0.0,
+   "pmax": 1.0,
+   "answer": {
+    "type": "score",
+    "score": 1.0,
+    "confidence": 1.0,
+    "legend": {
+     "0": "低（营销软文、未署名转载）",
+     "1": "中（社区实测或二手媒体）",
+     "2": "高（官方文档或一手来源）"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 1.0,
+     "2": 0.0
+    }
+   },
+   "label": 1,
+   "latency": 1.0369410514831543
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "t05",
+   "qid": "relevant",
+   "domain": "triage",
+   "type": "noul",
+   "correct": true,
+   "confidence": 0.24,
+   "err_abs": null,
+   "pmax": 0.62,
+   "answer": {
+    "type": "noul",
+    "noul": 0.62
+   },
+   "label": true,
+   "latency": 1.009415864944458
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "t05",
+   "qid": "source",
+   "domain": "triage",
+   "type": "choice",
+   "correct": true,
+   "confidence": 0.99,
+   "err_abs": null,
+   "pmax": 0.99,
+   "answer": {
+    "type": "choice",
+    "choice": "official",
+    "confidence": 0.99,
+    "probabilities": {
+     "official": 0.99,
+     "media": 0.0,
+     "forum": 0.0,
+     "marketing": 0.01
+    }
+   },
+   "label": "official",
+   "latency": 1.009415864944458
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "t05",
+   "qid": "trust",
+   "domain": "triage",
+   "type": "score",
+   "correct": true,
+   "confidence": 0.79,
+   "err_abs": 0.1399999999999999,
+   "pmax": 0.93,
+   "answer": {
+    "type": "score",
+    "score": 1.86,
+    "confidence": 0.79,
+    "legend": {
+     "0": "低（营销软文、未署名转载）",
+     "1": "中（社区实测或二手媒体）",
+     "2": "高（官方文档或一手来源）"
+    },
+    "probabilities": {
+     "0": 0.07,
+     "1": 0.0,
+     "2": 0.93
+    }
+   },
+   "label": 2,
+   "latency": 1.009415864944458
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "t04",
+   "qid": "relevant",
+   "domain": "triage",
+   "type": "noul",
+   "correct": true,
+   "confidence": 0.06000000000000005,
+   "err_abs": null,
+   "pmax": 0.53,
+   "answer": {
+    "type": "noul",
+    "noul": 0.53
+   },
+   "label": true,
+   "latency": 1.2462108135223389
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "t04",
+   "qid": "source",
+   "domain": "triage",
+   "type": "choice",
+   "correct": true,
+   "confidence": 1.0,
+   "err_abs": null,
+   "pmax": 1.0,
+   "answer": {
+    "type": "choice",
+    "choice": "official",
+    "confidence": 1.0,
+    "probabilities": {
+     "official": 1.0,
+     "media": 0.0,
+     "forum": 0.0,
+     "marketing": 0.0
+    }
+   },
+   "label": "official",
+   "latency": 1.2462108135223389
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "t04",
+   "qid": "trust",
+   "domain": "triage",
+   "type": "score",
+   "correct": true,
+   "confidence": 1.0,
+   "err_abs": 0.0,
+   "pmax": 1.0,
+   "answer": {
+    "type": "score",
+    "score": 2.0,
+    "confidence": 1.0,
+    "legend": {
+     "0": "低（营销软文、未署名转载）",
+     "1": "中（社区实测或二手媒体）",
+     "2": "高（官方文档或一手来源）"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.0,
+     "2": 1.0
+    }
+   },
+   "label": 2,
+   "latency": 1.2462108135223389
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "t06",
+   "qid": "relevant",
+   "domain": "triage",
+   "type": "noul",
+   "correct": false,
+   "confidence": 0.7,
+   "err_abs": null,
+   "pmax": 0.15,
+   "answer": {
+    "type": "noul",
+    "noul": 0.15
+   },
+   "label": true,
+   "latency": 1.0442485809326172
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "t06",
+   "qid": "source",
+   "domain": "triage",
+   "type": "choice",
+   "correct": true,
+   "confidence": 1.0,
+   "err_abs": null,
+   "pmax": 1.0,
+   "answer": {
+    "type": "choice",
+    "choice": "media",
+    "confidence": 1.0,
+    "probabilities": {
+     "official": 0.0,
+     "media": 1.0,
+     "forum": 0.0,
+     "marketing": 0.0
+    }
+   },
+   "label": "media",
+   "latency": 1.0442485809326172
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "t06",
+   "qid": "trust",
+   "domain": "triage",
+   "type": "score",
+   "correct": true,
+   "confidence": 0.91,
+   "err_abs": 0.020000000000000018,
+   "pmax": 0.94,
+   "answer": {
+    "type": "score",
+    "score": 0.98,
+    "confidence": 0.91,
+    "legend": {
+     "0": "低（营销软文、未署名转载）",
+     "1": "中（社区实测或二手媒体）",
+     "2": "高（官方文档或一手来源）"
+    },
+    "probabilities": {
+     "0": 0.04,
+     "1": 0.94,
+     "2": 0.02
+    }
+   },
+   "label": 1,
+   "latency": 1.0442485809326172
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "t07",
+   "qid": "relevant",
+   "domain": "triage",
+   "type": "noul",
+   "correct": true,
+   "confidence": 0.96,
+   "err_abs": null,
+   "pmax": 0.02,
+   "answer": {
+    "type": "noul",
+    "noul": 0.02
+   },
+   "label": false,
+   "latency": 0.9590809345245361
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "t07",
+   "qid": "source",
+   "domain": "triage",
+   "type": "choice",
+   "correct": true,
+   "confidence": 0.99,
+   "err_abs": null,
+   "pmax": 0.99,
+   "answer": {
+    "type": "choice",
+    "choice": "media",
+    "confidence": 0.99,
+    "probabilities": {
+     "official": 0.0,
+     "media": 0.99,
+     "forum": 0.01,
+     "marketing": 0.0
+    }
+   },
+   "label": "media",
+   "latency": 0.9590809345245361
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "t07",
+   "qid": "trust",
+   "domain": "triage",
+   "type": "score",
+   "correct": true,
+   "confidence": 1.0,
+   "err_abs": 0.0,
+   "pmax": 1.0,
+   "answer": {
+    "type": "score",
+    "score": 0.0,
+    "confidence": 1.0,
+    "legend": {
+     "0": "低（营销软文、未署名转载）",
+     "1": "中（社区实测或二手媒体）",
+     "2": "高（官方文档或一手来源）"
+    },
+    "probabilities": {
+     "0": 1.0,
+     "1": 0.0,
+     "2": 0.0
+    }
+   },
+   "label": 0,
+   "latency": 0.9590809345245361
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "t08",
+   "qid": "relevant",
+   "domain": "triage",
+   "type": "noul",
+   "correct": true,
+   "confidence": 0.8999999999999999,
+   "err_abs": null,
+   "pmax": 0.95,
+   "answer": {
+    "type": "noul",
+    "noul": 0.95
+   },
+   "label": true,
+   "latency": 0.9859874248504639
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "t08",
+   "qid": "source",
+   "domain": "triage",
+   "type": "choice",
+   "correct": true,
+   "confidence": 1.0,
+   "err_abs": null,
+   "pmax": 1.0,
+   "answer": {
+    "type": "choice",
+    "choice": "official",
+    "confidence": 1.0,
+    "probabilities": {
+     "official": 1.0,
+     "media": 0.0,
+     "forum": 0.0,
+     "marketing": 0.0
+    }
+   },
+   "label": "official",
+   "latency": 0.9859874248504639
+  },
+  {
+   "model": "jev-1.13.0",
+   "case": "t08",
+   "qid": "trust",
+   "domain": "triage",
+   "type": "score",
+   "correct": true,
+   "confidence": 1.0,
+   "err_abs": 0.0,
+   "pmax": 1.0,
+   "answer": {
+    "type": "score",
+    "score": 2.0,
+    "confidence": 1.0,
+    "legend": {
+     "0": "低（营销软文、未署名转载）",
+     "1": "中（社区实测或二手媒体）",
+     "2": "高（官方文档或一手来源）"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.0,
+     "2": 1.0
+    }
+   },
+   "label": 2,
+   "latency": 0.9859874248504639
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "t05",
+   "qid": "relevant",
+   "domain": "triage",
+   "type": "noul",
+   "correct": true,
+   "confidence": 0.10000000000000009,
+   "err_abs": null,
+   "pmax": 0.55,
+   "answer": {
+    "type": "noul",
+    "noul": 0.55
+   },
+   "label": true,
+   "latency": 0.9526472091674805
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "t05",
+   "qid": "source",
+   "domain": "triage",
+   "type": "choice",
+   "correct": true,
+   "confidence": 0.96,
+   "err_abs": null,
+   "pmax": 0.97,
+   "answer": {
+    "type": "choice",
+    "choice": "official",
+    "confidence": 0.96,
+    "probabilities": {
+     "official": 0.97,
+     "media": 0.0,
+     "forum": 0.0,
+     "marketing": 0.03
+    }
+   },
+   "label": "official",
+   "latency": 0.9526472091674805
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "t05",
+   "qid": "trust",
+   "domain": "triage",
+   "type": "score",
+   "correct": true,
+   "confidence": 0.73,
+   "err_abs": 0.18999999999999995,
+   "pmax": 0.91,
+   "answer": {
+    "type": "score",
+    "score": 1.81,
+    "confidence": 0.73,
+    "legend": {
+     "0": "低（营销软文、未署名转载）",
+     "1": "中（社区实测或二手媒体）",
+     "2": "高（官方文档或一手来源）"
+    },
+    "probabilities": {
+     "0": 0.09,
+     "1": 0.0,
+     "2": 0.91
+    }
+   },
+   "label": 2,
+   "latency": 0.9526472091674805
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "t04",
+   "qid": "relevant",
+   "domain": "triage",
+   "type": "noul",
+   "correct": true,
+   "confidence": 0.17999999999999994,
+   "err_abs": null,
+   "pmax": 0.59,
+   "answer": {
+    "type": "noul",
+    "noul": 0.59
+   },
+   "label": true,
+   "latency": 0.9979674816131592
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "t04",
+   "qid": "source",
+   "domain": "triage",
+   "type": "choice",
+   "correct": true,
+   "confidence": 1.0,
+   "err_abs": null,
+   "pmax": 1.0,
+   "answer": {
+    "type": "choice",
+    "choice": "official",
+    "confidence": 1.0,
+    "probabilities": {
+     "official": 1.0,
+     "media": 0.0,
+     "forum": 0.0,
+     "marketing": 0.0
+    }
+   },
+   "label": "official",
+   "latency": 0.9979674816131592
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "t04",
+   "qid": "trust",
+   "domain": "triage",
+   "type": "score",
+   "correct": true,
+   "confidence": 1.0,
+   "err_abs": 0.0,
+   "pmax": 1.0,
+   "answer": {
+    "type": "score",
+    "score": 2.0,
+    "confidence": 1.0,
+    "legend": {
+     "0": "低（营销软文、未署名转载）",
+     "1": "中（社区实测或二手媒体）",
+     "2": "高（官方文档或一手来源）"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.0,
+     "2": 1.0
+    }
+   },
+   "label": 2,
+   "latency": 0.9979674816131592
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "t06",
+   "qid": "relevant",
+   "domain": "triage",
+   "type": "noul",
+   "correct": false,
+   "confidence": 0.72,
+   "err_abs": null,
+   "pmax": 0.14,
+   "answer": {
+    "type": "noul",
+    "noul": 0.14
+   },
+   "label": true,
+   "latency": 0.9822137355804443
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "t06",
+   "qid": "source",
+   "domain": "triage",
+   "type": "choice",
+   "correct": true,
+   "confidence": 1.0,
+   "err_abs": null,
+   "pmax": 1.0,
+   "answer": {
+    "type": "choice",
+    "choice": "media",
+    "confidence": 1.0,
+    "probabilities": {
+     "official": 0.0,
+     "media": 1.0,
+     "forum": 0.0,
+     "marketing": 0.0
+    }
+   },
+   "label": "media",
+   "latency": 0.9822137355804443
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "t06",
+   "qid": "trust",
+   "domain": "triage",
+   "type": "score",
+   "correct": true,
+   "confidence": 0.9,
+   "err_abs": 0.020000000000000018,
+   "pmax": 0.93,
+   "answer": {
+    "type": "score",
+    "score": 1.02,
+    "confidence": 0.9,
+    "legend": {
+     "0": "低（营销软文、未署名转载）",
+     "1": "中（社区实测或二手媒体）",
+     "2": "高（官方文档或一手来源）"
+    },
+    "probabilities": {
+     "0": 0.03,
+     "1": 0.93,
+     "2": 0.04
+    }
+   },
+   "label": 1,
+   "latency": 0.9822137355804443
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "t07",
+   "qid": "relevant",
+   "domain": "triage",
+   "type": "noul",
+   "correct": true,
+   "confidence": 0.96,
+   "err_abs": null,
+   "pmax": 0.02,
+   "answer": {
+    "type": "noul",
+    "noul": 0.02
+   },
+   "label": false,
+   "latency": 1.0375339984893799
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "t07",
+   "qid": "source",
+   "domain": "triage",
+   "type": "choice",
+   "correct": true,
+   "confidence": 0.93,
+   "err_abs": null,
+   "pmax": 0.95,
+   "answer": {
+    "type": "choice",
+    "choice": "media",
+    "confidence": 0.93,
+    "probabilities": {
+     "official": 0.0,
+     "media": 0.95,
+     "forum": 0.05,
+     "marketing": 0.0
+    }
+   },
+   "label": "media",
+   "latency": 1.0375339984893799
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "t07",
+   "qid": "trust",
+   "domain": "triage",
+   "type": "score",
+   "correct": true,
+   "confidence": 1.0,
+   "err_abs": 0.01,
+   "pmax": 1.0,
+   "answer": {
+    "type": "score",
+    "score": 0.01,
+    "confidence": 1.0,
+    "legend": {
+     "0": "低（营销软文、未署名转载）",
+     "1": "中（社区实测或二手媒体）",
+     "2": "高（官方文档或一手来源）"
+    },
+    "probabilities": {
+     "0": 1.0,
+     "1": 0.0,
+     "2": 0.0
+    }
+   },
+   "label": 0,
+   "latency": 1.0375339984893799
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "t08",
+   "qid": "relevant",
+   "domain": "triage",
+   "type": "noul",
+   "correct": true,
+   "confidence": 0.9199999999999999,
+   "err_abs": null,
+   "pmax": 0.96,
+   "answer": {
+    "type": "noul",
+    "noul": 0.96
+   },
+   "label": true,
+   "latency": 0.9656336307525635
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "t08",
+   "qid": "source",
+   "domain": "triage",
+   "type": "choice",
+   "correct": true,
+   "confidence": 1.0,
+   "err_abs": null,
+   "pmax": 1.0,
+   "answer": {
+    "type": "choice",
+    "choice": "official",
+    "confidence": 1.0,
+    "probabilities": {
+     "official": 1.0,
+     "media": 0.0,
+     "forum": 0.0,
+     "marketing": 0.0
+    }
+   },
+   "label": "official",
+   "latency": 0.9656336307525635
+  },
+  {
+   "model": "jev-1.14.0",
+   "case": "t08",
+   "qid": "trust",
+   "domain": "triage",
+   "type": "score",
+   "correct": true,
+   "confidence": 1.0,
+   "err_abs": 0.0,
+   "pmax": 1.0,
+   "answer": {
+    "type": "score",
+    "score": 2.0,
+    "confidence": 1.0,
+    "legend": {
+     "0": "低（营销软文、未署名转载）",
+     "1": "中（社区实测或二手媒体）",
+     "2": "高（官方文档或一手来源）"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.0,
+     "2": 1.0
+    }
+   },
+   "label": 2,
+   "latency": 0.9656336307525635
+  }
+ ]
+}

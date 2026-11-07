@@ -107,6 +107,8 @@ node bin/guard.mjs log --tail 1
 **Judging:** the command really is executed, the token file goes empty, and `guard.log` shows `source: token` and `overridden: <original action>`.
 Also verify the binding: change one character in the command → it is **still blocked**, and what is published is **a different** token.
 
+**Also check the shape of that line:** the command **stands on a line of its own** — it starts at `node` and ends at the line break — so pasting the whole line runs the command and does not feed the following sentence in as arguments; a multi-line command has already been collapsed to one line (otherwise the line break would sever the single-quoted argument). The token in `guard allow --list` must be **exactly** the one published in the reason; if it is not, the copy the human holds is not the command the AI is retrying.
+
 ### 10 · The authorisation entry point and the reason wording
 
 ```bash

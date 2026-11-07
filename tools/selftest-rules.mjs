@@ -115,6 +115,18 @@ const CASES = [
   ['net user', null, 'F 普通:查看本地账号'],
   ['reg query HKLM\\Software', null, 'F 普通:查询注册表'],
   ['Get-Help Clear-Content', null, 'F 普通:查帮助,不是执行'],
+
+  // ── G 组:字面量正文(2026-11-07,写文档时被自己的阀门拦下)─────────────────────
+  // 原形:把带 Markdown 反引号的表格放进 `@'…'@` 再 Add-Content,反引号被当成 bash 的命令替换位置,
+  // 表格里的 `mkfs.ext4 …` / `dd … of=/dev/sda` 就成了"命令",整条写入被 deny。
+  ["$doc = @'\n| o11 | `mkfs.ext4 -F /dev/sdb1` |\n'@", null, 'G 数据:PS here-string 里的 Markdown 反引号'],
+  ["$doc = @'\n| `o01` `dd … of=/dev/sda` |\n'@", null, 'G 数据:here-string 里的块设备写入字面量'],
+  ['$doc = @"\n$(mkfs.ext4 /dev/sdb1)\n"@', 'mkfs', 'G 真执行:双引号 here-string 里的 $( ) 会展开'],
+  ["cat <<'EOF' > doc.md\n| `o11` `mkfs.ext4 -F /dev/sdb1` |\nEOF", null, 'G 数据:heredoc 写文件,正文不执行'],
+  ["git commit -F - <<'EOF'\nfix: stop blocking `mkfs.ext4 /dev/sdb1` in docs\nEOF", null, 'G 数据:提交信息走 heredoc'],
+  ["cat <<'EOF' | bash\nrm -rf /\nEOF", 'rm-root', 'G 真执行:heredoc 喂给 shell(名单外不挖)'],
+  ["cat <<EOF > doc.md\n`mkfs.ext4 /dev/sdb1`\nEOF", 'mkfs', 'G 真执行:未加引号的分隔符会展开反引号 → 照常扫'],
+  ['echo "`mkfs.ext4 /dev/sdb1`"', 'mkfs', 'G 真执行:双引号里的反引号本来就是命令替换'],
 ]
 
 let failed = 0

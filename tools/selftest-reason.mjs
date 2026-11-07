@@ -18,6 +18,7 @@ import { isAbsolute, join } from 'node:path'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { setLang } from '../lib/i18n.js'
+import { canonicalize, commandToken } from '../lib/token.js'
 import { explain, reviseGuidance, shellName, shellQuote, toHostDecision } from '../lib/verdict.js'
 
 // 本文件的断言写的是**中文文案本身**(哪些句子必须出现 / 必须不出现),所以先把语言钉死 ——
@@ -64,14 +65,22 @@ const CMD = 'rm -rf /home/user/jev-guard-probe-dir'
 
 // 1) 授权行用的是绝对路径,且落在包内的 bin/guard.mjs
 const hint = explain(CMD, riskVerdict, { policy: 'never', token: 'ALLOW-0A2DB6157F' })
-const m = hint.match(/ node (\S+) allow ([\s\S]*?) —— 然后重试同一条命令/)
+const m = hint.match(/node (\S+) allow ([^\n]*)/)
 expect('理由里出现授权行', m !== null, hint)
 const cliPath = m?.[1] ?? ''
 expect('授权行给出的是绝对路径', isAbsolute(cliPath), cliPath)
 expect('绝对路径指向包内的 bin/guard.mjs', cliPath === join(PKG_ROOT, 'bin', 'guard.mjs'), cliPath)
-expect('授权行以 node 开头(可直接粘贴)', / node \S+ allow /.test(hint))
+expect('授权行以 node 开头(可直接粘贴)', /^node \S+ allow /m.test(hint))
 expect('令牌原文出现在理由里', hint.includes('ALLOW-0A2DB6157F'))
 expect('用户被明确告知"AI 自己跑会被拒"', hint.includes('授权只在交互终端生效'))
+// 授权行必须**独占一行**:人(和替他贴代码块的 agent)点"复制"复制的是整行,行尾多半个
+// 说明句就会被当成参数。前后都必须断行,而不是只断在前面。
+expect('授权行独占一行(整行复制即为完整命令)',
+  /^node \S+ allow .*$/m.test(hint), hint)
+expect('授权行之后紧跟的是说明句而不是紧贴在同一行',
+  /\n然后重试同一条命令/.test(hint), hint)
+expect('授权行的下一行不是以 node 开头(没有把说明也并进去)',
+  !/\nnode \S+ allow [^\n]* —— /.test(hint), hint)
 
 // 2) 引号转义必须能原样解析回同一条命令(用户粘进 shell 的结果 = AI 重试的那条命令)
 //
@@ -89,7 +98,7 @@ if (POSIX_SHELL) {
 // 3) 命令里带单引号 / 双引号 / 中文时同样成立(shellQuote 的单引号转义)
 const tricky = 'rm -rf /home/user/jev-guard-probe-dir && echo "it\'s 探针,含单引号与中文"'
 const trickyHint = explain(tricky, riskVerdict, { policy: 'never', token: 'ALLOW-15537AF182' })
-const trickyQuoted = trickyHint.match(/ allow ([\s\S]*?) —— 然后重试同一条命令/)?.[1] ?? ''
+const trickyQuoted = trickyHint.match(/ allow ([^\n]*)/)?.[1] ?? ''
 if (POSIX_SHELL) {
   const trickyBack = execFileSync(POSIX_SHELL, ['-c', `printf %s ${trickyQuoted}`], { encoding: 'utf8' })
   expect('含引号/中文的命令也能原样解析回来', trickyBack === tricky, JSON.stringify(trickyBack))
@@ -101,7 +110,7 @@ if (POSIX_SHELL) {
 //    (理由末尾" 命令:<文本>"那一段允许截断到 300 字符,但授权行不行。)
 const longCmd = `rm -rf /home/user/jev-guard-probe-dir/${'sub-dir-'.repeat(50)}`
 const longHint = explain(longCmd, riskVerdict, { policy: 'never', token: 'ALLOW-DEADBEEF00' })
-const longQuoted = longHint.match(/ allow ([\s\S]*?) —— 然后重试同一条命令/)?.[1] ?? ''
+const longQuoted = longHint.match(/ allow ([^\n]*)/)?.[1] ?? ''
 expect('长命令的授权行未被截断', longQuoted.includes('sub-dir-'.repeat(50)) && longQuoted.length > 300, String(longQuoted.length))
 if (POSIX_SHELL) {
   const longBack = execFileSync(POSIX_SHELL, ['-c', `printf %s ${longQuoted}`], { encoding: 'utf8' })
@@ -109,6 +118,18 @@ if (POSIX_SHELL) {
 } else {
   expect('长命令的授权行长度与原文一致(不经 shell 直接比对)', longQuoted.length >= longCmd.length, `${longQuoted.length} vs ${longCmd.length}`)
 }
+
+// 4b) 授权行必须与令牌**同源**。令牌是对 `canonicalize(命令)` 求哈希的,所以授权行给出的
+//     也必须是折叠空白后的同一份文本 —— 否则用户照抄去授权,哈希出来的是另一个令牌,重试
+//     仍被拦,而两边看起来都"对"。2026-11-07 就错配过一次(给出的短了半句)。
+//     折叠顺带解决多行命令:换行塞进单引号参数会把引号断开。
+const messy = 'rm -rf   /home/user/jev-guard-probe-dir &&\n  echo  done'
+const messyHint = explain(messy, riskVerdict, { policy: 'never', token: commandToken(messy) })
+const messyQuoted = messyHint.match(/ allow ([^\n]*)/)?.[1] ?? ''
+expect('授权行给的是折叠空白后的文本(与令牌同源)',
+  messyQuoted === shellQuote(canonicalize(messy), process.platform), messyQuoted)
+expect('折叠后的授权行不含换行(多行命令不会把单引号断开)', !messyQuoted.includes('\n'))
+expect('提示里的令牌就是这条命令的令牌', messyHint.includes(commandToken(messy)), commandToken(messy))
 
 // 5) L0 硬规则:令牌越过不了硬地板,所以理由里**不该**出现授权行(免得用户白试)
 const l0Hint = explain('mkfs.ext4 /dev/sdb1', l0Verdict, { policy: 'never', token: 'ALLOW-0A2DB6157F' })

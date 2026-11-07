@@ -30,7 +30,7 @@ Once a human writes it into `~/.jev-guard/allow.txt`, the AI **retrying the same
 
 | Property | Meaning | Evidence |
 |---|---|---|
-| **Bound to the command's exact text** | change one character and it is a different token; rephrasing gets you no authorisation | a variant with a trailing slash was blocked, and what it gave out was a **different** token, `ALLOW-ADCD5EA86D` |
+| **Bound to the command's exact text** | whitespace is collapsed first, then the *whole* text is hashed; changing any non-whitespace character gives a different token, and rephrasing gets you no authorisation | a variant with a trailing slash was blocked, and what it gave out was a **different** token, `ALLOW-ADCD5EA86D` |
 | **One-shot** | deleted the moment it is used, impossible to replay | after the pass, `allow --list` is empty |
 | **Deterministic** | the same command always gets the same token | the same command appeared three times, and was always `ALLOW-5031AC2085` |
 | **Does not cross an L0 deny** | "never allowed" things like `dd` writing to a disk / formatting / dropping a database are **deliberately not given a token** | the authorisation line **does not appear** in the reason |
@@ -41,6 +41,8 @@ Once a human writes it into `~/.jev-guard/allow.txt`, the AI **retrying the same
 
 **That line in the reason is there for a human to copy-paste whole**: absolute path, the command's exact text **untruncated**, quotes already escaped
 (a regression test feeds it to `bash -c 'printf %s …'` and demands byte-for-byte restoration).
+
+It also **stands on a line of its own** — the sentence before it says "this one line is the whole of what has to be copied", the sentence after it starts on the next line — because the hand-off is usually a click-to-copy code block rather than a hand selection: one extra character and the explanation becomes shell arguments. The text on that line is the same `canonicalize()` output the token is computed from (whitespace collapsed, everything else verbatim), so a multi-line command arrives as one line and cannot break the quoting. That is not in tension with "bound to the exact text": the hash ignores whitespace by construction, and any non-whitespace edit still yields a different token.
 
 ---
 
