@@ -345,6 +345,8 @@ measurements/              Raw records behind docs/MEASUREMENTS.md (not in the n
 
 Two more deliberate omissions: judging **does not simulate filesystem state** (it will not reason "that file is empty anyway"), and it does not accept "this command is harmless" arguments that would require reading runtime state — that is precisely the crack accidents come in through.
 
+**False positives are recorded too, not tuned away.** Two from 2026-11-07, both kept: (a) an L0 rule fired on a *quoted argument* that happened to look like a command — `Select-String -Pattern 'npm notice|npm publish|…'` matched `publish-irreversible`, because the alternation puts a `|` in front of a verb; masking literal bodies cannot fix this one, the argument genuinely is live shell input, it simply is not a command; (b) the semantic layer rated deleting a scratch Markdown file in the workspace at `p=0.78` and blocked it. Both failures are loud, quote the rule or the probability, and cost one round trip — the only direction this tool is allowed to fail in. The reasoning and what is deliberately left uncovered are in **D22**.
+
 > Every document ships **in English by default, with a Chinese sibling** (`*.zh-CN.md`, linked from a language line at the top of each file). Every number in this README is reproducible from them.
 
 ## Documentation

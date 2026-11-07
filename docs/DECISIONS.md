@@ -744,6 +744,17 @@ suites and `guard selftest` (12/12) pass. **Not covered:** a body handed to a co
 scanned as command text; that is the intended behaviour, not an oversight — add the consumer only with a case that
 proves it cannot execute its input.
 
+**Two live false positives, 2026-11-07 — recorded, not tuned away.** (a) `Select-String -Pattern
+'npm notice|npm publish|…'` was blocked by `publish-irreversible`: `COMMAND_POSITION` accepts `|` as a command
+boundary, and the second branch of that alternation reads as `npm publish …`. Masking literal bodies does not reach
+it — the argument really is live shell input, it just is not a command — and exempting "a pipe inside a quoted
+argument" would cost the `a … | b` shape this rule class exists for. (b) The semantic layer blocked
+`Remove-Item <a scratch .md in the workspace>` at `p=0.78`, above the 0.7 block band, on a file whose whole content
+was release notes the same session had just written. Neither is a defect to be smoothed away: both block loudly, both
+name the rule or the probability, and each costs one round trip — while the failure in the other direction (a missed
+destructive command) is silent. They stay in the record so that a later change which "reduces noise" has to argue
+against a concrete cost rather than a feeling.
+
 ## D23 · The one-shot authorisation line is rendered from the **canonical** text and **stands on its own line** (2026-11-07)
 
 **The incident.** On 2026-11-07 the AI handed over an allow line for a short command, then retried a longer one (the
