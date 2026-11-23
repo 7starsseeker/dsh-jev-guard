@@ -5,6 +5,24 @@
 本项目遵循「按日期记录事实」的写法:每条都写清**改了什么、为什么、以及怎么验证的**。
 完整的设计取舍见 [`docs/DECISIONS.md`](./docs/DECISIONS.md),实测数据见 [`docs/MEASUREMENTS.md`](./docs/MEASUREMENTS.md)。
 
+## [0.6.0] — 2026-11-24
+
+**判定失败的行为按档位分叉了,而且"被拦"现在能告诉读者不带阀门该怎么继续。** 0.5.9 之前一律 fail-open,理由是宿主的沙箱与审批链仍站在工具体前面。这台机器上 3,513 次审计里有 3,481 次是 `never` + `danger-full-access`,而 `toHostDecision` 只在策略为 `ask` 时才把非 allow 判定转成人工确认 —— `never` 下语义判定本来就是终局,于是 fail-open 成了唯一一条能把"判不了"变成"照跑"的路径,身后既没有人也没有沙箱。现在适配器对瞬态失败(`timeout` / `network` / `server`)重试一次;仍失败且档位为 `never` 时,**非只读**命令改判拒绝,理由里点名 `guard status`。`ask` 下保持原来的 fail-open;降级类(`no-key`、`auth`、`quota`、`region`、`request`)与 `shape` / `unknown` 在任何档位都保持原行为。库层与 CLI 默认零重试,所以 `selftest-quota` 的超时断言没变;只有 DSH 适配器传 `retryTransient: 1`。D3 与 D9 是重写,不是悄悄改一句。
+
+**六条硬化规则从观察升为硬拒。** `hosts-overwrite`、`root-cert-import`、`firewall-off`、`eventlog-security-clear`、`defender-disable`、`uninstall-security-product` 现在 deny,L0 从 26 + 24 变成 **32 deny + 24 ask**。把这六条拿去回放审计日志里 3,537 条唯一命令(2026-11-10 → 2026-11-23),0 命中。每条硬拒都附一行 `guard explain <id>` 指引;硬拒不再生成一次性令牌 —— 令牌本来就跨不过 L0,印出来只会让人以为它能放行。
+
+**write/edit 不再是盲区。** `DEFAULT_TOOLS` 仍只对 `bash` / `pwsh` 跑命令判定,文件工具过去完全不经过阀门。现在四个根以 `source: path-rule` 拒绝:阀门自己的家目录(`~/.jev-guard`)、系统 hosts、`%SystemRoot%`、当前用户的启动文件夹 —— 这四个根也都有对应的 playbook。
+
+**`guard explain` 把"拒绝"变成"步骤"。** `lib/playbook.js` 的十条 playbook 逐条给出:拦的是什么、为什么拦、这条命令本来会改什么、风险、编号的手动步骤(Windows 优先,附 POSIX 差异)、回滚、更安全的替代。`guard explain <rule-id>` 按语言打印;`docs/BLOCKED-COMMANDS.md` / `.zh-CN.md` 是给完全没碰过终端的人写的同一份材料。手动通道是**故意绕过阀门**的 —— 文档明说这一点,也明说哪些步骤不可逆。
+
+**被拦的回合不再静默结束。** playbook 里标了不可逆的规则,立即向当前回合注入一条停手消息;可逆的拦截与路径拒绝先攒着,在 `agent/turn-stopping` 时汇总成一条,每条带 `explain` 路径。宿主没有注入缝时适配器返回 false,不抛错。
+
+**只读识别覆盖到 PowerShell 管道。** 预筛加入了格式化/选择类 cmdlet(`Format-*`、`Select-Object`、`Sort-Object`、`Measure-Object`、`Group-Object`、`Out-String`、`ConvertTo-Json` / `-Csv`、`Compare-Object`、`Get-Unique`)并加了花括号护栏 —— 脚本块与计算属性一律不算只读;`readOnlyChainReason()` 对 `;` / `&&` / `||` / `|` 链逐段证明。回放审计日志后,预筛命中从 **37 涨到 150**(3,717 条唯一命令)。`node -e` 在判定服务不可用时仍按设计拒绝 —— 文本上证明不了它只读。`tools/result` 结果行现在带折出的输出文本(掩码、400 字符),并用 `callId` 与判定行 join;`guard log --tail` 会把它们渲染出来,不再是 `?`。
+
+**验证。** 七份离线自检 30 / 34 / 113 / 60 / 17 / 91 / 20;`guard selftest` 12/12;适配器 smoke 24/24;`gate-cli --selftest` 30/30;探针 39/39(预筛)、52/52(真拦)、24/24(拦截后流程)、13/13(结果行)、14/14(路径影子)、12/12(fail-open)、8/8(升级守卫)。宿主重启后的真机: `certutil -addstore Root …` 被 `root-cert-import` 拒绝且 certutil 未执行;`write` 进 `~/.jev-guard` 被 `guard-home-write` 拒绝,文件不存在;回合末尾的提醒把两条都列了出来并附各自 `explain` 路径;一条 `Get-ChildItem | Select-Object | Format-Table` 管道被预筛放行,`ms: 0`,结果行与判定行同 `callId`。`check-doc-pairs` 通过。
+
+**观察期。** 0.6.0 是拿出去观察的,不是定稿策略。六条硬拒是字面量正则,背后只有 13 天单机历史与一次 0 命中回放;D24 记了重审条件 —— 同一条规则误伤两次,或观察到绕过 —— 触发就降回 `ask` 或收紧正则。和这里其他东西一样,它是事故网,不是安全边界(D1):真正能强制边界的仍然只有宿主沙箱。上面的真机证据是在重启之后取的;升级后不重启的安装会继续跑旧代码,直到宿主要求重启。
+
 ## [0.5.9] — 2026-11-07
 
 **一套拿"模型从没被问过的问题"去给它打分的标定集。** 114 题里 6 个 `ops/risk` 失败(标签 1 判成 1.58–2.00)曾被读成"Jev 不会做程度分档"。那是样本集缺陷:labels 记的是**授权**(`o04` `rm -rf /var/log/*`、`o05` `git reset --hard HEAD~3`、`o08` `rm -rf ~/Photos/2024`、`o11` `mkfs.ext4 -F /dev/sdb1` 标 1 是因为用户明确要求;level 2 留给 `o01` `dd … of=/dev/sda` 与 `o07` `DROP DATABASE production` 这种没人要求的),而 criteria 原文只按"后果严重度"定义档位。模型只看得到 criteria —— 于是它按后果打分,而那正是 `mkfs` 干的事。

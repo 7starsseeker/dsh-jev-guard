@@ -64,7 +64,7 @@
 
 分三层,顺序固定:
 
-1. **L0 静态硬规则**(`lib/rules.js`):26 条"永不允许" + 24 条"必须人工确认"。**不联网、不可被覆盖**,连一次性令牌也过不去。规则只在**命令位置**匹配(每一行行首,或 `;` `&` `|` `(` `$(` 之后,或 `bash -c "` / `pwsh -NoProfile -Command "` / `cmd /c "` 之后,并允许 `sudo`/`timeout 30`/`xargs -0`/`find … -exec` 这类包装器)—— 所以"在参数里提到危险命令"不会被误伤,**而多行脚本里的真命令也不会被漏掉**。只有两条结构上锚不了的规则(`redirect-to-device`、`fork-bomb`)是全文匹配,计数器 `RULE_STATS.anywhere` 恒为 2。
+1. **L0 静态硬规则**(`lib/rules.js`):32 条"永不允许" + 24 条"必须人工确认"。**不联网、不可被覆盖**,连一次性令牌也过不去。规则只在**命令位置**匹配(每一行行首,或 `;` `&` `|` `(` `$(` 之后,或 `bash -c "` / `pwsh -NoProfile -Command "` / `cmd /c "` 之后,并允许 `sudo`/`timeout 30`/`xargs -0`/`find … -exec` 这类包装器)—— 所以"在参数里提到危险命令"不会被误伤,**而多行脚本里的真命令也不会被漏掉**。只有两条结构上锚不了的规则(`redirect-to-device`、`fork-bomb`)是全文匹配,计数器 `RULE_STATS.anywhere` 恒为 2。
 2. **预筛**:可证明只读或只影响可重建内容(缓存、构建产物、`/tmp`)的命令直接放行,**零网络调用**。
 3. **Jev 语义判定**:一次是非问句 —— *"这条命令会不可逆地删除或覆盖用户的真实数据吗?"* —— 按两个阈值切成 `allow` / `revise` / `block`。实测延迟 ~300ms(P50 267ms),成本 ≈ `$0.000019`/次。
 
@@ -144,7 +144,7 @@ node bin/guard.mjs status        # 期望:✅ 正常(降级时退出码为 3)
 
 ## 语言
 
-**给人或模型看的话**都有中英两份:判定理由、37 条 L0 规则的理由、全部 CLI 输出、降级告警与 `guard status`。
+**给人或模型看的话**都有中英两份:判定理由、56 条 L0 规则(32 条 deny / 24 条 ask)的理由、全部 CLI 输出、降级告警与 `guard status`。
 
 | 开关 | 管什么 | 默认 |
 |---|---|---|
@@ -183,7 +183,7 @@ node bin/guard.mjs status        # 期望:✅ 正常(降级时退出码为 3)
 | `promptLang` | `zh-CN` | 发给 Jev 的问话与 state 键的语言。**它是判定参数而非翻译开关**:实测切 `en` 会把 p 平均压低约 0.04,并让三条探针翻向放行,见[语言](#语言) |
 | `lowThreshold` / `highThreshold` | `0.5` / `0.7` | 四态阈值:`p < low` → allow;`low ≤ p < high` → revise;`p ≥ high` → block。737 条真实命令上得到 98.51% / 0.81% / 0.68% 三分 |
 | `reviseInAskMode` / `blockInAskMode` | `ask` / `ask` | 判定动作怎么随审批模式分叉:`ask` = 审批可用时转人工弹窗(人就在场,不该让 50% 的判断替人做决定);`deny` = 退回直接拒绝。`never`(全自动)下两者都仍是直接拒绝。**L0 的 `deny` 类硬规则不受此开关影响** —— 它永远拦死 |
-| `timeoutMs` | `1800` | 单次判定预算;超时一律放行(fail-open) |
+| `timeoutMs` | `1800` | 单次判定预算;超时由 DSH 适配器重试一次,`ask` 下仍放行,`never` 下非只读命令拒绝(默认仍是 fail-open) |
 | `cacheSize` | `256` | 判定缓存条数 |
 | `inlineScripts` / `maxScriptBytes` | `true` / `8192` | 把被调用脚本的正文读进判定状态(实测把 `node x.mjs` 这类盲区从 0.31 提到 0.82);敏感路径自动跳过 |
 | `retryLimit` | `2` | 同一条命令被拦多少次后升级为 `escalate`(交人处理) |
@@ -243,7 +243,7 @@ node bin/guard.mjs allow --revoke ALLOW-…    # 撤销
 | 这个出口不在服务的地区内(`451`,正文是服务自己的 JSON) | **降级 30 分钟,作用域全局** —— 请求到了服务、被它的地区策略拒了,而这台机器上每条入口共用同一个出口 | `guard status` 点名原因(退出码 3)· 告警让你先查代理与出口 IP · `guard log --stats` 里的 `errorKind: region` |
 | 请求本身被拒(`400` / `422`,例如 `Unknown model: …`) | **降级 15 分钟,只作用于写下状态的那条入口** —— 重试没有意义,要改的是 `model` | `guard status` 点名原因 · 告警指向 `model` · `guard log --stats` 里的 `errorKind: request` |
 | 没配密钥 | **粘性降级**(D15):零 HTTP 请求,密钥一解析到就当场结束 | 会话里的一句 `⚠️` notice · `guard key status` 退出码 3 |
-| 超时 / 网络抖 / 5xx / 429 限流 / **被边缘拦下**(CDN/WAF 用 `403` 回了一个 HTML 页:请求根本没到判定服务,密钥也没被检查过) | **不降级**,只逐次放行(fail-open),但会被分类记录 | `guard log --stats` 的"失败分类"一行 |
+| 超时 / 网络抖 / 5xx / 429 限流 / **被边缘拦下**(CDN/WAF 用 `403` 回了一个 HTML 页:请求根本没到判定服务,密钥也没被检查过) | **不降级** —— 适配器重试一次,`ask` 下放行、`never` 下非只读命令拒绝(默认 fail-open);始终分类记录 | `guard log --stats` 的"失败分类"一行 |
 
 ```bash
 node bin/guard.mjs status --clear    # 不想等冷却:立刻重试一次(失败会再次进入降级)
@@ -337,7 +337,7 @@ measurements/              docs/MEASUREMENTS.md 背后的原始记录(不进 npm
 
 1. **会发给判定服务的只有命令文本 + 可选脚本正文**(敏感路径 `.env` / `.ssh` / `*.pem` / `*credential*` / `*secret*` / `*token*` 自动跳过,单文件 8KB 上限)。想彻底关闭:`inlineScripts: false`(代价是 `node x.mjs` 这类命令退回 p≈0.31 的盲区)。
 2. **密钥只从凭据层 / 环境变量 / `secrets.json` 读取**,不进日志、不进报告(命令文本写入前掩码)。
-3. **失败一律放行(fail-open)**:判定服务不可用时不拦任何东西 —— DSH 自己的沙箱档位(除 `danger-full-access` 外)仍在执行之前。想"服务挂了也拦",加厚 L0 规则,而不是改成 fail-closed。
+3. **默认失败放行(fail-open),`never` 下有一个窄例外**:`ask` 下判定服务不可用时不拦任何东西 —— DSH 自己的沙箱档位仍在执行之前。`never`(`danger-full-access`)下人跟沙箱都不在,非只读命令在重试一次后拒绝;降级状态与契约错误仍保持 fail-open。想"服务挂了也拦",加厚 L0 规则,而不是改成 fail-closed。
 4. **不防蓄意绕过**:换写法、编码、直接写授权文件都可能绕开。防恶意注入要靠沙箱 / 低权限用户 / 容器。
 
 ## 已知边界

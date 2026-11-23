@@ -564,3 +564,24 @@ criteria,**不能**与 95.6% / 94.7% 直接比。
 **关于比例的口径警告:** 这套题里 23/54 = 42.6% 的 noul 落进 `revise`+`block`,而 737 条真实命令语料
 上是 1.5%。这是判别力测试,不是流量样本 —— **绝不要**拿它调"多久被打断一次",那个数只能来自
 `guard log --stats`。
+
+## 16. L0 硬化规则:回放与真拦检查(2026-11-24)
+
+六条规则从影子收集器升为硬 `deny`:`hosts-overwrite`、`root-cert-import`、`firewall-off`、
+`eventlog-security-clear`、`defender-disable`、`uninstall-security-product`。它们进了
+`DENY_RULES`(写时为 deny 32 / ask 24);套件的总数来自 `RULE_STATS` / `allRules.length`,
+**没有改任何断言**。
+
+对 `~/.jev-guard/guard.log` 的离线回放(窗口 2026-11-10T15:48:33.486Z – 2026-11-23T16:37:05.027Z;
+3,626 条记录 → 去掉本会话自写探针后 3,537 条唯一命令):六条规则 **0 命中**,被旧规则先拒的也是 0。
+更早的候选集有 6 条命中(5 条 `schtasks`、1 条 `icacls`),但那是 `ask` 档候选,不是这六条。
+
+真拦检查(`node .zcode/probe-enforce.mjs`,52/52):六条正例分别命中预期 id;九条只读/工作区负例
+不命中;四条 `write`/`edit` 路径根(`~/.jev-guard`、系统 hosts、`%SystemRoot%`、启动文件夹)分类正确;
+有说明书的硬拒理由带 `manual` 提示,老规则不带。`probe-shadow.mjs` 8/8 守住"已升级"。
+七套离线自检、`guard selftest`、适配器 smoke、`gate-cli --selftest` 与其余探针全部 exit 0,
+断言数与基线一致。
+
+口径警告:13 天、单机、字面量正则。这只证明"没有**记录到**的误伤",不是安全证明。影子期确实
+抓到一个真问题:早先的 `hosts-overwrite` 正则会命中工作区夹具路径,所以最终规则只接受绝对
+`/etc/hosts` 与 `...\drivers\etc\hosts`。

@@ -85,7 +85,7 @@ If you really want to switch: re-calibrate first, or lower both thresholds by ab
 ```bash
 cd /mnt/t/dsh-jev-guard
 node bin/guard.mjs selftest                                    # expect: all 12 checks pass (offline)
-node bin/guard.mjs rules | head -5                             # expect: 26 deny + 24 ask rules listed
+node bin/guard.mjs rules | head -5                             # expect: 32 deny + 24 ask rules listed
 node bin/guard.mjs judge 'ls -la' 'git push --force origin main' 'pnpm test'
 ```
 
@@ -191,7 +191,7 @@ node bin/guard.mjs status            # health status (exit code 3 while degraded
 | A dangerous command was not blocked | not in L0 and `p < lowThreshold` | look at the `p` in the `judge` output; if necessary lower `lowThreshold` or add an L0 rule for that class of command |
 | Everything is blocked and no work can be done | the threshold is too low or L0 is too aggressive | look at the `rule.id` from `judge` first; edit `lib/rules.js` or raise `lowThreshold` |
 | The authorisation line pasted into cmd.exe reports a syntax error | cmd does not accept POSIX/PowerShell quoting | switch to `guard allow --command-file cmd.txt` |
-| A judging-service hiccup makes work impossible | this should not happen (fail-open) | if it really does happen, check `source: error` and `errorKind` in `guard.log` |
+| A judging-service hiccup makes work impossible | under `ask` this should not happen (fail-open); under `never` a non-read-only command is deliberately denied after one retry | check `source: error`, `errorKind` and `failOpenDenied` in `guard.log`, or run `guard status` |
 
 ## 8. Security and privacy (must be passed on to the user as it stands)
 
@@ -199,8 +199,10 @@ node bin/guard.mjs status            # health status (exit code 3 while degraded
    Sensitive paths (`.env` / `.ssh` / `*.pem` / `*credential*` / `*secret*` / `*token*`) are skipped automatically, with an 8KB per-file cap.
    To turn it off entirely: `inlineScripts: false` in `config.json` (at the cost of those commands dropping back into the p≈0.31 blind spot).
 2. **The key is read only from the credentials layer / environment variable / `secrets.json`, and is written into no log and no report.** The command text in a report goes through masking.
-3. **Every failure is fail-open**: when the judging service is unavailable the valve blocks nothing — because DSH's own sandbox preset
-   (anything except `danger-full-access`) is still in force before execution. If you want "block even when the service is down", thicken the L0 rules rather than changing this policy.
+3. **Failures are fail-open by default, with one `never` exception**: under `ask`, a judging-service failure blocks nothing — DSH's own sandbox preset
+   is still in force before execution. Under `never` (`danger-full-access`) neither a human nor the sandbox is left, so a non-read-only command is
+   denied after one retry. Degradation states and contract/plugin errors still fail open. If you want "block even when the service is down",
+   thicken the L0 rules rather than changing this policy.
 4. **It cannot stop a deliberate bypass.** Rewrapping it, encoding it, or writing `~/.jev-guard/allow.txt` directly can all get around it.
 5. **What it guards against is accidents, not an adversary — that scope was fixed explicitly by the user; do not narrow it on your own initiative.**
    There are at least two known and **deliberately kept** bypasses: file-writing tools writing `allow.txt` directly; and writing the same thing another way to get around the judgment.

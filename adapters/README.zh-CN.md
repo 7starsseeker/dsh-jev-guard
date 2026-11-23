@@ -28,7 +28,9 @@
 `../docs/MEASUREMENTS.md` §10 —— 那里记着三层真实事故。四条:
 
 1. **必须在执行前拿到命令原文**,并且**能返回"不许执行"**。做不到就属于"建议层",别写成适配器。
-2. **fail-open**:适配器自己出任何问题都必须放行(超时/解析错/未知 payload 形状)。
+2. **默认 fail-open**:适配器自己出任何问题都必须放行(超时/解析错/未知 payload 形状)。
+   DSH 适配器只在 `never` 下留了一个很窄的例外(重试一次后仍失败的非只读命令,见 [`../docs/DECISIONS.md`](../docs/DECISIONS.md) D3);
+   新适配器保持默认即可。
 3. **入口守卫内联、跨平台**:
    `realpathSync(process.argv[1]) === realpathSync(fileURLToPath(import.meta.url))`。
    **不要抽共享模块** —— `import.meta.url` 跟着模块走,抽出去就恒为 false(实测:连 WSL 都会静默失效)。

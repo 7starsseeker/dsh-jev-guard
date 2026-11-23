@@ -12,6 +12,7 @@
  *   guard key     set|status   密钥录入(只从标准输入读)与"哪个来源在生效"(永不回显值)
  *   guard selftest             离线自检:L0 规则、预筛、四态映射
  *   guard rules                打印 L0 规则清单
+ *   guard explain <rule-id>    被某条规则拦下时,这条命令是什么、风险、手动步骤与回滚
  *
  * The key is never printed and never stored here: it comes from the environment
  * variable named by config.apiKeyEnv, or from the file named by config.apiKeyFile.
@@ -33,7 +34,8 @@ import {
 import { resolveTokenPath, grantToken, readTokens, revokeToken } from '../lib/token.js'
 import { DENY_RULES, ASK_RULES, ruleWhy, staticRule } from '../lib/rules.js'
 import { explain, fingerprint, shellName, shellQuote } from '../lib/verdict.js'
-import { LANGS, setLang, t } from '../lib/i18n.js'
+import { LANGS, getLang, setLang, t } from '../lib/i18n.js'
+import { playbookFor } from '../lib/playbook.js'
 
 const HERE = dirname(fileURLToPath(import.meta.url))
 const ROOT = join(HERE, '..')
@@ -232,6 +234,46 @@ function rules() {
 }
 
 /**
+ * `guard explain <rule-id>` —— 真拦规则的"然后呢"。
+ *
+ * 为什么做成命令而不是只写进文档:被拦时人手上就是那条命令,再让他去翻文档等于让他放弃。
+ * 内容来自 `lib/playbook.js`,与拒绝理由里的指引是同一份来源;默认按当前语言打印,
+ * `--lang` 可切换。
+ *
+ * @returns exit code: 0 = printed, 1 = unknown rule, 2 = missing id.
+ */
+function cmdExplain() {
+  const id = PARSED.positional[0]
+  if (!id) {
+    process.stderr.write(`${t('cli.explain.usage')}\n`)
+    return 2
+  }
+  const entry = playbookFor(id)
+  if (!entry) {
+    process.stderr.write(`${t('cli.explain.unknown', { id })}\n`)
+    return 1
+  }
+  const en = getLang().startsWith('en')
+  const pick = (pair) => (en ? pair.en : pair.zh)
+  const heading = (key) => process.stdout.write(`\n${t(key)}\n`)
+  process.stdout.write(`${t('cli.explain.header', { id, title: pick(entry.title) })}\n`)
+  heading('cli.explain.why')
+  process.stdout.write(`${pick(entry.why)}\n`)
+  heading('cli.explain.changes')
+  process.stdout.write(`${pick(entry.changes)}\n`)
+  heading('cli.explain.risks')
+  process.stdout.write(`${pick(entry.risks)}\n`)
+  heading('cli.explain.manual')
+  for (const [i, line] of pick(entry.manual).entries()) process.stdout.write(`  ${i + 1}. ${line}\n`)
+  heading('cli.explain.rollback')
+  for (const [i, line] of pick(entry.rollback).entries()) process.stdout.write(`  ${i + 1}. ${line}\n`)
+  heading('cli.explain.safer')
+  process.stdout.write(`${pick(entry.safer)}\n`)
+  process.stdout.write(`\n${t('cli.explain.outside')}\n`)
+  return 0
+}
+
+/**
  * Read commands: argv after the subcommand, or one per line on stdin.
  * @returns command strings.
  */
@@ -342,6 +384,18 @@ async function cmdLog() {
     return 0
   }
   for (const r of records) {
+    if (r.event === 'result') {
+      const bits = [
+        String(r.at ?? '').slice(11, 19),
+        'result'.padEnd(9),
+        (r.isError === true ? 'error' : 'ok').padEnd(5),
+        String(r.tool ?? '').padEnd(5),
+        r.callId ?? '',
+      ].filter(Boolean).join(' ')
+      const out = String(r.output ?? '').replace(/\s+/g, ' ').slice(0, 150)
+      process.stdout.write(`${bits}\n    ${out}\n`)
+      continue
+    }
     const p = r.p === undefined ? '  -  ' : Number(r.p).toFixed(2)
     const bits = [
       String(r.at ?? '').slice(11, 19),
@@ -619,10 +673,10 @@ if (!langPick.known) {
 // 除下面这些之外,任何子命令在降级状态下都先在 stderr 说一句 —— 免得你以为它还在完整工作。
 //   · status:它的全部工作就是把状态说清楚,不需要再叠一句;
 //   · judge:每条判定的**理由里已经带了同一句告警**(lib/verdict.js 的 warn),再说就是第三遍;
-//   · selftest / rules:纯离线,不涉及额度。
+//   · selftest / rules / explain:纯离线,不涉及额度。
 //   · key:它的全部工作就是密钥本身(`key status` 会自己说清有没有密钥),再叠一句降级告警
 //     只会把"去跑 key set"这条真正的指示埋掉。
-if (!['status', 'judge', 'selftest', 'rules', 'key'].includes(sub)) {
+if (!['status', 'judge', 'selftest', 'rules', 'explain', 'key'].includes(sub)) {
   try {
     await warnIfDegraded(await loadConfig())
   } catch {
@@ -631,6 +685,7 @@ if (!['status', 'judge', 'selftest', 'rules', 'key'].includes(sub)) {
 }
 const code = sub === 'selftest' ? selftest()
   : sub === 'rules' ? (rules(), 0)
+  : sub === 'explain' ? cmdExplain()
   : sub === 'log' ? await cmdLog()
   : sub === 'status' ? await cmdStatus()
   : sub === 'allow' ? await cmdAllow()

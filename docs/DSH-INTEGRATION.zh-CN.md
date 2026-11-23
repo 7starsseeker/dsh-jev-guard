@@ -66,9 +66,9 @@
 | 失败类别 | 阀门行为 | 审计里的 `source` |
 |---|---|---|
 | `quota`(402 / 额度字样)/ `auth`(401/403,正文是 JSON) | **降级**:写 `~/.jev-guard/degraded.json`,冷却窗口内不再发请求,默认只跑免费的 L0 + 预筛 | 第一次:`error` + `degraded`;之后:`degraded` |
-| `edge`(401/403,带 HTML/WAF 错误页) | **不降级**:这份响应不是判定服务发的 —— CDN/WAF 在边缘就把请求拦了,密钥根本没被检查。逐次 fail-open,分类记为 `edge` | `error` |
+| `edge`(401/403,带 HTML/WAF 错误页) | **不降级**:这份响应不是判定服务发的 —— CDN/WAF 在边缘就把请求拦了,密钥根本没被检查。适配器重试一次,`ask` 下放行、`never` 下非只读命令拒绝(D3),分类记为 `edge` | `error` |
 | `no-key`(解析不到密钥) | **降级,且粘性 + 带作用域**:一次 HTTP 都不发,状态不随时间到期(没有可探测对象),密钥一出现即清除;写入时记下"是哪条入口报告的",所以只压制那一条入口 | 第一次:`error` + `degraded`;之后:`degraded` |
-| `timeout` / `network` / `server` / `rate-limit` | **不降级**,逐次 fail-open,以 `errorKind` 分类记录 | `error` |
+| `timeout` / `network` / `server` / `rate-limit` | **不降级**;适配器重试一次,`ask` 下放行、`never` 下非只读命令拒绝(D3),以 `errorKind` 分类记录 | `error` |
 
 `no-key` 原先刻意**不**降级(D10.2):它是本地配置状况、零 HTTP 成本,而 `degraded.json` 是全局共享的 ——
 一条路径读不到密钥,不该把别的路径也按停。**D15 保留这条反对意见,但用作用域而不是沉默来回答**:本地状态
@@ -144,15 +144,18 @@ DSH 这边最坏的失效形态是**插件一声不响地没挂上**:没有报�
 
 ---
 
-## 6. 失败一律放行(fail-open)
+## 6. 默认 fail-open;`never` 下瞬态失败拒绝非只读命令
 
-超时(默认 1800 ms)、网络错、服务 5xx、代码异常 → **放行**并记 `source: error`。
+超时(默认 1800 ms)、网络错、服务 5xx、代码异常 → **放行**并记 `source: error` —— 适配器会先对
+`timeout` / `network` / `server` 重试一次。例外是 `never`(danger-full-access):既没有人能批准,宿主沙箱也关了,
+此时**非只读**命令改为**拒绝**,理由里写明失败类别与 `guard status` 的恢复路径。降级状态
+(`no-key` / `auth` / `quota` / `region` / `request`)与契约/插件错误(`shape` / `unknown`)在任何档位都保持
+fail-open —— 见 [`DECISIONS.md`](./DECISIONS.md) D3。
 
-理由不是"我们不在乎":DSH 自己还有沙箱档位(`permission/preset`)在阀门**之后**生效
-(除非是 `danger-full-access`)。阀门是**增量**检查,不是唯一防线。改成 fail-closed 的话,
-判定服务抖一下你就干不了活 —— 一个"防事故"的东西变成了"制造事故"的东西。
-想做到"服务挂了也拦",正确做法是**把 L0 规则加厚**(那一层不联网、不依赖任何服务),
-而不是改这条策略。见 [`DECISIONS.md`](./DECISIONS.md) D3。
+理由不是"我们不在乎":`ask` 下 DSH 自己还有人,沙箱档位(`permission/preset`)也在阀门**之后**生效。
+阀门是**增量**检查,不是唯一防线 —— 这正是 `never` 要区别对待的原因:那里审批通道与沙箱都不在,
+"悄悄放行"后面没有第二层。想做到"服务挂了也拦",正确做法仍然是**把 L0 规则加厚**
+(那一层不联网、不依赖任何服务)。
 
 ---
 
@@ -173,7 +176,7 @@ DSH 这边最坏的失效形态是**插件一声不响地没挂上**:没有报�
 |---|---|---|---|
 | **一次性令牌** | 放行**某一条命令原文**一次 | 阀门(`~/.jev-guard/allow.txt`) | 不持久:用掉即删,不可重放 |
 | **DSH 审批** | 对**这一次调用**点头 | DSH | 只有"允许一次",**没有永久允许**(见 [`USER-INTERVENTION.md`](./USER-INTERVENTION.md) §2.1) |
-| **L0 静态规则** | 不联网的硬规则(26 条 deny + 24 条 ask) | `lib/rules.js` | 令牌**过不去** `deny` |
+| **L0 静态规则** | 不联网的硬规则(32 条 deny + 24 条 ask) | `lib/rules.js` | 令牌**过不去** `deny` |
 
 还要区分两个编号体系:`L0 / L1 / L2` 是**判定层**(见 [`ARCHITECTURE.md`](./ARCHITECTURE.md)),
 `allow / revise / block / escalate` 是**判定结果**。前者是"怎么算出来的",后者是"算出了什么"。

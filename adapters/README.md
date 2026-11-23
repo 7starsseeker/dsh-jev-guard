@@ -28,7 +28,9 @@ If you really are going to attach another host (or bring the archived one back),
 `../docs/MEASUREMENTS.md` §10 — three layers of real accidents are recorded there. The four:
 
 1. **You must obtain the command text before execution**, and **be able to return "you may not run this"**. If you cannot, that belongs to the "suggestion layer" — do not write it as an adapter.
-2. **fail-open**: whatever goes wrong on the adapter's own side must be allowed through (timeout / parse error / unknown payload shape).
+2. **fail-open by default**: whatever goes wrong on the adapter's own side must be allowed through (timeout / parse error / unknown payload shape).
+   The DSH adapter keeps one narrow exception under `never` (a non-read-only command after a retry — see [`../docs/DECISIONS.md`](../docs/DECISIONS.md) D3);
+   a new adapter should keep the default.
 3. **Inline the entry guard, cross-platform**:
    `realpathSync(process.argv[1]) === realpathSync(fileURLToPath(import.meta.url))`.
    **Do not extract it into a shared module** — `import.meta.url` follows the module, so once extracted it is constantly false (measured: even WSL silently stops working).

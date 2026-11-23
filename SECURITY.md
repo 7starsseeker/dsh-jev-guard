@@ -22,9 +22,9 @@ The judging service receives **the command text** and, when `inlineScripts` is o
 
 The key is resolved from the DSH credentials layer, then the environment, then a `secrets.json` **you create yourself** — default `~/.jev-guard/secrets.json` (or `$JEV_GUARD_HOME/secrets.json`, or the path in `JEV_GUARD_SECRETS`) — and it is never printed. It is masked before anything reaches the audit log. `node bin/guard.mjs key status` reports which source resolves and how long the value is, not the value.
 
-## Failures are fail-open — on purpose
+## Failures are fail-open by default — on purpose, with one `never` exception
 
-Timeout, network error, 5xx and 429 all **allow** the command and record `source: error`. The valve is an **incremental** check: DSH's own sandbox preset still applies after it (except under `danger-full-access`). Making it fail-closed would turn a thing that prevents accidents into a thing that causes them — **D3**. If you want "blocked even while the service is down", thicken the L0 rules instead.
+Timeout, network error, 5xx and 429 **allow** the command and record `source: error` — after one retry of `timeout` / `network` / `server`. The valve is an **incremental** check: in `ask` the host still has a human and DSH's own sandbox preset still applies after it. Under `never` (`danger-full-access`) there is no approval channel and no sandbox left, so a **non-read-only** command is **denied** instead, with the recovery path in the reason. Degradation states and contract/plugin errors still fail open in every preset — **D3**. If you want "blocked even while the service is down", thicken the L0 rules instead.
 
 ## The audit log
 

@@ -15,15 +15,16 @@
  */
 
 import { randomUUID } from 'node:crypto'
-import { readFileSync } from 'node:fs'
-import { dirname, join } from 'node:path'
+import { readFileSync, realpathSync } from 'node:fs'
+import { basename, dirname, isAbsolute, join, resolve, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { flush, record } from '../../lib/audit.js'
-import { DEFAULTS, evaluateCommand } from '../../lib/gate.js'
+import { flush, maskSecrets, record } from '../../lib/audit.js'
+import { DEFAULTS, evaluateCommand, readOnlyChainReason } from '../../lib/gate.js'
 import { setLang, getLang, t } from '../../lib/i18n.js'
-import { configFilePath, keyFilePath } from '../../lib/paths.js'
+import { HOME_DIR, configFilePath, keyFilePath } from '../../lib/paths.js'
 import { DEGRADING_KINDS, appliesTo, isSticky, kindLabel, readDegraded } from '../../lib/quota.js'
 import { RetryBudget, fingerprint, reviseGuidance, toHostDecision } from '../../lib/verdict.js'
+import { playbookFor } from '../../lib/playbook.js'
 
 /** Package root (adapters/dsh/ → ../..), used for the legacy in-package config fallback. */
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..')
@@ -317,6 +318,298 @@ async function pendingNotice(ctx, cfg, payload) {
 }
 
 /**
+ * 判定服务"暂时不可用"的失败类型:这一类在 never 档位下不再静默放行。
+ * 有意的边界:`no-key` / `auth` / `quota` / `region` / `request` 是**已确认的环境状态**
+ * (而且已经/将会通过 notice 播报),`shape` / `unknown` 是契约或插件 bug —— 这两组都保持
+ * fail-open:一个配置问题不该把整个会话锁死。
+ */
+const FAIL_OPEN_DENY_KINDS = Object.freeze(['timeout', 'network', 'server', 'rate-limit', 'edge'])
+
+/**
+ * fail-open 分叉:判定服务暂时不可用、且本会话**没有审批通道**(`policy === 'never'`,
+ * 即 danger-full-access)时,把一条非只读命令从"静默放行"改成 deny。
+ *
+ * 为什么放在适配器而不是 `lib/`:决定这件事的是"宿主还能不能兜底"(审批通道在不在),
+ * `lib/` 不知道宿主;而且 `lib/verdict.js` 的契约里 allow 就是 allow
+ * (`toHostDecision` 直接返回 `{ kind: 'allow' }`),分叉必须在它之前。
+ *
+ * @param verdict - `evaluateCommand` 的返回值。
+ * @param policy - 本会话的审批策略(`'ask' | 'never'`)。
+ * @param command - 原始命令文本(只读判断用)。
+ * @param opts - `{ cliPath }`,写进恢复提示。
+ * @returns `{ kind: 'deny', reason }`,或不接管时 `null`。
+ */
+export function failOpenDenial(verdict, policy, command, opts = {}) {
+  if (verdict?.source !== 'error' || verdict.action !== 'allow') return null
+  if (policy !== 'never') return null
+  if (!FAIL_OPEN_DENY_KINDS.includes(verdict.errorKind)) return null
+  // 只读命令即使判定服务挂了也不该被拦:预筛通常已经放过它们,这里再兜一次底。
+  if (readOnlyChainReason(command) !== undefined) return null
+  const retries = Number.isInteger(verdict.retries) ? verdict.retries : 0
+  return {
+    kind: 'deny',
+    reason: t('failOpen.deny', {
+      label: kindLabel(verdict.errorKind),
+      retried: retries > 0 ? t('failOpen.retried', { n: retries }) : '',
+      cli: opts.cliPath ?? CLI_PATH,
+      command: command.length > 300 ? `${command.slice(0, 300)}…` : command,
+    }),
+  }
+}
+
+/**
+ * 本回合被拦下的命令,按会话记一份;回合结束时汇总成一条提醒。
+ * 同一条规则只留第一个样例 —— 提醒要短,重复的破坏性命令不该把消息撑爆。
+ */
+const blockedBySession = new Map()
+
+/** signal → agent:`agent/pre-step` 拿得到 agent,`agent/turn-stopping` 的 payload 里没有。 */
+const agentBySignal = new WeakMap()
+
+/**
+ * 这条硬规则是不是"不可绕过":playbook 显式 `irreversible: true` 的算;
+ * **没有 playbook 的旧规则也按不可绕过处理** —— 没写手动步骤,就没有资格假装有。
+ *
+ * @param rule - 规则 id。
+ * @returns 是否立即停手(而不是留到回合末尾提醒)。
+ */
+export function isIrreversibleRule(rule) {
+  const entry = playbookFor(rule)
+  return entry === undefined ? true : entry.irreversible === true
+}
+
+/**
+ * 登记一条被拦的命令。
+ *
+ * @param agent - 受影响的 agent(可能拿不到,退化到 `no-session` 桶)。
+ * @param rule - 规则 id。
+ * @param command - 代表这条规则的样例命令(给提醒里用,调用方负责截断)。
+ * @param hard - 是否不可绕过(不可绕过的不会出现在回合末尾的"可手动完成"清单里)。
+ */
+function noteBlocked(agent, rule, command, hard = false) {
+  const sid = agent?.session?.id ?? 'no-session'
+  let bucket = blockedBySession.get(sid)
+  if (bucket === undefined) {
+    bucket = new Map()
+    blockedBySession.set(sid, bucket)
+  }
+  if (!bucket.has(rule)) bucket.set(rule, { command, hard })
+}
+
+/**
+ * 往会话里注入一条 user 消息(DSH 的 `Agent.inject`:入 next-step,不唤醒新回合)。
+ * 没有这个缝就返回 false —— 调用方不能假设消息一定送到了。
+ */
+function injectNotice(agent, text, summary) {
+  if (typeof agent?.inject !== 'function') return false
+  try {
+    agent.inject(noticeMessage(text, summary))
+    return true
+  } catch {
+    return false
+  }
+}
+
+/**
+ * 找到这一回合的 agent:`turn-stopping` 只带 `{turn, signal}`,用 pre-execute 记下的
+ * `signal → agent` 反查;查不到时退回 `ctx.agents.list()`(只在恰好一个会话有待提醒时才用,
+ * 免得把子代理的账算到主代理头上)。
+ */
+function resolveBlockedAgent(ctx, payload) {
+  const hit = agentBySignal.get(payload?.signal)
+  if (hit !== undefined) return hit
+  const list = ctx.get?.('agents')?.list?.() ?? []
+  const pending = list.filter(agent => (blockedBySession.get(agent?.session?.id ?? 'no-session')?.size ?? 0) > 0)
+  return pending.length === 1 ? pending[0] : undefined
+}
+
+/**
+ * 回合末尾的"可绕过"提醒:注入一条消息,让模型多走一步,在最终回答里把
+ * 被拦的命令、手动步骤和 `explain` 指引交给用户。只做一次,不重试原命令。
+ */
+function flushBlockedReminder(agent) {
+  if (agent === undefined) return
+  const sid = agent?.session?.id ?? 'no-session'
+  const bucket = blockedBySession.get(sid)
+  if (bucket === undefined) return
+  blockedBySession.delete(sid)
+  const items = [...bucket.entries()].filter(([, value]) => value.hard !== true)
+  if (items.length === 0) return
+  const list = items
+    .map(([rule, value]) => `- ${rule}: ${value.command}\n  ${CLI_PATH} explain ${rule}`)
+    .join('\n')
+  injectNotice(
+    agent,
+    t('blocked.remind.body', { count: items.length, cli: CLI_PATH, list }),
+    t('blocked.remind.summary', { count: items.length }),
+  )
+}
+
+/**
+ * 结果行里输出片段的字符上限。
+ */
+const RESULT_SNIPPET = 400
+
+/**
+ * 把一次工具执行结果压成审计记录。
+ *
+ * DSH 的 `tools/result` 只保证 `{ content, isError }`:bash/pwsh 非零退出会抛 `ToolError`,
+ * 所以这里**没有独立的 exitCode 可记** —— `isError` 就是"没跑成"的权威信号。
+ * 输出可能内联密钥,先 `maskSecrets` 再截断(反过来会把半截密钥留在尾巴上)。
+ *
+ * @param exec - the pre-execute pipeline view of the call(name / callId / parent / agent)。
+ * @param result - `{ content, isError }`。
+ * @returns 一条 `event:'result'` 审计记录(不含时间戳,由 `record` 补)。
+ */
+export function resultAuditEntry(exec, result) {
+  // `content` 是文本分片数组(bash/pwsh 都是 `[{ type: 'text', text }]`),
+  // 不是字符串 —— 只认字符串会把正常输出记成空。2026-11-24 实测:
+  // 非零退出也在文本里(`[exit code: 3]`),isError 只表示工具自身的基础设施失败。
+  const text = resultText(result)
+  return {
+    event: 'result',
+    tool: exec?.name,
+    callId: exec?.callId,
+    parentCallId: exec?.parent,
+    isError: result?.isError === true,
+    output: maskSecrets(text).slice(0, RESULT_SNIPPET),
+    outputTruncated: text.length > RESULT_SNIPPET,
+  }
+}
+
+/**
+ * 把工具结果的 `content` 折成文本。
+ *
+ * @param result - `{ content, isError }`。
+ * @returns 纯文本;无法识别时为空串。
+ */
+function resultText(result) {
+  const content = result?.content
+  if (typeof content === 'string') return content
+  if (!Array.isArray(content)) return ''
+  return content
+    .map(part => (typeof part === 'string' ? part : typeof part?.text === 'string' ? part.text : ''))
+    .join('')
+}
+
+/**
+ * Windows 路径比较不分大小写;POSIX 分。
+ */
+const WINDOWS = process.platform === 'win32'
+
+/** 本机路径分隔符(只用于拼前缀,不参与解析)。 */
+const PATH_SEP = WINDOWS ? '\\' : '/'
+
+/**
+ * 把路径折成绝对、去尾部分隔符、Windows 下小写的形式。
+ *
+ * 为什么不用 `fs.realpath` 一步到位:目标文件多半还不存在(新建),realpath 会抛。
+ * 解析 junction/symlink 的事交给 {@link realish},它只对存在的前缀动手。
+ *
+ * @param input - raw path from the tool arguments.
+ * @param base - cwd used for relative paths.
+ * @returns absolute path in comparison form.
+ */
+function canonicalPath(input, base) {
+  const abs = isAbsolute(input) ? input : resolve(base, input)
+  const trimmed = abs.length > 1 ? abs.replace(/[\\/]+$/, '') : abs
+  return WINDOWS ? trimmed.replace(/\//g, '\\').toLowerCase() : trimmed
+}
+
+/**
+ * 尽力把已有前缀解析成真实路径(junction / symlink),不存在的部分保持字面。
+ *
+ * @param abs - canonical absolute path.
+ * @returns best-effort real path.
+ */
+function realish(abs) {
+  try {
+    return canonicalPath(realpathSync.native(abs), abs)
+  } catch {
+    // 文件不存在是常态;退到父目录,至少能识破"父目录是 junction"。
+  }
+  try {
+    return join(canonicalPath(realpathSync.native(dirname(abs)), abs), basename(abs))
+  } catch {
+    return abs
+  }
+}
+
+/**
+ * `child` 是否等于 `parent` 或落在它下面(按路径边界,不是字符串前缀)。
+ *
+ * @param parent - canonical root.
+ * @param child - canonical candidate.
+ * @returns whether child is inside parent.
+ */
+function inside(parent, child) {
+  return child === parent || child.startsWith(parent.endsWith(PATH_SEP) ? parent : parent + PATH_SEP)
+}
+
+/**
+ * write/edit 的受保护路径判定。
+ *
+ * 为什么单独做:write/edit 没有 command 文本,现有 L0/预筛/语义层都不看它们
+ * (`extractCommand` 只取 `args.command`)。覆盖四条最不该被改的路径:
+ * 守卫自己的状态目录(allow.txt 被改写就等于绕过阀门)、hosts、Windows 目录、
+ * 启动文件夹。2026-11-24 起由调用方**真拦**(命中即 deny + 审计),不再是影子。
+ *
+ * 已知边界:junction 只解析"存在的前缀";8.3 短名、UNC、相对路径的 `..` 逃逸
+ * 都按字面处理。这是事故网而不是安全边界(见 DECISIONS D1/D24),不要假装它是。
+ *
+ * 返回值里仍保留 `event:'shadow'` / `decision:'would-deny'` 两个历史字段:导出探针
+ * (`probe-shadow.mjs`)按它们断言,改名只会制造无意义的迁移。真正落盘的记录由调用方
+ * 用 `rule` / `path` 重新组装(action:'block')。
+ *
+ * @param tool - tool name (`write` / `edit`).
+ * @param args - tool arguments; `file_path` is the only field read.
+ * @param opts - test seams: `cwd` / `homeDir` / `systemRoot` / `appData`.
+ * @returns a path-rule hit (`{ rule, path, ... }`), or null when nothing matched.
+ */
+export function shadowPathEntry(tool, args, opts = {}) {
+  const raw = args?.file_path
+  if (typeof raw !== 'string' || raw.trim() === '') return null
+  const base = typeof opts.cwd === 'string' && opts.cwd !== '' ? opts.cwd : process.cwd()
+  const home = opts.homeDir ?? HOME_DIR
+  const systemRoot = opts.systemRoot ?? process.env.SystemRoot ?? 'C:\\Windows'
+  const appData = opts.appData ?? process.env.APPDATA
+  const allowFile = process.env.JEV_GUARD_ALLOW_FILE
+
+  const literal = canonicalPath(raw.trim(), base)
+  const path = realish(literal)
+  const roots = [
+    [home, 'guard-home-write'],
+    [join(systemRoot, 'System32', 'drivers', 'etc'), 'system-hosts-write'],
+    [systemRoot, 'windows-dir-write'],
+  ]
+  if (typeof appData === 'string' && appData.trim() !== '') {
+    roots.push([
+      join(appData, 'Microsoft', 'Windows', 'Start Menu', 'Programs', 'Startup'),
+      'startup-write',
+    ])
+  }
+  if (typeof allowFile === 'string' && allowFile.trim() !== '') {
+    roots.unshift([allowFile.trim(), 'guard-home-write'])
+  }
+
+  for (const [root, rule] of roots) {
+    const canonicalRoot = realish(canonicalPath(root, base))
+    if (inside(canonicalRoot, path)) {
+      return {
+        event: 'shadow',
+        tool,
+        shadow: true,
+        action: 'deny',
+        decision: 'would-deny',
+        rule,
+        path: literal,
+      }
+    }
+  }
+  return null
+}
+
+/**
  * Register the guard.
  * @param ctx - plugin context.
  * @param config - optional overrides; every field falls back to {@link DEFAULTS}.
@@ -327,6 +620,10 @@ export function apply(ctx, config = {}) {
     tools: DEFAULT_TOOLS,
     apiKeyEnv: 'TYPESAFE_API_KEY',
     retryLimit: 2,
+    // 瞬态失败重试一次:适配器这条路径上"放行"的代价是人不知情,值得多花 1.8s。
+    // CLI 的 `guard judge` 不加这个(它是交互式的,应该立刻把失败报给人);库层默认 0,
+    // 因此 selftest-quota 那条"timeout 不重试"的断言不受影响。
+    retryTransient: 1,
     ...loadConfigFile(),
     ...config,
     // 入口身份由代码定死:配置文件把它改乱,作用域隔离就失效了(见 ADAPTER_SCOPE)。
@@ -371,6 +668,43 @@ export function apply(ctx, config = {}) {
 
   ctx.on('tools/pre-execute', async (exec, next) => {
     try {
+      // `agent/turn-stopping` 的 payload 没有 agent,但这里拿得到;用同一个 signal 串起来。
+      if (exec?.agent !== undefined && exec?.signal !== undefined) agentBySignal.set(exec.signal, exec.agent)
+      // write/edit 不经过命令判定:它们没有 command,`extractCommand` 返回 undefined。
+      // 2026-11-24 起对四条受保护路径**真拦**(影子期已用真实写入验证过命中形状):
+      // 守卫自己的状态目录、system hosts、Windows 目录、启动文件夹。拦下不是终点,
+      // 理由里带 `guard explain <rule>` —— 里面有手动执行、风险和回滚步骤。
+      if (exec.name === 'write' || exec.name === 'edit') {
+        const cwd0 = typeof exec.arguments?.workdir === 'string'
+          ? exec.arguments.workdir
+          : (exec.agent?.session?.cwd ?? process.cwd())
+        const pathHit = shadowPathEntry(exec.name, exec.arguments, { cwd: cwd0 })
+        if (pathHit !== null) {
+          const policy = effectivePolicy(ctx, exec.agent)
+          const preset = effectivePreset(ctx, exec.agent)
+          const reason = t('path.deny', { rule: pathHit.rule, path: pathHit.path, cli: CLI_PATH })
+          stats.blocked += 1
+          ctx.logger?.warn?.('jev-guard: blocked write to a protected path (%s): %s', pathHit.rule, pathHit.path)
+          void record({
+            tool: exec.name,
+            callId: exec.callId,
+            action: 'block',
+            decision: 'deny',
+            source: 'path-rule',
+            rule: pathHit.rule,
+            path: pathHit.path,
+            policy,
+            preset,
+            cwd: cwd0,
+            session: exec.agent?.session?.id,
+          }, cfg)
+          // 四条路径规则都是可逆的(删掉写进去的东西 / 恢复备份),所以不在当下打断,
+          // 留到回合结束时统一提醒"哪些被拦、用户可以怎么手动完成"。
+          noteBlocked(exec.agent, pathHit.rule, `${exec.name} ${pathHit.path}`.slice(0, 300))
+          return { kind: 'deny', reason }
+        }
+        return next()
+      }
       if (!cfg.tools.includes(exec.name)) return next()
       const command = extractCommand(exec)
       if (command === undefined) return next()
@@ -382,15 +716,25 @@ export function apply(ctx, config = {}) {
       const cwd = typeof exec.arguments?.workdir === 'string'
         ? exec.arguments.workdir
         : (exec.agent?.session?.cwd ?? process.cwd())
+      // 六条"改机器"规则已于 2026-11-24 升为 L0 deny(见 lib/rules.js 的 HARDENING_RULES),
+      // 由 evaluateCommand 内的 staticRule 直接判定;这里不再有影子记录。
       const verdict = await evaluateCommand(command, { ...cfg, cwd, cache, apiKey, signal: exec.signal })
 
       if (verdict.source === 'prefilter') stats.prefilters += 1
       if (verdict.source === 'cache') stats.cacheHits += 1
       if (verdict.source === 'static-rule') stats.ruleHits += 1
       if (verdict.source === 'degraded') stats.degraded += 1
+      // fail-open 分叉:没有审批通道(danger-full-access)时,"判定服务挂了"不再等于
+      // "静默放行一条非只读命令"。先算出来,下面那条 warn 才说得准是放行还是拒绝。
+      const failOpen = failOpenDenial(verdict, policy, command, { cliPath: CLI_PATH })
       if (verdict.source === 'error') {
         stats.errors += 1
-        ctx.logger?.warn?.('jev-guard: fail-open after %s (%sms): %s', verdict.error, verdict.ms, command.slice(0, 160))
+        ctx.logger?.warn?.(
+          failOpen
+            ? 'jev-guard: denying after %s (%sms, retries=%s, never): %s'
+            : 'jev-guard: fail-open after %s (%sms, retries=%s): %s',
+          verdict.error, verdict.ms, verdict.retries ?? 0, command.slice(0, 160),
+        )
       }
       // 降级告警:额度/密钥出问题时**必须有人能发现**。旧行为是静默 fail-open,
       // 日志里一堆 error 但没人看得出"它已经不在防护了"。这里三件事一起做:
@@ -422,6 +766,18 @@ export function apply(ctx, config = {}) {
         }, cfg)
       }
 
+      // 命中分叉:这一条不是用户拒绝,是"没有人能批准它" —— 理由里带恢复路径。
+      if (failOpen !== null) {
+        stats.blocked += 1
+        void record({
+          tool: exec.name, callId: exec.callId, action: 'block', decision: 'deny', source: 'error',
+          errorKind: verdict.errorKind, error: verdict.error, retries: verdict.retries,
+          policy, preset, cwd, command, failOpenDenied: true,
+          session: exec.agent?.session?.id,
+        }, cfg)
+        return failOpen
+      }
+
       const sessionKey = `${exec.agent?.session?.id ?? 'no-session'}:${fingerprint(command)}`
       let effective = verdict
 
@@ -431,7 +787,7 @@ export function apply(ctx, config = {}) {
         ctx.logger?.debug?.('jev-guard: allow via %s (p=%s, %sms)', verdict.source, verdict.p, verdict.ms)
         // 审计:DSH 的 logger 会过滤 info 级,所以真实凭据落在 guard.log 里。
         void record({
-          tool: exec.name, action: 'allow', decision: 'allow', source: verdict.source,
+          tool: exec.name, callId: exec.callId, action: 'allow', decision: 'allow', source: verdict.source,
           p: verdict.p, model: verdict.model, ms: verdict.ms, rule: verdict.rule?.id,
           enriched: verdict.enriched, cwd, error: verdict.error, errorKind: verdict.errorKind,
           policy, preset,
@@ -472,7 +828,7 @@ export function apply(ctx, config = {}) {
       // 审计:被拦/被问/升级都要留痕(含命中规则与重试次数)。decision.kind 已经能区分
       // "转人工(ask)"与"直接拒(deny)" —— 同一条 revise 在两种审批模式下会写在这里不同的值。
       void record({
-        tool: exec.name, action: effective.action, decision: decision.kind, source: effective.source,
+        tool: exec.name, callId: exec.callId, action: effective.action, decision: decision.kind, source: effective.source,
         p: verdict.p, model: verdict.model, ms: verdict.ms, rule: verdict.rule?.id,
         enriched: verdict.enriched, attempts, policy, preset, cwd, command,
         errorKind: verdict.errorKind, degraded: verdict.degraded, warning: verdict.warning,
@@ -480,6 +836,24 @@ export function apply(ctx, config = {}) {
         overridden: verdict.overridden, token: verdict.token,
         session: exec.agent?.session?.id,
       }, cfg)
+      // L0 硬拒不留白:不可逆的规则当场停手 —— 往下一步注入一条 user 消息,模型下一轮就会看到
+      // "不要重试、先问用户";可逆的规则只登记,留到回合末尾统一提醒。
+      // 这是"强提示",不是硬暂停:never 下没有审批通道,真正的暂停只存在于 ask 模式的审批链。
+      if (decision.kind === 'deny' && verdict.rule?.kind === 'deny') {
+        const ruleId = verdict.rule.id
+        const irreversible = isIrreversibleRule(ruleId)
+        noteBlocked(exec.agent, ruleId, command.slice(0, 300), irreversible)
+        if (irreversible) {
+          const text = t('blocked.hard.body', {
+            rule: ruleId,
+            cli: CLI_PATH,
+            command: command.length > 200 ? `${command.slice(0, 200)}…` : command,
+          })
+          if (!injectNotice(exec.agent, text, t('blocked.hard.summary', { rule: ruleId }))) {
+            ctx.logger?.debug?.('jev-guard: hard-block notice not injected (no inject seam)')
+          }
+        }
+      }
       // revise 的两条出路都带上三种降级模板:转人工时它是**弹窗正文**(让做决定的人看清
       // 还能怎么改),被直接拒时它是给模型的教案。routedToHuman 决定开头那几句怎么说。
       if (effective.action === 'revise') {
@@ -496,8 +870,39 @@ export function apply(ctx, config = {}) {
       // normal pipeline, where the sandbox and approval policy still apply.
       stats.errors += 1
       ctx.logger?.warn?.('jev-guard: unexpected failure, delegating: %s', String(error?.stack ?? error))
-      void record({ action: 'allow', decision: 'allow', source: 'adapter-error', error: String(error?.message ?? error), cwd: process.cwd() }, cfg)
+      void record({ tool: exec.name, callId: exec.callId, action: 'allow', decision: 'allow', source: 'adapter-error', error: String(error?.message ?? error), cwd: process.cwd() }, cfg)
       return next()
+    }
+  })
+
+  // ── 结果观察 ────────────────────────────────────────────────────────────────
+  //
+  // `tools/pre-execute` 只回答"放不放行",不回答"放行之后跑成什么样"。没有这一层,
+  // 审计里只有"判了 allow",事故复盘时回答不了"这条命令到底成功没有"。
+  // 只观察阀门管辖的工具;写失败不影响工具结果(record 自己也不抛)。
+  ctx.on('tools/result', (exec, result) => {
+    try {
+      if (!cfg.tools.includes(exec?.name)) return
+      void record({
+        ...resultAuditEntry(exec, result),
+        session: exec?.agent?.session?.id,
+      }, cfg)
+    } catch (error) {
+      ctx.logger?.debug?.('jev-guard: result audit skipped: %s', String(error?.message ?? error))
+    }
+  })
+
+  // ── 回合末尾的"可绕过"提醒 ─────────────────────────────────────────────────
+  //
+  // 可绕过的拦截不在当下打断:回合将结束时(`agent/turn-stopping`)注入一条 user 消息,
+  // 让模型多走一步,在最终回答里把"哪些被拦、怎么手动做"交给用户。
+  // 不可绕过的规则已经在拒绝时立即注入,不在这里重复。
+  ctx.on('agent/turn-stopping', (payload) => {
+    try {
+      flushBlockedReminder(resolveBlockedAgent(ctx, payload))
+    } catch (error) {
+      // 这个钩子抛错会破坏回合收尾;提醒失败是小事,回合坏了是大事。
+      ctx.logger?.debug?.('jev-guard: turn reminder skipped: %s', String(error?.message ?? error))
     }
   })
 
@@ -518,6 +923,8 @@ export function apply(ctx, config = {}) {
         //  · 空批次不要塞消息 —— 那会让循环白白多跑一次模型请求(DSH 自己的 model-selection
         //    用的就是这条守卫)。
         if (decision?.kind !== 'enter' || payload?.signal?.aborted) return decision
+        // 新回合开始:上个回合没送出去的账不能滚进来(提醒只在回合末尾做一次)。
+        if (payload?.step === 1) blockedBySession.delete(payload?.agent?.session?.id ?? 'no-session')
         if (decision.messages.length === 0 && (payload.step === 1 || payload.messages?.length > 0)) return decision
         const notice = await pendingNotice(ctx, cfg, payload)
         if (notice === null) return decision

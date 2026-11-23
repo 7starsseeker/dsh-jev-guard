@@ -557,3 +557,28 @@ that remain are not reachable by any threshold:
 **Caveat on rates:** 23 of 54 noul answers (42.6%) land in `revise`+`block` here, against 1.5% on the 737
 recorded commands. This set is a discrimination test, not a traffic sample — never tune "how often am I
 interrupted" against it; that number has to come from `guard log --stats`.
+
+## 16. L0 hardening rules: replay and enforcement checks (2026-11-24)
+
+Six rules moved from the shadow collector to hard `deny`: `hosts-overwrite`,
+`root-cert-import`, `firewall-off`, `eventlog-security-clear`, `defender-disable`,
+`uninstall-security-product`. They live in `DENY_RULES` (32 deny / 24 ask at the time of
+writing); the suites derive those totals from `RULE_STATS` / `allRules.length`, so no assertion
+was edited.
+
+Offline replay of `~/.jev-guard/guard.log` (window 2026-11-10T15:48:33.486Z –
+2026-11-23T16:37:05.027Z; 3,626 records → 3,537 unique commands after removing this session's own
+probe commands): **0 hits** for all six, and 0 already denied by older rules. An earlier candidate
+set had 6 hits (5 `schtasks`, 1 `icacls`), but those were `ask`-tier candidates, not these rules.
+
+Enforcement checks (`node .zcode/probe-enforce.mjs`, 52/52): the six positive forms hit with the
+expected id; nine read-only/workspace negatives do not; the four `write`/`edit` roots
+(`~/.jev-guard`, system hosts, `%SystemRoot%`, Startup) classify correctly; the deny reason carries
+the `manual` hint for playbook-backed rules and not for older ones. `probe-shadow.mjs` keeps an 8/8
+promotion guard. All seven offline suites, `guard selftest`, the adapter smoke test,
+`gate-cli --selftest` and the other probes exit 0 with their baseline assertion counts.
+
+Caveat: 13 days, one machine, literal patterns. This is evidence of no *recorded* misfire, not a
+proof of safety. The shadow phase did catch one real miss: the earlier `hosts-overwrite` pattern
+matched a workspace fixture path, so the final rule only accepts absolute `/etc/hosts` and
+`...\drivers\etc\hosts`.

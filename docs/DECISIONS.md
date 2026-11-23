@@ -71,15 +71,22 @@ The boundary matrix (18 forms) and the performance cases (a 4KB wrapper prefix, 
 
 ---
 
-## D3 · A failed judging is always **fail-open** (allow)
+## D3 · A failed judging is **fail-open by default**, but **denies transient failures under `never`**
 
-**Decision:** timeout, network error, service 5xx, code exception → allow, and record `source: error` in the audit log.
+**Decision:** timeout, network error, service 5xx, code exception → allow, and record `source: error` in the audit log — with one narrow exception:
+the DSH adapter retries `timeout` / `network` / `server` once, and when the session's approval policy is `never` (danger-full-access) a failed
+judgement on a **non-read-only** command is denied instead of allowed. Degradation states (`no-key`, `auth`, `quota`, `region`, `request`) and
+contract/plugin errors (`shape`, `unknown`) keep fail-open in every preset: they are announced configuration facts or bugs, and denying them
+would lock the session until a human edits a file.
 
-**Evidence:** the host's own sandbox and approval policy are still enforced before execution; the valve is only an **incremental** check. If it were changed to fail-closed,
-one wobble at Typesafe and you can't get any work done. To "block even when the service is down" you should **thicken the L0 rules** (the layer that does not depend on the network),
-not change this policy.
+**Evidence:** the host's own sandbox and approval policy are still enforced before execution; the valve is only an **incremental** check. In `ask`
+the host still has a human behind it; in `never` nobody is left to approve, so "allow quietly" is the only path with no second line of defence.
+Retrying costs one extra request (worst case one more `timeoutMs`), and the denial is **visible** — the reason names the failure class and the
+`guard status` recovery path, and the audit row carries `failOpenDenied: true`. To "block even when the service is down" you should also
+**thicken the L0 rules** (the layer that does not depend on the network); this policy is not a substitute for that.
 
-**Health signal:** the `fail-open` counter in `guard log --stats`; if it stays 0, the judging service has never quietly gone down.
+**Health signal:** the `fail-open` counter in `guard log --stats`; if it stays 0, the judging service has never quietly gone down. Under `never`,
+count `failOpenDenied` rows as well — those are the commands the valve refused because it could not judge them.
 
 ---
 
@@ -158,7 +165,8 @@ but so that judging can be replayed offline.
 2. Within the cooldown window (**quota 15 minutes / key 30 minutes**) **send no more requests** — saving money, and saving every command from waiting on a request that is bound to fail;
 3. When the window expires, send **one** probe request: success → recover automatically (a human need do nothing); failure → extend and stay degraded;
 4. **During degradation, run only the free L0 + pre-screen by default** (`degradePolicy: 'l0-only'`); transient failures (timeout/network/5xx/429 rate limiting)
-   still fail open per occurrence and do **not** degrade, but are classified and recorded.
+   do **not** degrade, but are classified and recorded. They are retried once by the adapter, and the outcome follows D3: allowed per occurrence under `ask`,
+   denied for a non-read-only command under `never`.
 
 **Why D3's fail-open alone is not enough:** functionally it is not wrong (commands still run), but it is **silent** — commands keep being allowed,
 the log fills up with `source: error`, and **nobody can see at a glance that the valve is no longer protecting anything**. This project has already been burned once by
@@ -480,8 +488,8 @@ a different project with a different dependency budget.
 **Decision:** `401`/`403` no longer map to `auth` wholesale. A response that does not look like it came from the JSON API —
 a `text/html` content-type, an HTML body (`<!doctype html`), or a WAF fingerprint (Cloudflare's `cf-ray` /
 `Attention Required` / `Error code: 10xx`, and Sucuri, Akamai, Imperva) — is classified into a new, **non-degrading** class
-`edge`: no state file, no cooldown, per-call fail-open, recorded as `errorKind: edge`. A 401/403 whose body **is** JSON stays
-`auth` and degrades for 30 minutes, because that is what a rejected key actually looks like.
+`edge`: no state file, no cooldown, recorded as `errorKind: edge` (this section decides **degradation** only; under `never`, D3's exception
+still denies a non-read-only command). A 401/403 whose body **is** JSON stays `auth` and degrades for 30 minutes, because that is what a rejected key actually looks like.
 
 **Why:** 2026-09-23 02:43:19Z, on a live deployment: one judgment came back `403` carrying Cloudflare's generic HTML error
 page (183 ms — a quick edge rejection, not a timeout). The old single line filed it as `auth`, wrote a **global** 30-minute
@@ -793,6 +801,113 @@ line. All seven offline suites pass, `guard selftest` is 12/12.
 **Not covered.** Nothing stops a human from retyping the line instead of copying it. Different whitespace still
 authorises (by design); any other difference does not, and the refusal shows both the expected token and the one it was
 given, so the mismatch is visible rather than silent.
+
+## D24 · Six machine-hardening rules are hard `deny`, and every hard deny ships a manual playbook (2026-11-24)
+
+**Decision.** `hosts-overwrite`, `root-cert-import`, `firewall-off`, `eventlog-security-clear`,
+`defender-disable` and `uninstall-security-product` move out of the shadow collector and into
+`DENY_RULES`. `write`/`edit` calls whose target is inside jev-guard's state directory, the system
+hosts file, `%SystemRoot%`, or the Startup folder are denied by the adapter with source
+`path-rule`. Every hard-deny rule that has a written playbook gets a `manual` line appended to the
+reason, so `guard explain <id>` prints why, what it would change, risks, manual steps, rollback and
+a safer alternative.
+
+**Why.** A shadow log is not protection. These six actions are the ones that destroy the machine's
+ability to recover — evidence, trust anchors, inbound filtering, the guard's own state. In this
+deployment 3,481 of 3,513 recorded runs use `never` + `danger-full-access`, where an `ask` rule is a
+deny anyway; promoting them makes the policy honest instead of silently allowing them.
+
+**Why a hard deny is defensible here.** L0 denies are evaluated before the semantic layer and are
+not overridable by a one-shot token, so a judging timeout cannot turn them into an allow. A hard
+deny does not mint a token either — the audit row carries no `ALLOW-…`, so nothing in the log
+suggests it could be overridden. The cost is that a legitimate administrator is stopped too — which
+is why the playbook exists, and why `guard explain` is part of the deny reason rather than a
+document nobody opens.
+
+**What it does not mean.** This is still an accident net, not a security boundary (D1). The
+patterns cover the invocations we have seen and the documented forms in `docs/BLOCKED-COMMANDS.md`;
+obfuscation, an unlisted wrapper, or a live 8.3/UNC spelling can miss. A human who reads the manual
+steps can always bypass the guard on purpose — the point is that they must read them, and the
+manual steps name the irreversible ones explicitly.
+
+**Verified.** Offline replay over 3,537 unique commands from `~/.jev-guard/guard.log`
+(2026-11-10 – 2026-11-23): 0 hits for the six rules. `probe-enforce.mjs` 52/52 covers positive
+forms, read-only/workspace negatives, the four path roots and the manual hint; `probe-shadow.mjs`
+8/8 guards the promotion; all seven offline suites, `guard selftest` (12/12), the adapter smoke
+test (24 groups) and `gate-cli --selftest` (30/30) keep their baseline assertion counts. No
+assertion file was edited: the suites derive totals from `RULE_STATS` / `allRules.length`.
+
+**Revisit when.** A legitimate command is denied twice by the same rule, or a bypass is observed.
+Then change the rule or the playbook — not the tests.
+
+## D25 · A hard deny stops the step; a reversible deny is reported at turn end (2026-11-24)
+
+**Decision.** A blocked command is never left as a bare refusal. The adapter splits by whether the
+rule is reversible:
+
+- **Irreversible** (playbook entry with `irreversible: true`, or a hard-deny rule with no playbook
+  at all): immediately after the deny, inject one `user` message via `Agent.inject()` (next step,
+  no wake). It tells the model to stop, not retry, not rephrase, explain the block, and leave the
+  choice to the user.
+- **Reversible** (playbook exists and is not marked irreversible): nothing is injected at deny
+  time. The rule and one sample command are recorded; at `agent/turn-stopping` the adapter injects
+  one summary message listing the rules plus `guard explain <rule>` pointers, so the model adds a
+  short section to its final answer. One message per turn; the bucket is cleared at the next turn's
+  first pre-step.
+
+**Why.** In `never` there is no approval prompt, so a deny used to be silent: the model saw the
+refusal, the user often did not. A host-only plugin has three levers — the deny reason,
+`Agent.inject()` (next-step, no wake) and `agent/turn-stopping` (the loop re-checks
+`inbox.nextStep` afterwards and runs one more step). `cancel()` would discard the whole turn, which
+is disproportionate for one blocked command.
+
+**What it is not.** `inject` is a strong hint, not a hard pause; the model can ignore it. A real
+pause exists only in `ask` mode, where the host raises an approval prompt. This is not a reason to
+switch `never` users to `ask` silently.
+
+**Limits.** `agent/turn-stopping` carries only `{turn, signal}`; the adapter correlates it with the
+agent captured at `tools/pre-execute` via the same signal, and falls back to `ctx.agents.list()`
+only when exactly one session has pending items. If a runtime has no `inject` seam, the deny reason
+still carries `explain` and no exception is thrown. Injected messages are written into the session
+history, so they are user-visible and auditable.
+
+**Verified.** `probe-blocked-flow.mjs` 24/24: immediate stop for `eventlog-security-clear` and for a
+no-playbook deny, with no duplicate at turn end; reversible `firewall-off` and a `guard-home-write`
+path block each produce one turn-end reminder; two rules combine into one message; a clean turn
+injects nothing; an agent without `inject` does not throw. The full offline suite keeps its
+baseline assertion counts.
+
+**Revisit when.** A model repeatedly ignores the stop message, or users report that the turn-end
+reminder interrupts legitimate work.
+
+## D26 · The read-only pre-screen covers pwsh formatters and selectors, but still refuses script blocks (2026-11-24)
+
+**Decision.** `PWSH_READONLY` now also recognises `Format-Table` / `Format-List` / `Format-Wide`,
+`Select-Object`, `Sort-Object`, `Measure-Object`, `Group-Object`, `Out-String`, `ConvertTo-Json`,
+`ConvertTo-Csv`, `Compare-Object` and `Get-Unique`. `readOnlyReason()` refuses any segment whose
+unquoted text contains `{` or `}`, so calculated properties (`Select-Object -Property @{…}`) and
+script blocks (`Where-Object { … }`, `ForEach-Object { … }`) never reach the name list.
+`readOnlyChainReason()` applies the same proof to every `; && || |` segment, and
+`failOpenDenial()` uses it: under `never`, a timeout no longer denies a pipeline that is provably
+read-only, while an unknown executable (`node -e …`) is still denied.
+
+**Why.** A real `Get-ChildItem | Format-Table` was denied during a judging timeout. The command was
+not judged unsafe; the pre-screen simply did not recognise `Format-Table`. Replaying the current
+log (3,717 unique commands) raises pre-screen hits from 37 to 150, removing those pointless
+timeouts without changing any L0 rule or threshold.
+
+**What it is not.** Name-level matching is not a security boundary (D1). The brace guard is what
+keeps the new names safe; quoted braces are blanked by `stripQuoted()`. `node` / `python` remain
+unrecognised and stay denied while the judge is down.
+
+**Verified.** `probe-pwsh-prefilter.mjs` 39/39 (including brace negatives and
+`Get-ChildItem | Format-Table Name`); `failOpenDenial()` returns `null` for
+`Get-ChildItem | Format-Table` and a deny for `Get-ChildItem | Remove-Item x` / `node -e 1`; the
+full offline suite keeps its baseline counts (30 / 34 / 113 / 60 / 17 / 91 / 20, guard 12/12,
+smoke 24, gate-cli 30/30).
+
+**Revisit when.** A listed formatter or selector is found to run code without braces, or a
+read-only command is still blocked during an outage.
 
 
 

@@ -64,7 +64,7 @@ command text ──▶ L0 static hard rules (offline · cannot be overridden) �
 
 Three layers, always in this order:
 
-1. **L0 static hard rules** (`lib/rules.js`): 26 "never allowed" + 24 "human confirmation required". **Offline and impossible to override** — not even a one-shot token gets past them. Rules match at **command position only** (the start of a line, or after `;` `&` `|` `(` `$(`, or after `bash -c "` / `pwsh -NoProfile -Command "` / `cmd /c "`, and skipping wrappers such as `sudo` / `timeout 30` / `xargs -0` / `find … -exec`) — so *mentioning* a dangerous command inside an argument is not a false positive, **and a real command buried in a multi-line script is not missed either**. Only two rules cannot be anchored structurally (`redirect-to-device`, `fork-bomb`) and match the whole text; the counter `RULE_STATS.anywhere` is always 2.
+1. **L0 static hard rules** (`lib/rules.js`): 32 "never allowed" + 24 "human confirmation required". **Offline and impossible to override** — not even a one-shot token gets past them. Rules match at **command position only** (the start of a line, or after `;` `&` `|` `(` `$(`, or after `bash -c "` / `pwsh -NoProfile -Command "` / `cmd /c "`, and skipping wrappers such as `sudo` / `timeout 30` / `xargs -0` / `find … -exec`) — so *mentioning* a dangerous command inside an argument is not a false positive, **and a real command buried in a multi-line script is not missed either**. Only two rules cannot be anchored structurally (`redirect-to-device`, `fork-bomb`) and match the whole text; the counter `RULE_STATS.anywhere` is always 2.
 2. **Pre-screen**: commands that are provably read-only or touch only rebuildable content (caches, build output, `/tmp`) pass straight through, with **zero network calls**.
 3. **Jev semantic judgment**: one yes/no question — *"will this command irreversibly delete or overwrite the user's real data?"* — split by two thresholds into `allow` / `revise` / `block`. Measured latency ~300ms (P50 267ms), cost ≈ `$0.000019` per call.
 
@@ -144,7 +144,7 @@ Then run a command in a session that is **certain** to be blocked (e.g. `git pus
 
 ## Languages
 
-Everything a human or a model reads — verdict reasons, the 37 L0 rule reasons, all CLI output, degradation warnings and `guard status` — exists in **English and Chinese**.
+Everything a human or a model reads — verdict reasons, the 56 L0 rule reasons (32 deny / 24 ask), all CLI output, degradation warnings and `guard status` — exists in **English and Chinese**.
 
 | Knob | What it controls | Default |
 |---|---|---|
@@ -183,7 +183,7 @@ Code comments and the labels inside `tools/` stay Chinese on purpose: they are r
 | `promptLang` | `zh-CN` | Language of the question asked to Jev and of the state keys. **A judging parameter, not a translation**: see [Languages](#languages) — switching it to `en` was measured to shift ≈ −0.04 and to flip three probes toward permissive |
 | `lowThreshold` / `highThreshold` | `0.5` / `0.7` | The four-state thresholds: `p < low` → allow; `low ≤ p < high` → revise; `p ≥ high` → block. Over 737 real commands this split 98.51% / 0.81% / 0.68% |
 | `reviseInAskMode` / `blockInAskMode` | `ask` / `ask` | How the verdict action branches by approval policy: `ask` = hand it to a human approval prompt when approval is available (a human is right there — a 50%-confidence judgment should not be deciding for them); `deny` = fall back to a plain refusal. Under `never` (fully automatic) both stay a plain refusal. **L0 `deny`-class hard rules are unaffected by this switch** — they always block |
-| `timeoutMs` | `1800` | Budget for a single judgment; anything over it is allowed (fail-open) |
+| `timeoutMs` | `1800` | Budget for a single judgment; a timeout is retried once by the DSH adapter, then allowed under `ask` and denied for a non-read-only command under `never` (fail-open is the default) |
 | `cacheSize` | `256` | Number of cached judgments |
 | `inlineScripts` / `maxScriptBytes` | `true` / `8192` | Read the body of an invoked script into the judgment context (measured: lifts the `node x.mjs` blind spot from 0.31 to 0.82); sensitive paths are skipped automatically |
 | `retryLimit` | `2` | How many times the same command may be blocked before it escalates (`escalate`, i.e. handed to a human) |
@@ -243,7 +243,7 @@ The judging service is **pay-per-use**, so running out of credit is a certainty.
 | This egress is outside the service's region (`451`, carrying the service's own JSON body) | **Degrades for 30 minutes, globally** — the request reached the service and was refused by its region policy, and every entry point on this machine shares one egress | `guard status` names the cause (exit code 3) · the warning says to check the proxy and the egress IP · `errorKind: region` in `guard log --stats` |
 | The request itself is refused (`400` / `422`, e.g. `Unknown model: …`) | **Degrades for 15 minutes, only for the entry point that wrote the state** — retrying cannot help, the `model` is what has to change | `guard status` names the cause · the warning points at the `model` · `errorKind: request` in `guard log --stats` |
 | No key configured | **Degrades stickily** (D15): zero HTTP requests, and it ends the moment a key resolves | one `⚠️` notice in the session itself · `guard key status` exits 3 |
-| Timeout / network hiccup / 5xx / 429 rate limit / **an edge block** (a CDN/WAF answering `403` with an HTML page: the request never reached the judging service, so the key was never checked) | **No degradation** — each call is simply allowed (fail-open), but it is categorized and recorded | the "failure breakdown" line of `guard log --stats` |
+| Timeout / network hiccup / 5xx / 429 rate limit / **an edge block** (a CDN/WAF answering `403` with an HTML page: the request never reached the judging service, so the key was never checked) | **No degradation** — the adapter retries once, then allows under `ask` and denies a non-read-only command under `never` (fail-open default); always categorized and recorded | the "failure breakdown" line of `guard log --stats` |
 
 ```bash
 node bin/guard.mjs status --clear    # don't want to wait out the cooldown: retry once now (a failure re-enters degradation)
@@ -340,7 +340,7 @@ measurements/              Raw records behind docs/MEASUREMENTS.md (not in the n
 
 1. **The only things sent to the judging service are the command text and, optionally, script bodies** (sensitive paths — `.env` / `.ssh` / `*.pem` / `*credential*` / `*secret*` / `*token*` — are skipped automatically, with an 8KB per-file cap). To turn this off entirely: `inlineScripts: false` (at the cost of `node x.mjs`-style commands dropping back into the p≈0.31 blind spot).
 2. **The key is read only from the credentials layer / environment / `secrets.json`** and never enters the log or a report (the command text is masked before writing).
-3. **Every failure is fail-open**: when the judging service is unavailable nothing is blocked — DSH's own sandbox preset (anything except `danger-full-access`) still applies before execution. If you want "block even when the service is down", thicken the L0 rules rather than switching to fail-closed.
+3. **Failures are fail-open by default, with one `never` exception**: under `ask`, nothing is blocked when the judging service is unavailable — DSH's own sandbox preset still applies before execution. Under `never` (`danger-full-access`) neither a human nor the sandbox is left, so a non-read-only command is denied after one retry; degradation states and contract errors still fail open. If you want "block even when the service is down", thicken the L0 rules rather than switching to fail-closed.
 4. **It does not defend against deliberate bypass**: rewriting the command, encoding it, or writing the authorisation file directly can all get around it. Defending against malicious injection takes a sandbox / a low-privilege user / a container.
 
 ## Known limits

@@ -73,7 +73,10 @@ Stuck entries appear with `--question` in the "Questions Needing Intervention" s
 3. **Script bodies are sent to TypeSafe's API.** Sensitive paths are skipped automatically, with an 8KB cap;
    if you do not want this, set `inlineScripts` in `config.json` to `false` (the cost is that the detection rate for commands
    like `node x.mjs` drops from 0.82 back to 0.31).
-4. **Failure always passes (fail-open).** If you want "block even when the service is down", thicken the L0 rules, rather than changing this policy.
+4. **Failures pass by default (fail-open), with one `never` exception.** The adapter retries `timeout` / `network` / `server` once; if judging still fails
+   under `never` (`danger-full-access`), a **non-read-only** command is denied, and the reason names the `guard status` recovery path. Under `ask` — and for
+   degradation states and contract/plugin errors in every preset — the command is allowed, as before. If you want "block even when the service is down",
+   thicken the L0 rules, rather than changing this policy.
    **Running out of quota also counts as failure** (the judging service is paid): the valve then **degrades** — it stops the semantic layer that costs money,
    keeps running the free L0 + pre-screen by default, and writes this matter into the rejection reason, the audit log and stderr.
    One command tells you the state: `node bin/guard.mjs status` (exit code 3 while degraded).

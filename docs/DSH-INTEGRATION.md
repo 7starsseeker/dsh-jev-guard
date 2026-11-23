@@ -68,9 +68,9 @@ Details, measured evidence, and the nature of each of the three channels are in 
 | Failure category | Valve behaviour | `source` in the audit |
 |---|---|---|
 | `quota` (402 / quota wording) / `auth` (401/403 with a JSON body) | **Degrades**: writes `~/.jev-guard/degraded.json`, sends no more requests within the cooldown window, by default only the free L0 + pre-screen runs | First time: `error` + `degraded`; afterwards: `degraded` |
-| `edge` (401/403 carrying an HTML/WAF error page) | **Does not degrade**: that response did not come from the judging service — a CDN/WAF blocked the request at the edge, so the key was never checked. Each call fails open and is recorded as `edge` | `error` |
+| `edge` (401/403 carrying an HTML/WAF error page) | **Does not degrade**: that response did not come from the judging service — a CDN/WAF blocked the request at the edge, so the key was never checked. The adapter retries once, then allows under `ask` and denies a non-read-only command under `never` (D3); recorded as `edge` | `error` |
 | `no-key` (no key could be resolved) | **Degrades, stickily and scoped**: no HTTP is sent at all, the state never expires with time (there is nothing to probe) and is cleared the moment a key resolves; it records the identity of the entry that reported it, so it suppresses only that entry | First time: `error` + `degraded`; afterwards: `degraded` |
-| `timeout` / `network` / `server` / `rate-limit` | **Does not degrade**, fail-open each time, recorded classified by `errorKind` | `error` |
+| `timeout` / `network` / `server` / `rate-limit` | **Does not degrade**; the adapter retries once, then allows under `ask` or denies a non-read-only command under `never` (D3), recorded classified by `errorKind` | `error` |
 
 `no-key` used to be deliberately non-degrading (D10.2): it is a local configuration condition with zero HTTP cost, while
 `degraded.json` is globally shared — one path being unable to read a secret should not stop the other paths too.
@@ -152,15 +152,18 @@ extracting it into a shared module for DRY it failed on WSL too; a dynamic `impo
 
 ---
 
-## 6. Every failure is allowed through (fail-open)
+## 6. Failures are fail-open by default; under `never` a transient failure denies non-read-only commands
 
-Timeout (1800 ms by default), network error, service 5xx, code exception → **allowed** and recorded as `source: error`.
+Timeout (1800 ms by default), network error, service 5xx, code exception → **allowed** and recorded as `source: error` — after the adapter has
+retried `timeout` / `network` / `server` once. The exception is `never` (danger-full-access): nobody is left to approve and the host sandbox is
+off, so a **non-read-only** command is **denied** instead of allowed through, with a reason that names the failure class and the
+`guard status` recovery path. Degradation states (`no-key` / `auth` / `quota` / `region` / `request`) and contract/plugin errors
+(`shape` / `unknown`) still fail open in every preset — see [`DECISIONS.md`](./DECISIONS.md) D3.
 
-The reason is not "we do not care": DSH itself still has the sandbox preset (`permission/preset`) taking effect **after** the valve
-(unless it is `danger-full-access`). The valve is an **incremental** check, not the only line of defence. If it were changed to fail-closed,
-one hiccup of the judging service and you cannot work — a thing that "prevents accidents" would have become a thing that
-"manufactures accidents". To achieve "blocked even when the service is down", the right approach is **to thicken the L0 rules**
-(that layer has no network access and depends on no service), not to change this policy. See [`DECISIONS.md`](./DECISIONS.md) D3.
+The reason is not "we do not care": in `ask`, DSH itself still has a human and the sandbox preset (`permission/preset`) taking effect
+**after** the valve. The valve is an **incremental** check, not the only line of defence — which is exactly why `never` is treated differently:
+there the approval channel and the sandbox are both absent, so "allow quietly" has no second line behind it. To achieve "blocked even when the
+service is down", the right approach is still **to thicken the L0 rules** (that layer has no network access and depends on no service).
 
 ---
 
@@ -182,7 +185,7 @@ is **to add another layer** (sandbox / low-privilege user / container), not to r
 |---|---|---|---|
 | **One-shot token** | Allows **the exact text of one command** once | The valve (`~/.jev-guard/allow.txt`) | Not persistent: deleted once used, not replayable |
 | **DSH approval** | A nod for **this one call** | DSH | Only "allow once", **no permanent allow** (see [`USER-INTERVENTION.md`](./USER-INTERVENTION.md) §2.1) |
-| **L0 static rules** | Hard rules with no network (26 deny + 24 ask) | `lib/rules.js` | A token **cannot get past** `deny` |
+| **L0 static rules** | Hard rules with no network (32 deny + 24 ask) | `lib/rules.js` | A token **cannot get past** `deny` |
 
 Two numbering systems must also be distinguished: `L0 / L1 / L2` are **judging layers** (see [`ARCHITECTURE.md`](./ARCHITECTURE.md)),
 and `allow / revise / block / escalate` are **judging results**. The former is "how it was computed", the latter is "what was computed".

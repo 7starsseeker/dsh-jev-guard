@@ -83,7 +83,7 @@
 ```bash
 cd /mnt/t/dsh-jev-guard
 node bin/guard.mjs selftest                                    # 期望:12 项全部通过(不联网)
-node bin/guard.mjs rules | head -5                             # 期望:列出 26 条 deny + 24 条 ask
+node bin/guard.mjs rules | head -5                             # 期望:列出 32 条 deny + 24 条 ask
 node bin/guard.mjs judge 'ls -la' 'git push --force origin main' 'pnpm test'
 ```
 
@@ -189,7 +189,7 @@ node bin/guard.mjs status            # 健康状态(降级时退出码 3)
 | 危险命令没被拦 | 不在 L0 且 `p < lowThreshold` | 看 `judge` 输出的 `p`;必要时调低 `lowThreshold` 或给该类命令加 L0 规则 |
 | 全被拦,干不了活 | 阈值过低或 L0 太激进 | 先看 `judge` 的 `rule.id`;编辑 `lib/rules.js` 或调高 `lowThreshold` |
 | 授权行粘到 cmd.exe 里报语法错 | cmd 不认 POSIX/PowerShell 的引号 | 改用 `guard allow --command-file cmd.txt` |
-| 判定服务抖动导致干不了活 | 不该发生(fail-open) | 若确实发生,查 `guard.log` 里的 `source: error` 与 `errorKind` |
+| 判定服务抖动导致干不了活 | `ask` 下不该发生(fail-open);`never` 下非只读命令在重试一次后会被有意拒绝 | 查 `guard.log` 里的 `source: error`、`errorKind` 与 `failOpenDenied`,或跑 `guard status` |
 
 ## 8. 安全与隐私(必须原样转告用户)
 
@@ -197,8 +197,9 @@ node bin/guard.mjs status            # 健康状态(降级时退出码 3)
    敏感路径(`.env` / `.ssh` / `*.pem` / `*credential*` / `*secret*` / `*token*`)自动跳过,单文件 8KB 上限。
    想彻底关闭:`config.json` 里 `inlineScripts: false`(代价是这类命令退回 p≈0.31 的盲区)。
 2. **密钥只从凭据层 / 环境变量 / `secrets.json` 读取,不写进任何日志和报告。** 报告里的命令文本会经过掩码。
-3. **失败一律放行(fail-open)**:判定服务不可用时阀门不拦任何东西 —— 因为 DSH 自己的沙箱档位
-   (除 `danger-full-access` 外)仍在执行之前。想"服务挂了也拦",把 L0 规则加厚,而不是改这条策略。
+3. **默认失败放行(fail-open),`never` 下有一个窄例外**:`ask` 下判定服务不可用时阀门不拦任何东西 ——
+   DSH 自己的沙箱档位仍在执行之前。`never`(`danger-full-access`)下人跟沙箱都不在,非只读命令在重试一次后改为拒绝。
+   降级状态与契约/插件错误仍保持 fail-open。想"服务挂了也拦",把 L0 规则加厚,而不是改这条策略。
 4. **它挡不住蓄意绕过。** 换壳、编码、直接写 `~/.jev-guard/allow.txt` 都可能绕开。
 5. **它防的是事故,不是对手 —— 这个范围是用户显式定下来的,别自作主张收窄。**
    已知且**有意保留**的旁路至少两条:文件写入类工具直接写 `allow.txt`;换一种写法绕开判定。

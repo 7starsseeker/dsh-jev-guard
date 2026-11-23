@@ -86,7 +86,7 @@ const CASES = [
   ['Remove-Item -Recurse C:\\Windows', 'ps-remove-item-windows-dir', 'E 真执行:删系统目录'],
   ['rd /s /q C:\\Windows', 'ps-remove-item-windows-dir', 'E 真执行:cmd 删系统目录'],
   ['Remove-Item -Recurse $env:SystemRoot', 'ps-remove-item-windows-dir', 'E 真执行:env 形式的系统目录'],
-  ['Remove-Item -Recurse C:\\Users\\lmkta', 'ps-remove-item-user-profile', 'E 真执行:删用户目录根'],
+  ['Remove-Item -Recurse C:\\Users\\me', 'ps-remove-item-user-profile', 'E 真执行:删用户目录根'],
   ['Remove-Item -Recurse $env:USERPROFILE', 'ps-remove-item-user-profile', 'E 真执行:env 形式的用户目录'],
   ['Remove-Item -Recurse ~', 'ps-remove-item-user-profile', 'E 真执行:PS 的 ~ 是家目录'],
   ['format D: /q', 'format-drive', 'E 真执行:cmd 的 format'],
@@ -106,7 +106,7 @@ const CASES = [
 
   // ── F 组:PowerShell 普通操作不该被误伤(与旧的错误模式对照)────────────────────
   ['Remove-Item -Recurse -Force .\\build', null, 'F 普通:相对目录的递归清理'],
-  ['Remove-Item -Recurse C:\\Users\\lmkta\\build\\dist', null, 'F 普通:C: 下的子目录(旧模式会 deny)'],
+  ['Remove-Item -Recurse C:\\Users\\me\\build\\dist', null, 'F 普通:C: 下的子目录(旧模式会 deny)'],
   ['Remove-Item -Recurse C:\\Windows.old', null, 'F 普通:Windows.old 是常规清理'],
   ['echo "rd /s /q C:\\" > notes.txt', null, 'F 散文:把命令写进参数'],
   ['Get-ChildItem C:\\ | Format-Table', null, 'F 普通:Format-Table 不是 format 盘符'],

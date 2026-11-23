@@ -22,9 +22,9 @@
 
 密钥按「DSH 凭据层 → 环境变量 → 你自己建的 `secrets.json`(默认 `~/.jev-guard/secrets.json`,或 `$JEV_GUARD_HOME/secrets.json`,或用 `JEV_GUARD_SECRETS` 指定)」三级解析,并且**永不打印**;写进审计日志之前先做掩码。`node bin/guard.mjs key status` 报的是哪一级解析到了、值有多长,不是值本身。
 
-## 失败一律放行(有意为之)
+## 默认失败放行(有意为之),`never` 下有一个窄例外
 
-超时、网络错、5xx、429 都**放行**并记 `source: error`。阀门是**增量**检查:它之后 DSH 自己的沙箱档位仍然生效(`danger-full-access` 除外)。改成 fail-closed 会让一个"防事故"的东西变成"制造事故"的东西——见 **D3**。想要"服务挂了也拦",正确做法是把 L0 规则加厚。
+超时、网络错、5xx、429 都**放行**并记 `source: error` —— 适配器会先对 `timeout` / `network` / `server` 重试一次。阀门是**增量**检查:`ask` 下它之后还有人、还有 DSH 自己的沙箱档位。`never`(`danger-full-access`)下审批通道与沙箱都不在,此时**非只读**命令改为**拒绝**,理由里带恢复路径。降级状态与契约/插件错误在任何档位仍保持 fail-open——见 **D3**。想要"服务挂了也拦",正确做法是把 L0 规则加厚。
 
 ## 审计日志
 
